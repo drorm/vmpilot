@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vmpilot"
+version = "0.1.0"
+authors = [
+  { name="Dror Matalon" },
+]
+description = "AI-driven system operations and development assistant"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0",
+    "fastapi>=0.100.0",
+    "pygments>=2.15.0",
+    "asyncio>=3.4.3",
+]
+
+[project.optional-dependencies]
+pipeline = ["openwebui-pipelines>=0.1.0"]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/vmpilot"
+Issues = "https://github.com/yourusername/vmpilot/issues"
