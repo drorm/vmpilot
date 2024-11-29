@@ -1,51 +1,120 @@
-# VMPilot
+# Compute Pipeline
 
-An AI-driven system operations and development assistant that provides command execution capabilities through both CLI and API interfaces.
+```error
+Only run this if you have enough knowledge about the security implications of running arbitrary commands in your virtual machine.
+
+Never run this on your local machine. You are letting the AI/LLM pilot run commands in your virtual machine and it can be dangerous. Additionally, when there is a risk that the AI might interact with the external world, and be taken over by an attacker.
+```
+
+## Overview
+
+VMPilot is an Open WebUI Pipeline that provides command execution capabilities in a VM. It lets the AI/LLM pilot, run commands, in your virtual machine. You tell it what to do and it attempts to perform the task which typically involves running multiple commands in the terminal. Since it is an Open WebUI Pipeline, it benefits from the very rich UI and ecosystem of Open WebUI.
+
+## Dependencies
+
+Core dependencies:
+- Python 3.11+
+- OpenWebUI Pipelines
+- Other dependencies as specified in requirements.txt
+
+To install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+## Project Structure
+
+```
+.
+├── compute.py     -- Main pipeline implementation
+├── loop.py        -- Core agent loop for LLM interaction
+├── logger.py      -- Logging configuration
+└── tools/
+    ├── base.py    -- Base tool implementations
+    ├── bash.py    -- Bash command execution tool
+    └── ...
+```
+
 
 ## Features
 
-- Interactive command execution with AI guidance
-- Tool integration (bash, file editing, system operations)
-- Supports both CLI and OpenWebUI Pipeline modes
-- Real-time streaming responses
-- Smart code and output formatting
+### Core Features
+- System prompt handling through message history
+  - Extracts and applies system prompts from conversation context
+  - Preserves system instructions across interactions
 
-## Installation
+- Code Output Processing
+  - Automatic programming language detection
+  - Smart code fence wrapping (\`\`\`language)
+  - Fallback to plain text for unknown content
 
+- Streaming Support
+  - Real-time response streaming
+  - Async queue-based implementation
+  - Support for both streaming and single-response modes
+
+- Tool Integration
+  - Structured tool output handling
+  - Error code and message capture
+  - Exit status reporting
+
+- Model Support
+  - Currently using Claude 3.5 Sonnet
+  - Extensible to other API providers
+
+## Usage
+
+To use the pipeline:
+
+1. Install dependencies:
 ```bash
-pip install vmpilot
+pip install pygments
 ```
 
-## CLI Usage
+2. Configure the ANTHROPIC_API_KEY environment variable
+3. The pipeline runs on port 9099 by default
+4. Access through any OpenAI API-compatible client
 
-1. Set your API key:
-```bash
-export ANTHROPIC_API_KEY=your_key_here
-```
+## Security Considerations
 
-2. Run the CLI:
-```bash
-vmpilot-cli
-```
+- The pipeline has arbitrary code execution capabilities
+- Only use in trusted environments
+- Keep API keys secure
+- Follow standard security practices when exposing endpoints
 
-## Pipeline Integration
+## Error Handling
 
-VMPilot can be used as an OpenWebUI Pipeline plugin:
+The pipeline provides:
+- Detailed error messages
+- Exit code reporting
+- Syntax-highlighted error output
+- Proper cleanup on failures
 
-1. Install with pipeline dependencies:
-```bash
-pip install vmpilot[pipeline]
-```
+## Logging
 
-2. Add to your pipeline configuration
+Comprehensive logging includes:
+- Tool execution details
+- API interactions
+- Error conditions
+- Performance metrics
 
-The service runs on port 9099 by default.
+## Key Components
 
-## Security Note
+### compute.py
 
-VMPilot has arbitrary code execution capabilities. Only use in trusted environments and follow security best practices.
+The main pipeline implementation that:
+- Provides an OpenAI API-compatible endpoint
+- Handles message streaming
+- Manages tool execution
+- Features automatic code language detection and syntax highlighting
+- Supports both streaming and non-streaming responses
 
-## Requirements
+### loop.py
 
-- Python 3.11+
-- Anthropic API key (for Claude integration)
+Core agent loop implementation that:
+- Manages interactions between LLMs and computer control tools
+- Supports multiple API providers (Anthropic, etc.)
+- Handles conversation context and tool execution
+- Implements prompt caching and optimization
+- Provides robust error handling
+
