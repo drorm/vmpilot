@@ -64,7 +64,6 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 
 <IMPORTANT>
 * Only execute valid bash commands
-* Dangerous commands will return an error instead of executing
 * You have a maximum of 5 operations to complete each task
 * Each command execution counts as one operation
 * If you reach the operation limit without completing the task, respond with "OPERATION LIMIT REACHED: [current status and what remains to be done]"
