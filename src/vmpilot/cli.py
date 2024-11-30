@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI interface for testing compute.py functionality.
+CLI interface for interacting with vmpilot from the cli
 Usage: ./cli.py "your command here"
 """
 
@@ -16,9 +16,9 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from .compute import Pipeline  # Try relative import first
+    from .vmpilot import Pipeline  # Try relative import first
 except ImportError:
-    from compute import Pipeline  # Fallback to direct import
+    from vmpilot import Pipeline  # Fallback to direct import
 
 
 def create_mock_body() -> Dict:
@@ -26,6 +26,7 @@ def create_mock_body() -> Dict:
     return {
         "temperature": 0.7,
         "stream": True,
+        "disable_logging": True,  # Disable logging when running from CLI
     }
 
 
@@ -44,7 +45,7 @@ async def main(command: str):
 
     # Execute pipeline
     result = pipeline.pipe(
-        user_message=command, model_id="compute-bash", messages=messages, body=body
+        user_message=command, model_id="VMPilot", messages=messages, body=body
     )
 
     # Print each message in the stream
