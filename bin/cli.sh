@@ -5,3 +5,4 @@ export ANTHROPIC_API_KEY=`cat ~/.anthropic/api_key`
 
 cd "$SCRIPT_DIR/.."
 PYTHONPATH="$(pwd)" python3 src/vmpilot/cli.py "$@"
+echo

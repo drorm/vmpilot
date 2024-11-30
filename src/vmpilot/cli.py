@@ -26,6 +26,7 @@ def create_mock_body() -> Dict:
     return {
         "temperature": 0.7,
         "stream": True,
+        "disable_logging": True,  # Disable logging when running from CLI
     }
 
 

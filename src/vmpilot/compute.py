@@ -40,7 +40,6 @@ class Pipeline:
         self.name = "Compute Pipeline"
         self.type = "manifold"
         self.id = "compute"
-        logger.info(f"#### Initializing {self.name} pipeline")
 
         self.valves = self.Valves(
             ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY", ""),
@@ -69,6 +68,10 @@ class Pipeline:
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through Claude with tool integration."""
+        # Disable logging if requested (e.g. when running from CLI)
+        if body.get("disable_logging"):
+            logger.disabled = True
+
         logger.info(f"pipe called with user_message: {user_message}")
 
         from vmpilot.loop import sampling_loop, APIProvider
