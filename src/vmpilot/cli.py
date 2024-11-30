@@ -21,10 +21,10 @@ except ImportError:
     from vmpilot import Pipeline  # Fallback to direct import
 
 
-def create_mock_body() -> Dict:
+def create_mock_body(temperature: float = 0.7) -> Dict:
     """Create a mock body for pipeline calls"""
     return {
-        "temperature": 0.7,
+        "temperature": temperature,
         "stream": True,
         "disable_logging": True,  # Disable logging when running from CLI
     }
@@ -35,12 +35,12 @@ def create_mock_messages(command: str) -> List[Dict]:
     return [{"role": "user", "content": command}]
 
 
-async def main(command: str):
+async def main(command: str, temperature: float):
     """Main CLI execution flow"""
     pipeline = Pipeline()
 
     # Create mock pipeline call parameters
-    body = create_mock_body()
+    body = create_mock_body(temperature)
     messages = create_mock_messages(command)
 
     # Execute pipeline
@@ -56,6 +56,7 @@ async def main(command: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test compute.py via CLI")
     parser.add_argument("command", help="Command to execute")
+    parser.add_argument("-t", "--temperature", type=float, default=0.7, help="Temperature for response generation (default: 0.7)")
     args = parser.parse_args()
 
-    asyncio.run(main(args.command))
+    asyncio.run(main(args.command, args.temperature))

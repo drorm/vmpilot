@@ -34,15 +34,28 @@ logger.propagate = False
 
 class Pipeline:
     class Valves(BaseModel):
+        # Required runtime parameters
         ANTHROPIC_API_KEY: str = ""
+        PIPELINES_DIR: str = ""
+
+        # Model configuration
+        MODEL_ID: str = "claude-3-5-sonnet-20241022"
+        PROVIDER: str = "anthropic"  # Maps to APIProvider.ANTHROPIC
+
+        # Inference parameters with OpenWebUI-compatible defaults
+        TEMPERATURE: float = 0.8
+
+        MAX_TOKENS: int = 4096
 
     def __init__(self):
         self.name = "VMPilot Pipeline"
         self.type = "manifold"
         self.id = "vmpilot"
 
+        # Initialize valves with environment variables and defaults
         self.valves = self.Valves(
             ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY", ""),
+            PIPELINES_DIR=os.getenv("PIPELINES_DIR", ""),
         )
 
     async def on_startup(self):
@@ -146,9 +159,12 @@ class Pipeline:
                     try:
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
+                        logger.info(f"body: {body}")
+                        logger.info(f"body model: {body.get('model')}")
+                        logger.info(f"APIProvider: {APIProvider.ANTHROPIC}")
                         loop.run_until_complete(
                             sampling_loop(
-                                model="claude-3-5-sonnet-20241022",
+                                model=self.valves.MODEL_ID,
                                 provider=APIProvider.ANTHROPIC,
                                 system_prompt_suffix=system_prompt_suffix,
                                 messages=formatted_messages,
@@ -156,6 +172,15 @@ class Pipeline:
                                 tool_output_callback=tool_callback,
                                 api_response_callback=lambda req, res, exc: None,
                                 api_key=self.valves.ANTHROPIC_API_KEY,
+                                max_tokens=body.get(
+                                    "max_tokens", self.valves.MAX_TOKENS
+                                ),
+                                temperature=body.get(
+                                    "temperature", self.valves.TEMPERATURE
+                                ),
+                                # top_k=body.get("top_k", self.valves.TOP_K),
+                                # top_p=body.get("top_p", self.valves.TOP_P),
+                                # stop_sequences=body.get("stop", self.valves.STOP_SEQUENCES),
                             )
                         )
                     except Exception as e:

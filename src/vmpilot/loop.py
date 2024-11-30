@@ -83,6 +83,7 @@ async def sampling_loop(
     ],
     api_key: str,
     only_n_most_recent_images: int | None = None,
+    temperature: float,
     max_tokens: int = 4096,
 ):
     """
@@ -136,6 +137,7 @@ async def sampling_loop(
                 system=[system],
                 tools=tool_collection.to_params(),
                 betas=betas,
+                temperature=temperature,
             )
         except (APIStatusError, APIResponseValidationError) as e:
             api_response_callback(e.request, e.response, e)
