@@ -18,9 +18,9 @@ ln -s "$ROOT_DIR/src/vmpilot" vmpilot
 
 cd pipelines
 # Clean up any existing compute directory and files
-rm -f "compute.py"
+rm -f "vmpilot.py"
 # Link necessary files into compute directory
-ln -s "$ROOT_DIR/src/vmpilot/compute.py"
+ln -s "$ROOT_DIR/src/vmpilot/vmpilot.py"
 
 cd ..
 
