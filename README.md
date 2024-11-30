@@ -1,8 +1,7 @@
 # Compute Pipeline
 
-# Warning
+> [!CAUTION]
 Only run this if you have enough knowledge about the security implications of running arbitrary commands in your virtual machine.
-
 **Never run this on your local machine**. You are letting the AI/LLM pilot run commands in your machine and it can be dangerous. Additionally, there is a risk that the AI might interact with the external world, and be taken over by an attacker.
 
 ## Overview
