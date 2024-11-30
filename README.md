@@ -6,7 +6,11 @@ Only run this if you have enough knowledge about the security implications of ru
 
 ## Overview
 
-VMPilot is an Open WebUI Pipeline that provides command execution capabilities in a VM. It lets the AI/LLM pilot, run commands, in your virtual machine. You tell it what to do and it attempts to perform the task which typically involves running multiple commands in the terminal. Since it is an Open WebUI Pipeline, it benefits from the very rich UI and ecosystem of Open WebUI.
+VMPilot is an AI-driven system operations assistant that provides command execution capabilities in virtual machines through CLI and API interfaces. It enables users to delegate terminal tasks to an AI/LLM pilot powered by Claude 3.5 Sonnet, which can execute multiple commands to accomplish requested operations. The system features real-time response streaming, comprehensive error handling, and robust security measures, while offering both command-line and API access methods.
+
+It is available as an Open WebUI Pipeline, or a cli.
+
+It is derived from [Claude Computer Use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use) and [OpenWebUI Pipelines](https://docs.anthropic.com/en/docs/build-with-claude/openwebui-pipelines).
 
 ## Dependencies
 
@@ -60,14 +64,11 @@ pip install -r requirements.txt
   - Currently using Claude 3.5 Sonnet
   - Extensible to other API providers
 
-## Usage
+## Installation
 
 To use the pipeline:
 
-1. Install dependencies:
-```bash
-pip install pygments
-```
+1. Install dependencies
 
 2. Configure the ANTHROPIC_API_KEY environment variable
 3. The pipeline runs on port 9099 by default
@@ -76,7 +77,7 @@ pip install pygments
 ## Security Considerations
 
 - The pipeline has arbitrary code execution capabilities
-- Only use in trusted environments
+- Should only be used in trusted environments
 - Keep API keys secure
 - Follow standard security practices when exposing endpoints
 
@@ -98,7 +99,7 @@ Comprehensive logging includes:
 
 ## Key Components
 
-### compute.py
+### vmpilot.py
 
 The main pipeline implementation that:
 - Provides an OpenAI API-compatible endpoint
