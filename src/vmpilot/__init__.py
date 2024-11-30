@@ -1,9 +1,9 @@
 """
-Compute Pipeline package
+VMPilto Pipeline package
 """
 
 from .tools import BashTool, ComputerTool, EditTool, ToolCollection, ToolResult
-from .compute import Pipeline
+from .vmpilot import Pipeline
 
 __all__ = [
     "Pipeline",

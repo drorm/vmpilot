@@ -1,10 +1,10 @@
 """
-title: Compute Pipeline with Bash Tool
+title: VMPilot Pipeline
 author: Assistant
 date: 2024-11-20
-version: 1.0
+version: 0.1
 license: MIT
-description: A pipeline that enables execution of bash commands through an API endpoint
+description: A pipeline that enables using an LLM to execute commands
 environment_variables: ANTHROPIC_API_KEY
 """
 
@@ -37,9 +37,9 @@ class Pipeline:
         ANTHROPIC_API_KEY: str = ""
 
     def __init__(self):
-        self.name = "Compute Pipeline"
+        self.name = "VMPilot Pipeline"
         self.type = "manifold"
-        self.id = "compute"
+        self.id = "vmpilot"
 
         self.valves = self.Valves(
             ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY", ""),
@@ -58,8 +58,8 @@ class Pipeline:
         """Return list of supported models/pipelines"""
         return [
             {
-                "id": "compute-bash",
-                "name": "Compute Pipeline (Bash)",
+                "id": "VMPilot",
+                "name": "VMPilot Pipeline",
                 "description": "Execute bash commands via pipeline",
             }
         ]
@@ -67,7 +67,7 @@ class Pipeline:
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
-        """Execute bash commands through Claude with tool integration."""
+        """Execute bash commands through an LLM with tool integration."""
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             logger.disabled = True
@@ -78,11 +78,11 @@ class Pipeline:
 
         # Handle title request
         if body.get("title", False):
-            return "Compute Pipeline"
+            return "VMPilot Pipeline"
 
         # Verify the model is supported
-        if model_id != "compute-bash":
-            error_msg = f"Unsupported model ID: {model_id}. Use 'compute-bash'."
+        if model_id != "VMPilot":
+            error_msg = f"Unsupported model ID: {model_id}. Use 'VMPilot'."
             logger.error(error_msg)
             return error_msg
 
