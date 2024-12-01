@@ -66,13 +66,19 @@ pip install -r requirements.txt
 
 ## Installation
 
-To use the pipeline:
+For a complete setup, follow these guides in order:
 
-1. Install dependencies
+1. [DNS and SSL Setup](docs/dns_ssl_setup.md) - Configure secure access to your services
+2. [Installation Guide](docs/installation.md) - Full installation instructions including OpenWebUI and pipeline setup
+3. [Usage Guide](docs/usage.md) - Learn how to use VMPilot effectively
 
+Quick start:
+1. Install dependencies (`pip install -r requirements.txt`)
 2. Configure the ANTHROPIC_API_KEY environment variable
 3. The pipeline runs on port 9099 by default
 4. Access through any OpenAI API-compatible client
+
+See the [Installation Guide](docs/installation.md) for detailed setup instructions.
 
 ## Security Considerations
 
@@ -80,6 +86,44 @@ To use the pipeline:
 - Should only be used in trusted environments
 - Keep API keys secure
 - Follow standard security practices when exposing endpoints
+
+When using VMPilot with GitHub repositories, it's crucial to follow security best practices to protect your account and repositories:
+
+### Use Fine-Grained Personal Access Tokens
+
+Instead of using tokens with full repository access:
+
+1. Go to GitHub Settings > Developer Settings > Personal Access Tokens > Fine-grained tokens
+2. Create a new token with:
+   - Limited repository access (only select required repositories)
+   - Minimal permissions (e.g., only Contents:Read if just cloning)
+   - Set an expiration date
+
+### Permission Scopes
+
+Only grant the minimal permissions needed:
+- For read-only operations: `Contents: Read`
+- For cloning and pulling: `Contents: Read`
+- For committing changes: `Contents: Read & Write`
+
+### Security Recommendations
+
+- Never share tokens with full repository access
+- Regularly rotate access tokens
+- Monitor token usage in GitHub Security settings
+- Revoke tokens immediately if compromised
+- Use separate tokens for different purposes/repositories
+
+### Token Environment Variables
+
+When configuring GitHub access:
+```bash
+# Use specific environment variables for different access levels
+GITHUB_READ_TOKEN=github_pat_xxx  # Read-only access
+GITHUB_WRITE_TOKEN=github_pat_yyy # Repository write access
+```
+
+This approach ensures that even if a token is compromised, the potential impact is limited to specific repositories and actions.
 
 ## Error Handling
 
@@ -116,4 +160,3 @@ Core agent loop implementation that:
 - Handles conversation context and tool execution
 - Implements prompt caching and optimization
 - Provides robust error handling
-
