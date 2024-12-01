@@ -27,3 +27,6 @@ ENV/
 .vscode/
 *.swp
 .DS_Store
+
+#PipeLine specific
+valves.json
