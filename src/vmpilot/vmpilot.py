@@ -8,12 +8,14 @@ description: A pipeline that enables using an LLM to execute commands
 environment_variables: ANTHROPIC_API_KEY
 """
 
-import os
-import logging
-import threading
 import asyncio
+import logging
+import os
 import queue
-from typing import List, Dict, Union, Generator, Iterator
+import threading
+from typing import Any, Dict, Generator, Iterator, List, Union
+
+from anthropic.types import MessageParam
 from pydantic import BaseModel
 
 # Set up logging
@@ -87,7 +89,7 @@ class Pipeline:
 
         logger.info(f"pipe called with user_message: {user_message}")
 
-        from vmpilot.loop import sampling_loop, APIProvider
+        from vmpilot.loop import APIProvider, sampling_loop
 
         # Handle title request
         if body.get("title", False):
@@ -101,7 +103,7 @@ class Pipeline:
 
         try:
             # Extract system message and format messages
-            formatted_messages = []
+            formatted_messages: List[MessageParam] = []
             system_prompt_suffix = ""
 
             for msg in messages:
@@ -115,30 +117,31 @@ class Pipeline:
 
                 if isinstance(content, str):
                     formatted_messages.append(
-                        {
-                            "role": role,
-                            "content": [{"type": "text", "text": content}],
-                        }
+                        MessageParam(
+                            role=role,
+                            content=[{"type": "text", "text": content}],
+                        )
                     )
                 else:
-                    formatted_messages.append({"role": role, "content": content})
+                    formatted_messages.append(MessageParam(role=role, content=content))
 
             # Add current user message
             formatted_messages.append(
-                {
-                    "role": "user",
-                    "content": [{"type": "text", "text": user_message}],
-                }
+                MessageParam(
+                    role="user",
+                    content=[{"type": "text", "text": user_message}],
+                )
             )
 
             def generate_responses():
                 output_queue = queue.Queue()
                 loop_done = threading.Event()
 
-                def output_callback(content: Dict):
-                    if content["type"] == "text":
-                        logger.info(f"Queueing text: {content['text']}")
-                        output_queue.put(content["text"])
+                def output_callback(content: Dict[str, Any]) -> None:
+                    if isinstance(content, dict) and content.get("type") == "text":
+                        text = content.get("text", "")
+                        logger.info(f"Queueing text: {text}")
+                        output_queue.put(text)
 
                 def tool_callback(result, tool_id):
                     outputs = []
@@ -212,9 +215,9 @@ class Pipeline:
             else:
                 # For non-streaming, collect all output and return as string
                 logger.info("Non-streaming mode")
-                output_parts = []
+                output_parts: List[str] = []
                 for msg in generate_responses():
-                    output_parts.append(msg)
+                    output_parts.append(str(msg))
                 result = (
                     "\n".join(output_parts)
                     if output_parts

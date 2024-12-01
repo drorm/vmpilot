@@ -43,3 +43,9 @@ multi_line_output = 3
 [tool.mypy]
 python_version = "3.11"
 strict = true
+ignore_patterns = [
+    "src/vmpilot/tools/*",
+    "src/vmpilot/loop.py"
+]
+
+

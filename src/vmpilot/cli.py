@@ -4,12 +4,11 @@ CLI interface for interacting with vmpilot from the cli
 Usage: ./cli.py "your command here"
 """
 
-import sys
-import asyncio
 import argparse
+import asyncio
 import os
-from typing import List, Dict
-from pathlib import Path
+import sys
+from typing import Dict, List
 
 # Add parent directory to Python path when running as script
 if __name__ == "__main__":
@@ -56,7 +55,13 @@ async def main(command: str, temperature: float):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test compute.py via CLI")
     parser.add_argument("command", help="Command to execute")
-    parser.add_argument("-t", "--temperature", type=float, default=0.7, help="Temperature for response generation (default: 0.7)")
+    parser.add_argument(
+        "-t",
+        "--temperature",
+        type=float,
+        default=0.7,
+        help="Temperature for response generation (default: 0.7)",
+    )
     args = parser.parse_args()
 
     asyncio.run(main(args.command, args.temperature))
