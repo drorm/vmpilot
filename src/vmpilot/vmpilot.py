@@ -31,6 +31,8 @@ stream_handler.setFormatter(log_format)
 logger.addHandler(stream_handler)
 logger.propagate = False
 
+# Number of lines to show in tool output before truncating
+TOLL_OUTPUT_LINES = 7
 
 class Pipeline:
     class Valves(BaseModel):
@@ -85,7 +87,13 @@ class Pipeline:
         if body.get("disable_logging"):
             logger.disabled = True
 
-        logger.info(f"pipe called with user_message: {user_message}")
+        # Validate API key
+        if not self.valves.ANTHROPIC_API_KEY or len(self.valves.ANTHROPIC_API_KEY) < 32:
+            error_msg = "Error: Invalid or missing API key"
+            logger.error(error_msg)
+            return error_msg
+
+        logger.info(f"User: {user_message}")
 
         from vmpilot.loop import sampling_loop, APIProvider
 
@@ -95,7 +103,7 @@ class Pipeline:
 
         # Verify the model is supported
         if model_id != "VMPilot":
-            error_msg = f"Unsupported model ID: {model_id}. Use 'VMPilot'."
+            error_msg = f"Unsupported model"
             logger.error(error_msg)
             return error_msg
 
@@ -137,7 +145,7 @@ class Pipeline:
 
                 def output_callback(content: Dict):
                     if content["type"] == "text":
-                        logger.info(f"Queueing text: {content['text']}")
+                        logger.info(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
 
                 def tool_callback(result, tool_id):
@@ -149,9 +157,14 @@ class Pipeline:
                     if hasattr(result, "output") and result.output:
                         outputs.append(f"\n```plain\n{result.output}\n```\n")
 
-                    logger.info("Tool callback queueing outputs:")
+                    logger.debug("Tool callback queueing outputs:")
                     for i, output in enumerate(outputs, 1):
-                        logger.info(f"Output {i}:\n{output}")
+                        # Show first n lines of output (default 5 lines)
+                        output_lines = output.splitlines()
+                        truncated_output = '\n'.join(output_lines[:TOLL_OUTPUT_LINES])
+                        if len(output_lines) > TOLL_OUTPUT_LINES:
+                            truncated_output += f"\n... (and {len(output_lines) - TOLL_OUTPUT_LINES} more lines)"
+                        logger.info(f"{truncated_output}")
                     for output in outputs:
                         output_queue.put(output)
 
@@ -159,9 +172,7 @@ class Pipeline:
                     try:
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
-                        logger.info(f"body: {body}")
-                        logger.info(f"body model: {body.get('model')}")
-                        logger.info(f"APIProvider: {APIProvider.ANTHROPIC}")
+                        logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             sampling_loop(
                                 model=self.valves.MODEL_ID,
@@ -207,11 +218,11 @@ class Pipeline:
                 thread.join()
 
             if body.get("stream", False):
-                logger.info("Streaming mode enabled")
+                logger.debug("Streaming mode enabled")
                 return generate_responses()
             else:
                 # For non-streaming, collect all output and return as string
-                logger.info("Non-streaming mode")
+                logger.debug("Non-streaming mode")
                 output_parts = []
                 for msg in generate_responses():
                     output_parts.append(msg)
