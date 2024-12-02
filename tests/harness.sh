@@ -10,9 +10,24 @@ cp -r sample_files/* "$TEST_DIR/"
 # Export test directory for test scripts
 export TEST_DIR
 
-# Run all test scripts
+# Run tests
 echo "Running tests..."
-for test in scripts/*.sh; do
+
+if [ $# -eq 0 ]; then
+    # If no arguments provided, run all tests
+    test_files=(scripts/*.sh)
+else
+    # If arguments provided, use them as test files
+    test_files=("$@")
+fi
+
+for test in "${test_files[@]}"; do
+    if [ ! -f "$test" ]; then
+        echo "❌ Test file not found: $test"
+        failed_tests=1
+        continue
+    fi
+    
     echo "Running $test..."
     if bash "$test"; then
         echo "✅ $test passed"

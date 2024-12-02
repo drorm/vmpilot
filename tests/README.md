@@ -18,13 +18,22 @@ tests/
 
 ## Running Tests
 
-To run all tests:
+There are several ways to run the tests:
+
+1. To run all tests:
 ```bash
 cd /home/dror/vmpilot/tests
 ./harness.sh
 ```
 
-To run a single test:
+2. To run specific test(s) using harness:
+```bash
+cd /home/dror/vmpilot/tests
+./harness.sh scripts/ls_files.sh           # Run single test
+./harness.sh scripts/ls_files.sh scripts/modify_file.sh  # Run multiple tests
+```
+
+3. To run a test script directly:
 ```bash
 cd /home/dror/vmpilot/tests/scripts
 ./[test_script_name].sh
