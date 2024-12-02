@@ -34,6 +34,7 @@ logger.propagate = False
 # Number of lines to show in tool output before truncating
 TOLL_OUTPUT_LINES = 7
 
+
 class Pipeline:
     class Valves(BaseModel):
         # Required runtime parameters
@@ -161,7 +162,7 @@ class Pipeline:
                     for i, output in enumerate(outputs, 1):
                         # Show first n lines of output (default 5 lines)
                         output_lines = output.splitlines()
-                        truncated_output = '\n'.join(output_lines[:TOLL_OUTPUT_LINES])
+                        truncated_output = "\n".join(output_lines[:TOLL_OUTPUT_LINES])
                         if len(output_lines) > TOLL_OUTPUT_LINES:
                             truncated_output += f"\n... (and {len(output_lines) - TOLL_OUTPUT_LINES} more lines)"
                         logger.info(f"{truncated_output}")
