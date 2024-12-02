@@ -8,12 +8,13 @@ description: A pipeline that enables using an LLM to execute commands
 environment_variables: ANTHROPIC_API_KEY
 """
 
-import os
-import logging
-import threading
 import asyncio
+import logging
+import os
 import queue
-from typing import List, Dict, Union, Generator, Iterator
+import threading
+from typing import Dict, Generator, Iterator, List, Union
+
 from pydantic import BaseModel
 
 # Set up logging
@@ -96,7 +97,7 @@ class Pipeline:
 
         logger.info(f"User: {user_message}")
 
-        from vmpilot.loop import sampling_loop, APIProvider
+        from vmpilot.loop import APIProvider, sampling_loop
 
         # Handle title request
         if body.get("title", False):

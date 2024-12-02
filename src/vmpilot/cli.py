@@ -4,12 +4,12 @@ CLI interface for interacting with vmpilot from the cli
 Usage: ./cli.py "your command here"
 """
 
-import sys
-import asyncio
 import argparse
+import asyncio
 import os
-from typing import List, Dict
+import sys
 from pathlib import Path
+from typing import Dict, List
 
 # Add parent directory to Python path when running as script
 if __name__ == "__main__":
