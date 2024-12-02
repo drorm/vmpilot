@@ -44,8 +44,9 @@ async def main(command: str, temperature: float):
     messages = create_mock_messages(command)
 
     # Execute pipeline
+    model_id = os.getenv("MODEL_ID", "VMPilot")
     result = pipeline.pipe(
-        user_message=command, model_id="VMPilot", messages=messages, body=body
+        user_message=command, model_id=model_id, messages=messages, body=body
     )
 
     # Print each message in the stream
@@ -56,7 +57,13 @@ async def main(command: str, temperature: float):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test compute.py via CLI")
     parser.add_argument("command", help="Command to execute")
-    parser.add_argument("-t", "--temperature", type=float, default=0.7, help="Temperature for response generation (default: 0.7)")
+    parser.add_argument(
+        "-t",
+        "--temperature",
+        type=float,
+        default=0.7,
+        help="Temperature for response generation (default: 0.7)",
+    )
     args = parser.parse_args()
 
     asyncio.run(main(args.command, args.temperature))
