@@ -87,6 +87,8 @@ class Pipeline:
         """Execute bash commands through an LLM with tool integration."""
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
+            # Disable all logging at the root level
+            logging.getLogger().setLevel(logging.ERROR)
             logger.disabled = True
 
         # Validate API key
@@ -94,8 +96,6 @@ class Pipeline:
             error_msg = "Error: Invalid or missing API key"
             logger.error(error_msg)
             return error_msg
-
-        logger.info(f"User: {user_message}")
 
         from vmpilot.lang import process_messages, APIProvider
 

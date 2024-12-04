@@ -34,12 +34,7 @@ def create_mock_body(temperature: float = 0.7) -> Dict:
 def create_mock_messages(command: str) -> List[Dict]:
     """Create initial message history with user command"""
     # Format messages for LangChain compatibility
-    return [
-        {
-            "role": "user",
-            "content": [{"type": "text", "text": command}]
-        }
-    ]
+    return [{"role": "user", "content": [{"type": "text", "text": command}]}]
 
 
 async def main(command: str, temperature: float):
@@ -62,21 +57,34 @@ async def main(command: str, temperature: float):
             # Handle both string and dict outputs from LangChain
             if isinstance(msg, dict):
                 if msg.get("type") == "text":
-                    print(msg["text"], end="", flush=True)
+                    # Only print non-system messages
+                    text = msg["text"].strip()
+                    # Skip empty messages, system/debug messages, and command echoes
+                    if text and not any(x.lower() in text.lower() for x in [
+                        command.lower(),  # Original command (case insensitive)
+                        "executing",  # Tool use announcements
+                        "command",  # Command execution notifications
+                        "['",  # Command array listings
+                        "]'",  # Command array endings
+                        "show me",  # Command echo
+                        "help you",  # Assistant intros
+                        "using the terminal",  # Command announcements
+                    ]):
+                        print(text, end="\n", flush=True)
                 elif msg.get("type") == "tool_use":
-                    name = msg.get("name", "unknown")
-                    input_data = msg.get("input", {})
-                    if name == "terminal":
-                        cmd = input_data.get("commands", "")
-                        print(f"\n$ {cmd}", end="", flush=True)
-                elif msg.get("type") == "tool_result":
-                    content = msg.get("content", "")
-                    if isinstance(content, str):
-                        print(f"\n{content}", end="", flush=True)
-                    else:
-                        print(f"\n{str(content)}", end="", flush=True)
+                    # Suppress tool use messages in CLI mode
+                    pass
+                elif msg.get("type") == "tool_output":
+                    output = msg.get("output", "").strip()
+                    error = msg.get("error")
+                    if output and not any(x in output for x in ["Executing command", "['ls"]):
+                        print(output, end="\n", flush=True)
+                    if error:
+                        print(f"Error: {error}", end="\n", flush=True)
             else:
-                print(str(msg), end="", flush=True)
+                msg_str = str(msg).strip()
+                if msg_str and not any(x in msg_str for x in [command, "Executing command", "['ls"]):
+                    print(msg_str, end="\n", flush=True)
     except Exception as e:
         print(f"\nError: {str(e)}", file=sys.stderr)
         sys.exit(1)

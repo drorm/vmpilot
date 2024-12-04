@@ -10,15 +10,15 @@ from enum import StrEnum
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 # Set logging levels for specific loggers
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("httpcore").setLevel(logging.WARNING)
-logging.getLogger("asyncio").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
+
 
 class APIProvider(StrEnum):
     ANTHROPIC = "anthropic"
     BEDROCK = "bedrock"
     VERTEX = "vertex"
+
+
 from typing import Any, Callable, Dict, List
 from datetime import datetime
 import platform
@@ -30,9 +30,6 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt.chat_agent_executor import AgentState
-
-# Set up logging
-logger = logging.getLogger(__name__)
 
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
 
@@ -66,7 +63,7 @@ def setup_tools():
     # Suppress warning about shell tool safeguards
     import warnings
     warnings.filterwarnings("ignore", category=UserWarning, module="langchain_community.tools.shell.tool")
-    
+
     # Initialize Shell Tool
     shell_tool = ShellTool()
     shell_tool.description = """Use this tool to execute bash commands. For example:
@@ -134,7 +131,7 @@ async def process_messages(
         logging.getLogger("httpcore").setLevel(logging.ERROR)
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
-        
+
     # Create agent
     agent = await create_agent(model, api_key, temperature, max_tokens)
 
@@ -151,7 +148,7 @@ async def process_messages(
                     for item in msg["content"]:
                         if item["type"] == "text":
                             formatted_messages.append(HumanMessage(content=item["text"]))
-                            
+
         logger.info(f"Formatted {len(formatted_messages)} messages")
     except Exception as e:
         logger.error(f"Error formatting messages: {e}")
@@ -160,7 +157,7 @@ async def process_messages(
     # Stream agent responses
     thread_id = f"vmpilot-{os.getpid()}"
     logger.info(f"Starting agent stream with {len(formatted_messages)} messages")
-    
+
     async def process_stream():
         try:
             async for response in agent.astream(
@@ -173,11 +170,17 @@ async def process_messages(
             ):
                 logger.debug(f"Got response: {response}")
                 try:
+                    logger.debug(
+                        output_callback(
+                            {"type": "text", "text": f"RAW LLM RESPONSE: {response}\n"}
+                        )
+                    )
+
                     # Handle different response types
                     if "messages" in response:
                         message = response["messages"][-1]
                         content = message.content
-                        
+
                         if isinstance(content, str):
                             output_callback({"type": "text", "text": content})
                         elif isinstance(content, list):
