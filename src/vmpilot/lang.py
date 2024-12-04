@@ -25,7 +25,7 @@ import platform
 
 from langchain_anthropic import ChatAnthropic
 from langchain_community.agent_toolkits import FileManagementToolkit
-from langchain_community.tools.shell.tool import ShellTool
+from fence import FenceShellTool
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
@@ -58,7 +58,7 @@ def _modify_state_messages(state: AgentState):
     return messages
 
 
-def setup_tools():
+def setup_tools(llm=None):
     """Initialize and configure LangChain tools."""
     # Suppress warning about shell tool safeguards
     import warnings
@@ -67,13 +67,20 @@ def setup_tools():
         "ignore", category=UserWarning, module="langchain_community.tools.shell.tool"
     )
 
-    # Initialize Shell Tool
-    shell_tool = ShellTool()
-    shell_tool.description = """Use this tool to execute bash commands. For example:
-    - To list files: ls [path]
-    - To show file contents: cat [path]
-    - To search text: grep [pattern] [path]
-    - To show disk usage: du -h [path]"""
+    tools = []
+
+    # Initialize Shell Tool with fencing capability if LLM is provided
+    if llm is not None:
+        try:
+            shell_tool = FenceShellTool(llm=llm)
+            shell_tool.description = """Use this tool to execute bash commands. The output will be automatically fenced with the appropriate markdown language syntax. For example:
+            - To list files: ls [path]
+            - To show file contents: cat [path]
+            - To search text: grep [pattern] [path]
+            - To show disk usage: du -h [path]"""
+            tools.append(shell_tool)
+        except Exception as e:
+            logger.error(f"Error: Error creating FenceShellTool: {e}", flush=True)
 
     # Initialize File Management Tools
     toolkit = FileManagementToolkit(
@@ -82,8 +89,8 @@ def setup_tools():
     )
     file_tools = toolkit.get_tools()
 
-    # Only return essential tools
-    return [shell_tool] + file_tools
+    # Return all tools
+    return tools + file_tools
 
 
 async def create_agent(
@@ -99,11 +106,14 @@ async def create_agent(
         temperature=temperature,
         max_tokens=max_tokens,
         anthropic_api_key=api_key,
-        model_kwargs={"extra_headers": {"anthropic-beta": COMPUTER_USE_BETA_FLAG}},
+        timeout=30,  # Add 30-second timeout
+        model_kwargs={
+            "extra_headers": {"anthropic-beta": COMPUTER_USE_BETA_FLAG},
+        },
     )
 
-    # Set up tools
-    tools = setup_tools()
+    # Set up tools with LLM for fencing capability
+    tools = setup_tools(llm=llm)
 
     # Create React agent
     agent = create_react_agent(
@@ -122,10 +132,12 @@ async def process_messages(
     output_callback: Callable[[Dict], None],
     tool_output_callback: Callable[[Any, str], None],
     api_key: str,
-    max_tokens: int = 4096,
+    max_tokens: int = 8192,
     temperature: float = 0.7,
     disable_logging: bool = False,
 ) -> List[dict]:
+    logger.debug("DEBUG: process_messages started", flush=True)
+    logger.debug(f"DEBUG: model={model}, provider={provider}", flush=True)
     """Process messages through the agent and handle outputs."""
     if disable_logging:
         # Disable all logging if flag is set
@@ -135,8 +147,10 @@ async def process_messages(
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
 
+    logger.debug("DEBUG: Creating agent", flush=True)
     # Create agent
     agent = await create_agent(model, api_key, temperature, max_tokens)
+    logger.debug("DEBUG: Agent created successfully", flush=True)
 
     # Convert messages to LangChain format
     formatted_messages = []

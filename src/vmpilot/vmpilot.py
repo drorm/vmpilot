@@ -85,6 +85,7 @@ class Pipeline:
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
+        logger.debug(f"DEBUG: Starting pipe with message: {user_message}", flush=True)
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -146,11 +147,15 @@ class Pipeline:
                 loop_done = threading.Event()
 
                 def output_callback(content: Dict):
+                    logger.debug(f"DEBUG: Received content: {content}", flush=True)
                     if content["type"] == "text":
                         logger.info(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
 
                 def tool_callback(result, tool_id):
+                    logger.debug(
+                        f"DEBUG: Tool callback received result: {result}", flush=True
+                    )
                     outputs = []
                     if hasattr(result, "error") and result.error:
                         if hasattr(result, "exit_code") and result.exit_code:

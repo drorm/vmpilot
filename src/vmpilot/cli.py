@@ -63,12 +63,9 @@ async def main(command: str, temperature: float):
                     if text and not any(
                         x.lower() in text.lower()
                         for x in [
-                            command.lower(),  # Original command (case insensitive)
-                            "executing",  # Tool use announcements
-                            "command",  # Command execution notifications
+                            "executing command",  # Tool use announcements
                             "['",  # Command array listings
                             "]'",  # Command array endings
-                            "show me",  # Command echo
                             "help you",  # Assistant intros
                             "using the terminal",  # Command announcements
                         ]

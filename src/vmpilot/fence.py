@@ -5,7 +5,7 @@ import json
 from typing import Union, List
 
 
-class UnifiedShellTool(ShellTool):
+class FenceShellTool(ShellTool):
     llm: ChatAnthropic = Field(description="LLM to use for command generation")
 
     class Config:
@@ -26,7 +26,7 @@ class UnifiedShellTool(ShellTool):
             "Only respond with valid JSON."
         )
         response = self.llm.invoke(f"{prompt}\nInput: {query}")
-        if hasattr(response, 'content'):
+        if hasattr(response, "content"):
             response = response.content
         return json.loads(response)
 
@@ -36,8 +36,8 @@ class UnifiedShellTool(ShellTool):
 
     def _run(self, commands: Union[str, List[str]]) -> str:
         if isinstance(commands, list):
-            commands = ' '.join(commands)
-            
+            commands = " ".join(commands)
+
         # Get command and expected language
         result = self._get_command_and_language(commands)
         command = result["command"]
@@ -48,19 +48,3 @@ class UnifiedShellTool(ShellTool):
 
         # Return the wrapped output
         return self._wrap_output(language, raw_output)
-
-
-# Note: When using as a module, we don't initialize here.
-# The LLM should be passed in when creating the UnifiedShellTool instance.
-
-if __name__ == "__main__":
-    import sys
-
-    try:
-        if len(sys.argv) > 1:
-            query = " ".join(sys.argv[1:])
-            print(unified_shell_tool.run(query))
-        else:
-            print("Please provide a query as command line argument")
-    except Exception as e:
-        print(f"Error: {str(e)}")
