@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI interface for interacting with vmpilot from the cli
+CLI interface for interacting with vmpilot from the cli using LangChain
 Usage: ./cli.py "your command here"
 """
 
@@ -27,12 +27,19 @@ def create_mock_body(temperature: float = 0.7) -> Dict:
         "temperature": temperature,
         "stream": True,
         "disable_logging": True,  # Disable logging when running from CLI
+        "max_tokens": 8192,  # For LangChain compatibility
     }
 
 
 def create_mock_messages(command: str) -> List[Dict]:
     """Create initial message history with user command"""
-    return [{"role": "user", "content": command}]
+    # Format messages for LangChain compatibility
+    return [
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": command}]
+        }
+    ]
 
 
 async def main(command: str, temperature: float):
@@ -50,12 +57,33 @@ async def main(command: str, temperature: float):
     )
 
     # Print each message in the stream
-    for msg in result:
-        print(msg, end="", flush=True)
+    try:
+        for msg in result:
+            # Handle both string and dict outputs from LangChain
+            if isinstance(msg, dict):
+                if msg.get("type") == "text":
+                    print(msg["text"], end="", flush=True)
+                elif msg.get("type") == "tool_use":
+                    name = msg.get("name", "unknown")
+                    input_data = msg.get("input", {})
+                    if name == "terminal":
+                        cmd = input_data.get("commands", "")
+                        print(f"\n$ {cmd}", end="", flush=True)
+                elif msg.get("type") == "tool_result":
+                    content = msg.get("content", "")
+                    if isinstance(content, str):
+                        print(f"\n{content}", end="", flush=True)
+                    else:
+                        print(f"\n{str(content)}", end="", flush=True)
+            else:
+                print(str(msg), end="", flush=True)
+    except Exception as e:
+        print(f"\nError: {str(e)}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Test compute.py via CLI")
+    parser = argparse.ArgumentParser(description="VMPilot CLI using LangChain")
     parser.add_argument("command", help="Command to execute")
     parser.add_argument(
         "-t",

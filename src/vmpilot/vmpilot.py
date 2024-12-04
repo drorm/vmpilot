@@ -1,10 +1,10 @@
 """
 title: VMPilot Pipeline
 author: Assistant
-date: 2024-11-20
-version: 0.1
+date: 2024-12-02
+version: 0.2
 license: MIT
-description: A pipeline that enables using an LLM to execute commands
+description: A pipeline that enables using an LLM to execute commands via LangChain
 environment_variables: ANTHROPIC_API_KEY
 """
 
@@ -97,7 +97,7 @@ class Pipeline:
 
         logger.info(f"User: {user_message}")
 
-        from vmpilot.loop import APIProvider, sampling_loop
+        from vmpilot.lang import process_messages, APIProvider
 
         # Handle title request
         if body.get("title", False):
@@ -176,14 +176,13 @@ class Pipeline:
                         asyncio.set_event_loop(loop)
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
-                            sampling_loop(
+                            process_messages(
                                 model=self.valves.MODEL_ID,
                                 provider=APIProvider.ANTHROPIC,
                                 system_prompt_suffix=system_prompt_suffix,
                                 messages=formatted_messages,
                                 output_callback=output_callback,
                                 tool_output_callback=tool_callback,
-                                api_response_callback=lambda req, res, exc: None,
                                 api_key=self.valves.ANTHROPIC_API_KEY,
                                 max_tokens=body.get(
                                     "max_tokens", self.valves.MAX_TOKENS
@@ -191,9 +190,7 @@ class Pipeline:
                                 temperature=body.get(
                                     "temperature", self.valves.TEMPERATURE
                                 ),
-                                # top_k=body.get("top_k", self.valves.TOP_K),
-                                # top_p=body.get("top_p", self.valves.TOP_P),
-                                # stop_sequences=body.get("stop", self.valves.STOP_SEQUENCES),
+                                disable_logging=body.get("disable_logging", False)
                             )
                         )
                     except Exception as e:
