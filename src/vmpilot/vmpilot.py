@@ -190,7 +190,7 @@ class Pipeline:
                                 temperature=body.get(
                                     "temperature", self.valves.TEMPERATURE
                                 ),
-                                disable_logging=body.get("disable_logging", False)
+                                disable_logging=body.get("disable_logging", False),
                             )
                         )
                     except Exception as e:

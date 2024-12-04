@@ -60,16 +60,19 @@ async def main(command: str, temperature: float):
                     # Only print non-system messages
                     text = msg["text"].strip()
                     # Skip empty messages, system/debug messages, and command echoes
-                    if text and not any(x.lower() in text.lower() for x in [
-                        command.lower(),  # Original command (case insensitive)
-                        "executing",  # Tool use announcements
-                        "command",  # Command execution notifications
-                        "['",  # Command array listings
-                        "]'",  # Command array endings
-                        "show me",  # Command echo
-                        "help you",  # Assistant intros
-                        "using the terminal",  # Command announcements
-                    ]):
+                    if text and not any(
+                        x.lower() in text.lower()
+                        for x in [
+                            command.lower(),  # Original command (case insensitive)
+                            "executing",  # Tool use announcements
+                            "command",  # Command execution notifications
+                            "['",  # Command array listings
+                            "]'",  # Command array endings
+                            "show me",  # Command echo
+                            "help you",  # Assistant intros
+                            "using the terminal",  # Command announcements
+                        ]
+                    ):
                         print(text, end="\n", flush=True)
                 elif msg.get("type") == "tool_use":
                     # Suppress tool use messages in CLI mode
@@ -77,13 +80,17 @@ async def main(command: str, temperature: float):
                 elif msg.get("type") == "tool_output":
                     output = msg.get("output", "").strip()
                     error = msg.get("error")
-                    if output and not any(x in output for x in ["Executing command", "['ls"]):
+                    if output and not any(
+                        x in output for x in ["Executing command", "['ls"]
+                    ):
                         print(output, end="\n", flush=True)
                     if error:
                         print(f"Error: {error}", end="\n", flush=True)
             else:
                 msg_str = str(msg).strip()
-                if msg_str and not any(x in msg_str for x in [command, "Executing command", "['ls"]):
+                if msg_str and not any(
+                    x in msg_str for x in [command, "Executing command", "['ls"]
+                ):
                     print(msg_str, end="\n", flush=True)
     except Exception as e:
         print(f"\nError: {str(e)}", file=sys.stderr)

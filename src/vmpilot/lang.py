@@ -62,7 +62,10 @@ def setup_tools():
     """Initialize and configure LangChain tools."""
     # Suppress warning about shell tool safeguards
     import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="langchain_community.tools.shell.tool")
+
+    warnings.filterwarnings(
+        "ignore", category=UserWarning, module="langchain_community.tools.shell.tool"
+    )
 
     # Initialize Shell Tool
     shell_tool = ShellTool()
@@ -147,7 +150,9 @@ async def process_messages(
                     # Handle structured content
                     for item in msg["content"]:
                         if item["type"] == "text":
-                            formatted_messages.append(HumanMessage(content=item["text"]))
+                            formatted_messages.append(
+                                HumanMessage(content=item["text"])
+                            )
 
         logger.info(f"Formatted {len(formatted_messages)} messages")
     except Exception as e:
@@ -187,26 +192,39 @@ async def process_messages(
                             for item in content:
                                 if isinstance(item, dict):
                                     if item.get("type") == "text":
-                                        output_callback({"type": "text", "text": item["text"]})
+                                        output_callback(
+                                            {"type": "text", "text": item["text"]}
+                                        )
                                     elif item.get("type") == "tool_use":
-                                        output_callback({
-                                            "type": "tool_use",
-                                            "name": item["name"],
-                                            "input": item.get("input", {}),
-                                        })
+                                        output_callback(
+                                            {
+                                                "type": "tool_use",
+                                                "name": item["name"],
+                                                "input": item.get("input", {}),
+                                            }
+                                        )
                                         # Pass tool output back to agent
                                         tool_output_callback(
-                                            {"output": item.get("output", ""), "error": None},
+                                            {
+                                                "output": item.get("output", ""),
+                                                "error": None,
+                                            },
                                             item["name"],
                                         )
                                 else:
-                                    logger.warning(f"Unknown content item type: {type(item)}")
+                                    logger.warning(
+                                        f"Unknown content item type: {type(item)}"
+                                    )
                 except Exception as e:
                     logger.error(f"Error processing response: {e}")
-                    output_callback({"type": "text", "text": f"Error processing response: {str(e)}"})
+                    output_callback(
+                        {"type": "text", "text": f"Error processing response: {str(e)}"}
+                    )
         except Exception as e:
             logger.error(f"Error in agent stream: {e}")
-            output_callback({"type": "text", "text": f"Error in agent stream: {str(e)}"})
+            output_callback(
+                {"type": "text", "text": f"Error in agent stream: {str(e)}"}
+            )
 
     # Run the stream processor
     await process_stream()
