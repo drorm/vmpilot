@@ -42,18 +42,28 @@ class FileEditInput(BaseModel):
 class FileEditTool(BaseTool):
     name: str = "edit_file"
     description: str = """Use this tool to edit files on the system. When given a natural language command like 'create a hello world example', translate it into the appropriate file operation. Available operations:
-    - view: Show file contents or directory listing
     - create: Create a new file with content (e.g. for a hello world example, create a Python file that prints "Hello, World!")
     - str_replace: Replace specific text in a file with new text
     - insert: Insert new text at a specific line number
     - undo_edit: Undo the last edit operation
+
+    Note: To view files, use the bash tool with commands like cat, head, tail, or less.
     """
     args_schema: Type[BaseModel] = FileEditInput
 
     editor: Any = Field(default_factory=CoreEditTool)
+    view_in_shell: bool = Field(
+        default=False,
+        description="If True, file viewing is disabled and should be done via shell tool",
+    )
 
     async def _arun(self, command: Command, path: str, **kwargs) -> str:
         """Async execution of edit commands"""
+        if command == "view" and self.view_in_shell:
+            raise Exception(
+                "File viewing operations should be done using the bash tool with commands like 'cat', 'head', 'tail', or 'less'"
+            )
+
         result = await self.editor.execute(command, path, **kwargs)
         if not result.success:
             raise Exception(result.error or result.message)
@@ -62,6 +72,11 @@ class FileEditTool(BaseTool):
     def _run(self, command: Command, path: str, **kwargs) -> str:
         """Synchronous execution of edit commands"""
         import asyncio
+
+        if command == "view" and self.view_in_shell:
+            raise Exception(
+                "File viewing operations should be done using the bash tool with commands like 'cat', 'head', 'tail', or 'less'"
+            )
 
         result = asyncio.run(self.editor.execute(command, path, **kwargs))
         if not result.success:

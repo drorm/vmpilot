@@ -83,18 +83,11 @@ def setup_tools(llm=None):
         except Exception as e:
             logger.error(f"Error: Error creating FenceShellTool: {e}", flush=True)
 
-    # Initialize File Management Tools
-    toolkit = FileManagementToolkit(
-        root_dir="/",  # Allow access to system files
-        selected_tools=["read_file"],  # Only safe operations
-    )
-    file_tools = toolkit.get_tools()
-
-    # Add file editing tool
-    tools.append(FileEditTool())
+    # Add file editing tool (excluding view operations which are handled by shell tool)
+    tools.append(FileEditTool(view_in_shell=True))
 
     # Return all tools
-    return tools + file_tools
+    return tools
 
 
 async def create_agent(
@@ -185,9 +178,13 @@ async def process_messages(
                             tool_output = item.get("output", "")
                             if isinstance(tool_output, dict):
                                 tool_output = tool_output.get("output", "")
-                            content_parts.append(f"Tool use: {item['name']}\nOutput: {tool_output}")
+                            content_parts.append(
+                                f"Tool use: {item['name']}\nOutput: {tool_output}"
+                            )
                     if content_parts:
-                        formatted_messages.append(AIMessage(content="\n".join(content_parts)))
+                        formatted_messages.append(
+                            AIMessage(content="\n".join(content_parts))
+                        )
 
         logger.info(f"Formatted {len(formatted_messages)} messages")
     except Exception as e:
