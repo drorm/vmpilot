@@ -2,9 +2,13 @@
 
 # Test listing files in the test directory
 output=$(../bin/cli.sh -t 0 "ls -1 $TEST_DIR")
+echo "Raw output:"
+echo "$output"
 
-# Extract the plain text output between ```plain marks
-actual_output=$(echo "$output" | sed -n '/^```plain$/,/^```$/p' | sed '1d;$d' | grep -v '^$' | tr -d '\r')
+# Extract the plain text output between ```plaintext marks
+actual_output=$(echo "$output" | sed -n '/^```plaintext$/,/^```$/p' | sed '1d;$d' | grep -v '^$' | tr -d '\r')
+echo "Processed output:"
+echo "$actual_output"
 
 # Compare with expected output
 if [ "$(echo "$actual_output" | grep -c "test[12]")" -eq 2 ]; then

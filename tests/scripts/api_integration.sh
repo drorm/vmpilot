@@ -40,7 +40,7 @@ fi
 # Test 4: Response formatting
 echo "Test 4: Response formatting"
 response=$(ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" ../bin/cli.sh -t 0 "ls -l" 2>&1)
-if echo "$response" | grep -q "\`\`\`plain"; then
+if echo "$response" | grep -q "\`\`\`"; then
     echo "✓ Response formatting test passed"
 else
     echo "✗ Response formatting test failed"

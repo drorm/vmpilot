@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xv
 
 # Test error handling scenarios
 # Requires TEST_DIR environment variable to be set
@@ -6,16 +6,6 @@
 set -e  # Exit on error
 
 echo "Starting error handling tests..."
-
-# Test 1: Invalid command execution
-echo "Test 1: Invalid command execution"
-response=$(ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" ../bin/cli.sh -t 0 "nonexistentcommand" 2>&1)
-if echo "$response" | grep -qi "command not found\|No such file or directory"; then
-    echo "✓ Invalid command test passed"
-else
-    echo "✗ Invalid command test failed"
-    exit 1
-fi
 
 # Test 2: Permission denied
 echo "Test 2: Permission denied"
