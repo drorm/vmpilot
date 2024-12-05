@@ -75,11 +75,15 @@ async def main(command: str, temperature: float):
                     if error:
                         print(f"Error: {error}", end="\n", flush=True)
             else:
+                # Handle error messages and other string outputs
                 msg_str = str(msg).strip()
                 if msg_str and not any(
                     x in msg_str for x in [command, "Executing command", "['ls"]
                 ):
-                    print(msg_str, end="\n", flush=True)
+                    if msg_str.startswith("Error:"):
+                        print(msg_str, flush=True)
+                    else:
+                        print(msg_str, end="\n", flush=True)
     except Exception as e:
         print(f"\nError: {str(e)}", file=sys.stderr)
         sys.exit(1)

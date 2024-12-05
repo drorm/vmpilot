@@ -171,6 +171,23 @@ async def process_messages(
                             formatted_messages.append(
                                 HumanMessage(content=item["text"])
                             )
+            elif msg["role"] == "assistant":
+                if isinstance(msg["content"], str):
+                    formatted_messages.append(AIMessage(content=msg["content"]))
+                elif isinstance(msg["content"], list):
+                    # Combine all content parts into one message
+                    content_parts = []
+                    for item in msg["content"]:
+                        if item["type"] == "text":
+                            content_parts.append(item["text"])
+                        elif item["type"] == "tool_use":
+                            # Include tool name and output in the message
+                            tool_output = item.get("output", "")
+                            if isinstance(tool_output, dict):
+                                tool_output = tool_output.get("output", "")
+                            content_parts.append(f"Tool use: {item['name']}\nOutput: {tool_output}")
+                    if content_parts:
+                        formatted_messages.append(AIMessage(content="\n".join(content_parts)))
 
         logger.info(f"Formatted {len(formatted_messages)} messages")
     except Exception as e:
