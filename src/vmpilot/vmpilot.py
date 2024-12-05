@@ -33,7 +33,7 @@ logger.addHandler(stream_handler)
 logger.propagate = False
 
 # Number of lines to show in tool output before truncating
-TOLL_OUTPUT_LINES = 7
+TOOL_OUTPUT_LINES = 7
 
 
 class Pipeline:
@@ -176,9 +176,9 @@ class Pipeline:
                     logger.debug("Tool callback queueing outputs:")
                     for output in outputs:
                         output_lines = str(output).splitlines()
-                        truncated_output = "\n".join(output_lines[:TOLL_OUTPUT_LINES])
-                        if len(output_lines) > TOLL_OUTPUT_LINES:
-                            truncated_output += f"\n... (and {len(output_lines) - TOLL_OUTPUT_LINES} more lines)"
+                        truncated_output = "\n".join(output_lines[:TOOL_OUTPUT_LINES])
+                        if len(output_lines) > TOOL_OUTPUT_LINES:
+                            truncated_output += f"\n... (and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)"
                         logger.info(f"{truncated_output}")
                         output_queue.put(output)
 
