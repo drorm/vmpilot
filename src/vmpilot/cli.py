@@ -60,17 +60,7 @@ async def main(command: str, temperature: float):
                     # Only print non-system messages
                     text = msg["text"].strip()
                     # Skip empty messages, system/debug messages, and command echoes
-                    if text and not any(
-                        x.lower() in text.lower()
-                        for x in [
-                            "executing command",  # Tool use announcements
-                            "['",  # Command array listings
-                            "]'",  # Command array endings
-                            "help you",  # Assistant intros
-                            "using the terminal",  # Command announcements
-                        ]
-                    ):
-                        print(text, end="\n", flush=True)
+                    print(text, end="\n", flush=True)
                 elif msg.get("type") == "tool_use":
                     # Suppress tool use messages in CLI mode
                     pass

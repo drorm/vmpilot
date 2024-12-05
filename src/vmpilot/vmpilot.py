@@ -231,7 +231,7 @@ class Pipeline:
                 for msg in generate_responses():
                     output_parts.append(msg)
                 result = (
-                    "\n".join(output_parts)
+                    "\n\n".join(part.strip() for part in output_parts)
                     if output_parts
                     else "Command executed successfully"
                 )

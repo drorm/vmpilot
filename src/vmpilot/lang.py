@@ -25,7 +25,7 @@ import platform
 
 from langchain_anthropic import ChatAnthropic
 from langchain_community.agent_toolkits import FileManagementToolkit
-from fence import FenceShellTool
+from vmpilot.fence import FenceShellTool
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
@@ -190,9 +190,7 @@ async def process_messages(
                 logger.debug(f"Got response: {response}")
                 try:
                     logger.debug(
-                        output_callback(
                             {"type": "text", "text": f"RAW LLM RESPONSE: {response}\n"}
-                        )
                     )
 
                     # Handle different response types
@@ -201,6 +199,9 @@ async def process_messages(
                         content = message.content
 
                         if isinstance(content, str):
+                            # Skip if the content exactly matches the last user message
+                            if formatted_messages and isinstance(formatted_messages[-1], HumanMessage) and content.strip() == formatted_messages[-1].content.strip():
+                                continue
                             output_callback({"type": "text", "text": content})
                         elif isinstance(content, list):
                             for item in content:

@@ -32,7 +32,7 @@ class FenceShellTool(ShellTool):
 
     def _wrap_output(self, language: str, output: str) -> str:
         # Wrap the shell output in Markdown code fences
-        return f"```{language}\n{output}\n```"
+        return f"\n```{language}\n{output}\n```\n"
 
     def _run(self, commands: Union[str, List[str]]) -> str:
         if isinstance(commands, list):
