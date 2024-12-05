@@ -86,7 +86,7 @@ def setup_tools(llm=None):
     # Initialize File Management Tools
     toolkit = FileManagementToolkit(
         root_dir="/",  # Allow access to system files
-        selected_tools=["read_file", "list_directory"],  # Only safe operations
+        selected_tools=["read_file"],  # Only safe operations
     )
     file_tools = toolkit.get_tools()
 
