@@ -26,7 +26,7 @@ def create_mock_body(temperature: float = 0.7) -> Dict:
     return {
         "temperature": temperature,
         "stream": True,
-        "disable_logging": True,  # Disable logging when running from CLI
+        "disable_logging": True,  # Enable logging for debugging
         "max_tokens": 8192,  # For LangChain compatibility
     }
 
@@ -62,14 +62,15 @@ async def main(command: str, temperature: float):
                     # Skip empty messages, system/debug messages, and command echoes
                     print(text, end="\n", flush=True)
                 elif msg.get("type") == "tool_use":
-                    # Suppress tool use messages in CLI mode
-                    pass
+                    # Show edit_file tool messages
+                    if msg.get("name") == "edit_file":
+                        print(
+                            f"Executing: {msg.get('input', {})}", end="\n", flush=True
+                        )
                 elif msg.get("type") == "tool_output":
                     output = msg.get("output", "").strip()
                     error = msg.get("error")
-                    if output and not any(
-                        x in output for x in ["Executing command", "['ls"]
-                    ):
+                    if output:
                         print(output, end="\n", flush=True)
                     if error:
                         print(f"Error: {error}", end="\n", flush=True)

@@ -157,22 +157,29 @@ class Pipeline:
                         f"DEBUG: Tool callback received result: {result}", flush=True
                     )
                     outputs = []
-                    if hasattr(result, "error") and result.error:
-                        if hasattr(result, "exit_code") and result.exit_code:
-                            outputs.append(f"Exit code: {result.exit_code}")
-                        outputs.append(result.error)
-                    if hasattr(result, "output") and result.output:
-                        outputs.append(f"\n```plain\n{result.output}\n```\n")
+
+                    # Handle dictionary results (from FileEditTool)
+                    if isinstance(result, dict):
+                        if "error" in result and result["error"]:
+                            outputs.append(result["error"])
+                        if "output" in result and result["output"]:
+                            outputs.append(result["output"])
+                    # Handle object results (from shell tool)
+                    else:
+                        if hasattr(result, "error") and result.error:
+                            if hasattr(result, "exit_code") and result.exit_code:
+                                outputs.append(f"Exit code: {result.exit_code}")
+                            outputs.append(result.error)
+                        if hasattr(result, "output") and result.output:
+                            outputs.append(f"\n```plain\n{result.output}\n```\n")
 
                     logger.debug("Tool callback queueing outputs:")
-                    for i, output in enumerate(outputs, 1):
-                        # Show first n lines of output (default 5 lines)
-                        output_lines = output.splitlines()
+                    for output in outputs:
+                        output_lines = str(output).splitlines()
                         truncated_output = "\n".join(output_lines[:TOLL_OUTPUT_LINES])
                         if len(output_lines) > TOLL_OUTPUT_LINES:
                             truncated_output += f"\n... (and {len(output_lines) - TOLL_OUTPUT_LINES} more lines)"
                         logger.info(f"{truncated_output}")
-                    for output in outputs:
                         output_queue.put(output)
 
                 def run_loop():
