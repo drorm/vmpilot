@@ -1,0 +1,69 @@
+from typing import Optional, Type
+from langchain.tools import BaseTool
+from pydantic import BaseModel, Field
+from typing import Any
+
+from .core_edit import CoreEditTool, Command
+
+
+class FileEditInput(BaseModel):
+    """Schema for file edit operations"""
+
+    command: Command = Field(
+        ...,
+        description="The edit command to execute. Use 'create' for creating new files, 'view' to show files, 'str_replace' to change text, 'insert' to add lines, 'undo_edit' to undo.",
+    )
+    path: str = Field(
+        ...,
+        description="Absolute path to the file or directory. Must start with '/' like '/tmp/hello.py'",
+    )
+    file_text: Optional[str] = Field(
+        None,
+        description="For 'create' command: The content to put in the new file. For a hello world example: 'print(\"Hello, World!\")'",
+    )
+    view_range: Optional[list[int]] = Field(
+        None,
+        description="For 'view' command: Show only these line numbers [start, end]. Example: [1, 10] shows first 10 lines",
+    )
+    old_str: Optional[str] = Field(
+        None,
+        description="For 'str_replace' command: The exact text to find and replace in the file",
+    )
+    new_str: Optional[str] = Field(
+        None,
+        description="For 'str_replace' command: The new text to replace the old text with. For 'insert' command: The text to insert",
+    )
+    insert_line: Optional[int] = Field(
+        None,
+        description="For 'insert' command: Add the new text after this line number (starts at 1)",
+    )
+
+
+class FileEditTool(BaseTool):
+    name: str = "edit_file"
+    description: str = """Use this tool to edit files on the system. When given a natural language command like 'create a hello world example', translate it into the appropriate file operation. Available operations:
+    - view: Show file contents or directory listing
+    - create: Create a new file with content (e.g. for a hello world example, create a Python file that prints "Hello, World!")
+    - str_replace: Replace specific text in a file with new text
+    - insert: Insert new text at a specific line number
+    - undo_edit: Undo the last edit operation
+    """
+    args_schema: Type[BaseModel] = FileEditInput
+
+    editor: Any = Field(default_factory=CoreEditTool)
+
+    async def _arun(self, command: Command, path: str, **kwargs) -> str:
+        """Async execution of edit commands"""
+        result = await self.editor.execute(command, path, **kwargs)
+        if not result.success:
+            raise Exception(result.error or result.message)
+        return result.message
+
+    def _run(self, command: Command, path: str, **kwargs) -> str:
+        """Synchronous execution of edit commands"""
+        import asyncio
+
+        result = asyncio.run(self.editor.execute(command, path, **kwargs))
+        if not result.success:
+            raise Exception(result.error or result.message)
+        return result.message
