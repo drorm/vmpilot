@@ -26,7 +26,7 @@ def create_mock_body(temperature: float = 0.7) -> Dict:
     return {
         "temperature": temperature,
         "stream": True,
-        "disable_logging": False,  # Enable logging for debugging
+        "debug": False,  # Set to True to enable debug logging
         "max_tokens": 8192,  # For LangChain compatibility
     }
 
