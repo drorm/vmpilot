@@ -40,16 +40,19 @@ class Pipeline:
     class Valves(BaseModel):
         # Required runtime parameters
         ANTHROPIC_API_KEY: str = ""
+        OPENAI_API_KEY: str = ""
         PIPELINES_DIR: str = ""
 
         # Model configuration
         MODEL_ID: str = "claude-3-5-sonnet-20241022"
-        PROVIDER: str = "anthropic"  # Maps to APIProvider.ANTHROPIC
+        PROVIDER: str = "openai"  # Maps to APIProvider.ANTHROPIC or APIProvider.OPENAI
+
+        # OpenAI model options
+        OPENAI_MODEL_ID: str = "gpt-4"
 
         # Inference parameters with OpenWebUI-compatible defaults
         TEMPERATURE: float = 0.8
-
-        MAX_TOKENS: int = 4096
+        MAX_TOKENS: int = 2048
 
     def __init__(self):
         self.name = "VMPilot Pipeline"
@@ -92,11 +95,25 @@ class Pipeline:
             logging.getLogger().setLevel(logging.ERROR)
             logger.disabled = True
 
-        # Validate API key
-        if not self.valves.ANTHROPIC_API_KEY or len(self.valves.ANTHROPIC_API_KEY) < 32:
-            error_msg = "Error: Invalid or missing API key"
+        # Validate API key based on provider
+        """
+        if self.valves.PROVIDER == "anthropic":
+            if not self.valves.ANTHROPIC_API_KEY or len(self.valves.ANTHROPIC_API_KEY) < 32:
+                error_msg = "Error: Invalid or missing Anthropic API key"
+                logger.error(error_msg)
+                return error_msg
+            api_key = self.valves.ANTHROPIC_API_KEY
+        elif self.valves.PROVIDER == "openai":
+            if not self.valves.OPENAI_API_KEY or len(self.valves.OPENAI_API_KEY) < 32:
+                error_msg = "Error: Invalid or missing OpenAI API key"
+                logger.error(error_msg)
+                return error_msg
+            api_key = self.valves.OPENAI_API_KEY
+        else:
+            error_msg = f"Error: Unsupported provider {self.valves.PROVIDER}"
             logger.error(error_msg)
             return error_msg
+        """
 
         from vmpilot.lang import process_messages, APIProvider
 
@@ -184,21 +201,20 @@ class Pipeline:
 
                 def run_loop():
                     try:
+                        api_key = os.getenv("OPENAI_API_KEY", "")
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(
-                                model=self.valves.MODEL_ID,
-                                provider=APIProvider.ANTHROPIC,
+                                model=self.valves.OPENAI_MODEL_ID if self.valves.PROVIDER == "openai" else self.valves.MODEL_ID,
+                                provider=APIProvider.OPENAI,
                                 system_prompt_suffix=system_prompt_suffix,
                                 messages=formatted_messages,
                                 output_callback=output_callback,
                                 tool_output_callback=tool_callback,
-                                api_key=self.valves.ANTHROPIC_API_KEY,
-                                max_tokens=body.get(
-                                    "max_tokens", self.valves.MAX_TOKENS
-                                ),
+                                api_key=api_key,
+                                max_tokens=1024,
                                 temperature=body.get(
                                     "temperature", self.valves.TEMPERATURE
                                 ),

@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 class APIProvider(StrEnum):
     ANTHROPIC = "anthropic"
-    BEDROCK = "bedrock"
-    VERTEX = "vertex"
+    OPENAI = "openai"
 
 
 from typing import Any, Callable, Dict, List
@@ -24,6 +23,7 @@ from datetime import datetime
 import platform
 
 from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
 from langchain_community.agent_toolkits import FileManagementToolkit
 from vmpilot.fence import FenceShellTool
 from vmpilot.tools.langchain_edit import FileEditTool
@@ -81,7 +81,7 @@ def setup_tools(llm=None):
             - To show disk usage: du -h [path]"""
             tools.append(shell_tool)
         except Exception as e:
-            logger.error(f"Error: Error creating FenceShellTool: {e}", flush=True)
+            logger.error(f"Error: Error creating FenceShellTool: {e}")
 
     # Add file editing tool (excluding view operations which are handled by shell tool)
     tools.append(FileEditTool(view_in_shell=True))
@@ -93,21 +93,30 @@ def setup_tools(llm=None):
 async def create_agent(
     model: str,
     api_key: str,
+    provider: APIProvider,
     temperature: float = 0.7,
     max_tokens: int = 4096,
 ):
     """Create a LangChain agent with the configured tools."""
-    # Initialize Anthropic model
-    llm = ChatAnthropic(
-        model=model,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        anthropic_api_key=api_key,
-        timeout=30,  # Add 30-second timeout
-        model_kwargs={
-            "extra_headers": {"anthropic-beta": COMPUTER_USE_BETA_FLAG},
-        },
-    )
+    if provider == APIProvider.ANTHROPIC:
+        llm = ChatAnthropic(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            anthropic_api_key=api_key,
+            timeout=30,  # Add 30-second timeout
+            model_kwargs={
+                "extra_headers": {"anthropic-beta": COMPUTER_USE_BETA_FLAG},
+            },
+        )
+    elif provider == APIProvider.OPENAI:
+        llm = ChatOpenAI(
+            model=model,
+            temperature=temperature,
+            max_tokens=1024,
+            openai_api_key=api_key,
+            timeout=30,
+        )
 
     # Set up tools with LLM for fencing capability
     tools = setup_tools(llm=llm)
@@ -133,8 +142,8 @@ async def process_messages(
     temperature: float = 0.7,
     disable_logging: bool = False,
 ) -> List[dict]:
-    logger.debug("DEBUG: process_messages started", flush=True)
-    logger.debug(f"DEBUG: model={model}, provider={provider}", flush=True)
+    logger.debug("DEBUG: process_messages started")
+    logger.debug(f"DEBUG: model={model}, provider={provider}")
     """Process messages through the agent and handle outputs."""
     if disable_logging:
         # Disable all logging if flag is set
@@ -144,10 +153,10 @@ async def process_messages(
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
 
-    logger.debug("DEBUG: Creating agent", flush=True)
+    logger.debug("DEBUG: Creating agent")
     # Create agent
-    agent = await create_agent(model, api_key, temperature, max_tokens)
-    logger.debug("DEBUG: Agent created successfully", flush=True)
+    agent = await create_agent(model, api_key, provider, temperature, max_tokens)
+    logger.debug("DEBUG: Agent created successfully")
 
     # Convert messages to LangChain format
     formatted_messages = []

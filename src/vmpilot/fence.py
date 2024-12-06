@@ -1,12 +1,12 @@
 from langchain_community.tools import ShellTool
-from langchain_anthropic import ChatAnthropic
+from langchain_core.language_models import BaseChatModel
 from pydantic import Field
 import json
 from typing import Union, List
 
 
 class FenceShellTool(ShellTool):
-    llm: ChatAnthropic = Field(description="LLM to use for command generation")
+    llm: BaseChatModel = Field(description="LLM to use for command generation")
 
     class Config:
         arbitrary_types_allowed = True
