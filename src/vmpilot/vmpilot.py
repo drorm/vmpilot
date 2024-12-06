@@ -48,7 +48,7 @@ class Pipeline:
         PROVIDER: str = "openai"  # Maps to APIProvider.ANTHROPIC or APIProvider.OPENAI
 
         # OpenAI model options
-        OPENAI_MODEL_ID: str = "gpt-4"
+        OPENAI_MODEL_ID: str = "gpt-4o-2024-11-20"
 
         # Inference parameters with OpenWebUI-compatible defaults
         TEMPERATURE: float = 0.8
@@ -77,12 +77,25 @@ class Pipeline:
 
     def pipelines(self) -> List[dict]:
         """Return list of supported models/pipelines"""
-        return [
+        models = [
             {
-                "id": "VMPilot",
-                "name": "VMPilot Pipeline",
-                "description": "Execute bash commands via pipeline",
-            }
+                "id": "anthropic",
+                "name": "Anthropic (Claude)",
+                "description": "Execute commands using Anthropic's Claude model",
+            },
+            {
+                "id": "openai",
+                "name": "OpenAI (GPT-4)",
+                "description": "Execute commands using OpenAI's GPT-4 model",
+            },
+        ]
+
+        # Only show models with valid API keys
+        return [
+            model
+            for model in models
+            if (model["id"] == "anthropic" and len(self.valves.ANTHROPIC_API_KEY) >= 32)
+            or (model["id"] == "openai" and len(self.valves.OPENAI_API_KEY) >= 32)
         ]
 
     def pipe(
@@ -123,9 +136,13 @@ class Pipeline:
         if body.get("title", False):
             return "VMPilot Pipeline"
 
-        # Verify the model is supported
-        if model_id != "VMPilot":
-            error_msg = f"Unsupported model"
+        # Set provider based on selected model
+        if model_id == "anthropic":
+            self.valves.PROVIDER = "anthropic"
+        elif model_id == "openai":
+            self.valves.PROVIDER = "openai"
+        else:
+            error_msg = f"Unsupported model: {model_id}"
             logger.error(error_msg)
             return error_msg
 
