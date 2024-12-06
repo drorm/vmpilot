@@ -5,7 +5,7 @@ TEST_DIR=$(mktemp -d)
 echo "Creating test environment in $TEST_DIR"
 
 # Copy sample files to test directory
-cp -r sample_files/* "$TEST_DIR/"
+cp -r tests/sample_files/* "$TEST_DIR/" 2>/dev/null || true
 
 # Export test directory for test scripts
 export TEST_DIR
