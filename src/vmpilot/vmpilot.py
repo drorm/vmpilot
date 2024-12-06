@@ -117,17 +117,29 @@ class Pipeline:
             ):
                 error_msg = "Error: Invalid or missing Anthropic API key"
                 logger.error(error_msg)
+                if body.get("stream", False):
+                    def error_generator():
+                        yield {"type": "text", "text": error_msg}
+                    return error_generator()
                 return error_msg
             api_key = self.valves.ANTHROPIC_API_KEY
         elif self.valves.PROVIDER == "openai":
             if not self.valves.OPENAI_API_KEY or len(self.valves.OPENAI_API_KEY) < 32:
                 error_msg = "Error: Invalid or missing OpenAI API key"
                 logger.error(error_msg)
+                if body.get("stream", False):
+                    def error_generator():
+                        yield {"type": "text", "text": error_msg}
+                    return error_generator()
                 return error_msg
             api_key = self.valves.OPENAI_API_KEY
         else:
             error_msg = f"Error: Unsupported provider {self.valves.PROVIDER}"
             logger.error(error_msg)
+            if body.get("stream", False):
+                def error_generator():
+                    yield {"type": "text", "text": error_msg}
+                return error_generator()
             return error_msg
 
         from vmpilot.lang import process_messages, APIProvider
@@ -189,9 +201,7 @@ class Pipeline:
                         output_queue.put(content["text"])
 
                 def tool_callback(result, tool_id):
-                    logger.debug(
-                        f"DEBUG: Tool callback received result: {result}"
-                    )
+                    logger.debug(f"DEBUG: Tool callback received result: {result}")
                     outputs = []
 
                     # Handle dictionary results (from FileEditTool)
