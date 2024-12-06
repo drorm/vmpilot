@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Literal, Optional, get_args
 
 Command = Literal[
-    "view",
     "create",
     "str_replace",
     "insert",
@@ -49,10 +48,6 @@ class BaseEditTool:
         if path.exists() and command == "create":
             raise ToolError(
                 f"File already exists at: {path}. Cannot overwrite files using command `create`."
-            )
-        if path.is_dir() and command != "view":
-            raise ToolError(
-                f"The path {path} is a directory and only the `view` command can be used on directories"
             )
 
     def read_file(self, path: Path) -> str:

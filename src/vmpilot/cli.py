@@ -53,7 +53,7 @@ async def main(command: str, temperature: float, provider: str, model: str):
 
     # Execute pipeline
     result = pipeline.pipe(
-        user_message=command, model_id="VMPilot", messages=messages, body=body
+        user_message=command, model_id=provider, messages=messages, body=body
     )
 
     # Print each message in the stream

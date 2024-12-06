@@ -46,10 +46,17 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 
 <IMPORTANT>
 * Only execute valid bash commands
+* Use bash to view files using commands like cat, head, tail, or less
+* Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
 * You have a maximum of 5 operations to complete each task
 * Each command execution counts as one operation
 * If you reach the operation limit without completing the task, respond with "OPERATION LIMIT REACHED: [current status and what remains to be done]"
-</IMPORTANT>"""
+</IMPORTANT>
+
+<TOOLS>
+* Use the bash tool to execute system commands. Provide commands as a single string.
+* Use the str_replace_editor tool for editing files.
+</TOOLS>"""
 
 
 def _modify_state_messages(state: AgentState):
@@ -74,11 +81,12 @@ def setup_tools(llm=None):
     if llm is not None:
         try:
             shell_tool = FenceShellTool(llm=llm)
-            shell_tool.description = """Use this tool to execute bash commands. The output will be automatically fenced with the appropriate markdown language syntax. For example:
-            - To list files: ls [path]
-            - To show file contents: cat [path]
-            - To search text: grep [pattern] [path]
-            - To show disk usage: du -h [path]"""
+            shell_tool.description = """Execute bash commands in the system. Input should be a single command string. Example inputs:
+            - ls /path
+            - cat file.txt
+            - head -n 10 file.md
+            - grep pattern file
+            The output will be automatically formatted with appropriate markdown syntax."""
             tools.append(shell_tool)
         except Exception as e:
             logger.error(f"Error: Error creating FenceShellTool: {e}")

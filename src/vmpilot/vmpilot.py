@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # Create handlers
 stream_handler = logging.StreamHandler()
@@ -48,7 +48,7 @@ class Pipeline:
         PROVIDER: str = "openai"  # Maps to APIProvider.ANTHROPIC or APIProvider.OPENAI
 
         # OpenAI model options
-        OPENAI_MODEL_ID: str = "gpt-4o-2024-11-20"
+        OPENAI_MODEL_ID: str = "gpt-4"
 
         # Inference parameters with OpenWebUI-compatible defaults
         TEMPERATURE: float = 0.8
@@ -102,7 +102,7 @@ class Pipeline:
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
-        logger.debug(f"DEBUG: Starting pipe with message: {user_message}", flush=True)
+        logger.debug(f"DEBUG: Starting pipe with message: {user_message}")
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -183,14 +183,14 @@ class Pipeline:
                 loop_done = threading.Event()
 
                 def output_callback(content: Dict):
-                    logger.debug(f"DEBUG: Received content: {content}", flush=True)
+                    logger.debug(f"DEBUG: Received content: {content}")
                     if content["type"] == "text":
                         logger.info(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
 
                 def tool_callback(result, tool_id):
                     logger.debug(
-                        f"DEBUG: Tool callback received result: {result}", flush=True
+                        f"DEBUG: Tool callback received result: {result}"
                     )
                     outputs = []
 

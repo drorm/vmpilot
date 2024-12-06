@@ -11,7 +11,7 @@ class FileEditInput(BaseModel):
 
     command: Command = Field(
         ...,
-        description="The edit command to execute. Use 'create' for creating new files, 'view' to show files, 'str_replace' to change text, 'insert' to add lines, 'undo_edit' to undo.",
+        description="The edit command to execute. Use 'create' for creating new files, 'str_replace' to change text, 'insert' to add lines, 'undo_edit' to undo.",
     )
     path: str = Field(
         ...,
@@ -20,10 +20,6 @@ class FileEditInput(BaseModel):
     file_text: Optional[str] = Field(
         None,
         description="For 'create' command: The content to put in the new file. For a hello world example: 'print(\"Hello, World!\")'",
-    )
-    view_range: Optional[list[int]] = Field(
-        None,
-        description="For 'view' command: Show only these line numbers [start, end]. Example: [1, 10] shows first 10 lines",
     )
     old_str: Optional[str] = Field(
         None,
@@ -47,7 +43,7 @@ class FileEditTool(BaseTool):
     - insert: Insert new text at a specific line number
     - undo_edit: Undo the last edit operation
 
-    Note: To view files, use the bash tool with commands like cat, head, tail, or less.
+    Note: this tool **cannot** be used to view files. Use the bash tool with commands like 'cat', 'head', 'tail', or 'less' for that.
     """
     args_schema: Type[BaseModel] = FileEditInput
 
