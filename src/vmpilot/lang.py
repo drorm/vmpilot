@@ -6,6 +6,8 @@ Replaces the original loop.py with LangChain tools and agents.
 import logging
 import os
 from enum import StrEnum
+from contextvars import ContextVar
+from typing import Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +35,9 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt.chat_agent_executor import AgentState
 
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
+
+# The system prompt that's passed on from webui.
+prompt_suffix: ContextVar[Optional[Any]] = ContextVar("prompt_suffix", default=None)
 
 # System prompt maintaining compatibility with original VMPilot
 SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
@@ -62,7 +67,14 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 def _modify_state_messages(state: AgentState):
     # Keep the last N messages in the state as well as the system prompt
     N_MESSAGES = 30
-    messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"][:N_MESSAGES]
+
+    # Our global system prompt
+    system_prompt = SYSTEM_PROMPT
+    # Append the suffix to the system prompt
+    suffix = prompt_suffix.get()
+    system_prompt = f"{system_prompt}\n\n{suffix}"
+
+    messages = [SystemMessage(content=system_prompt)] + state["messages"][:N_MESSAGES]
     return messages
 
 
@@ -150,7 +162,6 @@ async def process_messages(
     temperature: float = 0.7,
     disable_logging: bool = False,
 ) -> List[dict]:
-    logger.debug("DEBUG: process_messages started")
     logger.debug(f"DEBUG: model={model}, provider={provider}")
     """Process messages through the agent and handle outputs."""
     if disable_logging:
@@ -161,6 +172,7 @@ async def process_messages(
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
 
+    prompt_suffix.set(system_prompt_suffix)
     logger.debug("DEBUG: Creating agent")
     # Create agent
     agent = await create_agent(model, api_key, provider, temperature, max_tokens)
