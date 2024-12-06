@@ -37,18 +37,23 @@ def create_mock_messages(command: str) -> List[Dict]:
     return [{"role": "user", "content": [{"type": "text", "text": command}]}]
 
 
-async def main(command: str, temperature: float):
+async def main(command: str, temperature: float, provider: str, model: str):
     """Main CLI execution flow"""
     pipeline = Pipeline()
+    pipeline.valves.PROVIDER = provider
+
+    if provider == "openai":
+        pipeline.valves.OPENAI_MODEL_ID = model
+    else:
+        pipeline.valves.MODEL_ID = model
 
     # Create mock pipeline call parameters
     body = create_mock_body(temperature)
     messages = create_mock_messages(command)
 
     # Execute pipeline
-    model_id = os.getenv("MODEL_ID", "VMPilot")
     result = pipeline.pipe(
-        user_message=command, model_id=model_id, messages=messages, body=body
+        user_message=command, model_id="VMPilot", messages=messages, body=body
     )
 
     # Print each message in the stream
@@ -99,6 +104,21 @@ if __name__ == "__main__":
         default=0.7,
         help="Temperature for response generation (default: 0.7)",
     )
+    parser.add_argument(
+        "-p",
+        "--provider",
+        type=str,
+        default="anthropic",
+        choices=["anthropic", "openai"],
+        help="API provider to use (default: anthropic)",
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        default="claude-3-5-sonnet-20241022",
+        help="Model to use (default: claude-3-5-sonnet-20241022 for Anthropic, gpt-4 for OpenAI)",
+    )
     args = parser.parse_args()
 
-    asyncio.run(main(args.command, args.temperature))
+    asyncio.run(main(args.command, args.temperature, args.provider, args.model))

@@ -62,6 +62,7 @@ class Pipeline:
         # Initialize valves with environment variables and defaults
         self.valves = self.Valves(
             ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY", ""),
+            OPENAI_API_KEY=os.getenv("OPENAI_API_KEY", ""),
             PIPELINES_DIR=os.getenv("PIPELINES_DIR", ""),
         )
 
@@ -96,9 +97,11 @@ class Pipeline:
             logger.disabled = True
 
         # Validate API key based on provider
-        """
         if self.valves.PROVIDER == "anthropic":
-            if not self.valves.ANTHROPIC_API_KEY or len(self.valves.ANTHROPIC_API_KEY) < 32:
+            if (
+                not self.valves.ANTHROPIC_API_KEY
+                or len(self.valves.ANTHROPIC_API_KEY) < 32
+            ):
                 error_msg = "Error: Invalid or missing Anthropic API key"
                 logger.error(error_msg)
                 return error_msg
@@ -113,7 +116,6 @@ class Pipeline:
             error_msg = f"Error: Unsupported provider {self.valves.PROVIDER}"
             logger.error(error_msg)
             return error_msg
-        """
 
         from vmpilot.lang import process_messages, APIProvider
 
@@ -201,14 +203,26 @@ class Pipeline:
 
                 def run_loop():
                     try:
-                        api_key = os.getenv("OPENAI_API_KEY", "")
+                        api_key = (
+                            self.valves.OPENAI_API_KEY
+                            if self.valves.PROVIDER == "openai"
+                            else self.valves.ANTHROPIC_API_KEY
+                        )
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(
-                                model=self.valves.OPENAI_MODEL_ID if self.valves.PROVIDER == "openai" else self.valves.MODEL_ID,
-                                provider=APIProvider.OPENAI,
+                                model=(
+                                    self.valves.OPENAI_MODEL_ID
+                                    if self.valves.PROVIDER == "openai"
+                                    else self.valves.MODEL_ID
+                                ),
+                                provider=(
+                                    APIProvider.OPENAI
+                                    if self.valves.PROVIDER == "openai"
+                                    else APIProvider.ANTHROPIC
+                                ),
                                 system_prompt_suffix=system_prompt_suffix,
                                 messages=formatted_messages,
                                 output_callback=output_callback,
