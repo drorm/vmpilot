@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Create handlers
 stream_handler = logging.StreamHandler()

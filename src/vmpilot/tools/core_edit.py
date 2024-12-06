@@ -117,11 +117,11 @@ class CoreEditTool(BaseEditTool):
             self.write_file(path, content)
             self._file_history[path].append(content)
             return EditResult(
-                success=True, message=f"File created successfully at: {path}"
+                success=True, message=f"File created successfully at: {path}.\n"
             )
         except Exception as e:
             return EditResult(
-                success=False, message=f"Failed to create file: {e}", error=str(e)
+                success=False, message=f"Failed to create file: {e}.\n", error=str(e)
             )
 
     def str_replace(
