@@ -158,9 +158,15 @@ async def process_messages(
     max_tokens: int = 8192,
     temperature: float = 0.7,
     disable_logging: bool = False,
+    recursion_limit: int = None,
 ) -> List[dict]:
     logger.debug(f"DEBUG: model={model}, provider={provider}")
     """Process messages through the agent and handle outputs."""
+    # Get recursion limit from config if not explicitly set
+    if recursion_limit is None:
+        provider_config = config.get_provider_config(provider)
+        recursion_limit = provider_config.recursion_limit
+
     logging.getLogger("httpx").setLevel(logging.WARNING)
     if disable_logging:
         # Disable all logging if flag is set
@@ -229,6 +235,7 @@ async def process_messages(
                 config={
                     "thread_id": thread_id,
                     "run_name": f"vmpilot-run-{thread_id}",
+                    "recursion_limit": recursion_limit,
                 },
                 stream_mode="values",
             ):
@@ -286,10 +293,15 @@ async def process_messages(
                         {"type": "text", "text": f"Error processing response: {str(e)}"}
                     )
         except Exception as e:
-            logger.error(f"Error in agent stream: {e}")
-            output_callback(
-                {"type": "text", "text": f"Error in agent stream: {str(e)}"}
-            )
+            error_message = str(e)
+            message = ""
+            if "Recursion limit" in error_message and "reached" in error_message:
+                message = f" I've done {recursion_limit} steps in a row. Let me know if you'd like me to continue. "
+                logger.info(message)
+            else:
+                logger.error(f"Error in agent stream: {e}")
+                message = f"Error in agent stream: {str(e)}"
+            output_callback({"type": "text", "text": f"{message}"})
 
     # Run the stream processor
     await process_stream()

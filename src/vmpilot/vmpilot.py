@@ -50,6 +50,7 @@ class Pipeline:
         # Model configuration
         provider: Provider = config.default_provider
         model: str = ""  # Will be set based on provider's default
+        recursion_limit: int = 25  # Will be set based on provider's config
 
         # Inference parameters with OpenWebUI-compatible defaults
         temperature: float = 0.8
@@ -59,6 +60,9 @@ class Pipeline:
             super().__init__(**data)
             if not self.model:
                 self.model = config.get_default_model(self.provider)
+            if self.recursion_limit is None:
+                provider_config = config.get_provider_config(self.provider)
+                self.recursion_limit = provider_config.recursion_limit
             # Set initial API key based on provider
             if self.provider == Provider.ANTHROPIC:
                 self.api_key = self.anthropic_api_key
@@ -133,8 +137,10 @@ class Pipeline:
                 error_msg = "Error: Invalid or missing OpenAI API key"
                 logger.error(error_msg)
                 if body.get("stream", False):
+
                     def error_generator():
                         yield {"type": "text", "text": error_msg}
+
                     return error_generator()
                 return error_msg
             api_key = self.valves.api_key
@@ -142,8 +148,10 @@ class Pipeline:
             error_msg = f"Error: Unsupported provider {self.valves.provider}"
             logger.error(error_msg)
             if body.get("stream", False):
+
                 def error_generator():
                     yield {"type": "text", "text": error_msg}
+
                 return error_generator()
             return error_msg
 
@@ -269,6 +277,9 @@ class Pipeline:
                                     "temperature", self.valves.temperature
                                 ),
                                 disable_logging=body.get("disable_logging", False),
+                                recursion_limit=body.get(
+                                    "recursion_limit", self.valves.recursion_limit
+                                ),
                             )
                         )
                     except Exception as e:

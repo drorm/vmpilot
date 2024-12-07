@@ -22,6 +22,7 @@ class ProviderConfig(BaseModel):
     api_key_path: str = Field(description="Default path to API key file")
     api_key_env: str = Field(description="Environment variable name for API key")
     beta_flags: Dict[str, str] = Field(default_factory=dict)
+    recursion_limit: int = Field(default=25, description="Maximum number of recursive steps the model can take")
 
 
 class ModelConfig(BaseModel):
@@ -42,12 +43,14 @@ class ModelConfig(BaseModel):
                 api_key_path="~/.anthropic/api_key",
                 api_key_env="ANTHROPIC_API_KEY",
                 beta_flags={"computer-use-2024-10-22": "true"},
+                recursion_limit=25,
             ),
             Provider.OPENAI: ProviderConfig(
                 default_model="gpt-4o",
                 available_models=["gpt-4o", "gpt-4"],
                 api_key_path="~/.openai",
                 api_key_env="OPENAI_API_KEY",
+                recursion_limit=25,
             ),
         }
 
