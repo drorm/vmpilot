@@ -15,9 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class APIProvider(StrEnum):
-    ANTHROPIC = "anthropic"
-    OPENAI = "openai"
+from .config import Provider as APIProvider, config
 
 
 from typing import Any, Callable, Dict, List
@@ -164,6 +162,7 @@ async def process_messages(
 ) -> List[dict]:
     logger.debug(f"DEBUG: model={model}, provider={provider}")
     """Process messages through the agent and handle outputs."""
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     if disable_logging:
         # Disable all logging if flag is set
         logging.getLogger("vmpilot").setLevel(logging.WARNING)
@@ -215,14 +214,14 @@ async def process_messages(
                             AIMessage(content="\n".join(content_parts))
                         )
 
-        logger.info(f"Formatted {len(formatted_messages)} messages")
+        logger.debug(f"Formatted {len(formatted_messages)} messages")
     except Exception as e:
         logger.error(f"Error formatting messages: {e}")
         raise
 
     # Stream agent responses
     thread_id = f"vmpilot-{os.getpid()}"
-    logger.info(f"Starting agent stream with {len(formatted_messages)} messages")
+    logger.debug(f"Starting agent stream with {len(formatted_messages)} messages")
 
     async def process_stream():
         try:

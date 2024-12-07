@@ -36,23 +36,27 @@ logger.propagate = False
 TOOL_OUTPUT_LINES = 7
 
 
+from .config import Provider, config
+
+
 class Pipeline:
     class Valves(BaseModel):
         # Required runtime parameters
-        ANTHROPIC_API_KEY: str = ""
-        OPENAI_API_KEY: str = ""
-        PIPELINES_DIR: str = ""
+        api_key: str = ""
+        pipelines_dir: str = ""
 
         # Model configuration
-        MODEL_ID: str = "claude-3-5-sonnet-20241022"
-        PROVIDER: str = "openai"  # Maps to APIProvider.ANTHROPIC or APIProvider.OPENAI
-
-        # OpenAI model options
-        OPENAI_MODEL_ID: str = "gpt-4"
+        provider: Provider = config.default_provider
+        model: str = ""  # Will be set based on provider's default
 
         # Inference parameters with OpenWebUI-compatible defaults
-        TEMPERATURE: float = 0.8
-        MAX_TOKENS: int = 2048
+        temperature: float = 0.8
+        max_tokens: int = 2048
+
+        def __init__(self, **data):
+            super().__init__(**data)
+            if not self.model:
+                self.model = config.get_default_model(self.provider)
 
     def __init__(self):
         self.name = "VMPilot Pipeline"
@@ -61,9 +65,8 @@ class Pipeline:
 
         # Initialize valves with environment variables and defaults
         self.valves = self.Valves(
-            ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY", ""),
-            OPENAI_API_KEY=os.getenv("OPENAI_API_KEY", ""),
-            PIPELINES_DIR=os.getenv("PIPELINES_DIR", ""),
+            api_key=os.getenv("ANTHROPIC_API_KEY", ""),
+            pipelines_dir=os.getenv("PIPELINES_DIR", ""),
         )
 
     async def on_startup(self):
@@ -91,12 +94,7 @@ class Pipeline:
         ]
 
         # Only show models with valid API keys
-        return [
-            model
-            for model in models
-            if (model["id"] == "anthropic" and len(self.valves.ANTHROPIC_API_KEY) >= 32)
-            or (model["id"] == "openai" and len(self.valves.OPENAI_API_KEY) >= 32)
-        ]
+        return [model for model in models if len(self.valves.api_key) >= 32]
 
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
@@ -110,21 +108,20 @@ class Pipeline:
             logger.disabled = True
 
         # Validate API key based on provider
-        if self.valves.PROVIDER == "anthropic":
-            if (
-                not self.valves.ANTHROPIC_API_KEY
-                or len(self.valves.ANTHROPIC_API_KEY) < 32
-            ):
+        if self.valves.provider == Provider.ANTHROPIC:
+            if not self.valves.api_key or len(self.valves.api_key) < 32:
                 error_msg = "Error: Invalid or missing Anthropic API key"
                 logger.error(error_msg)
                 if body.get("stream", False):
+
                     def error_generator():
                         yield {"type": "text", "text": error_msg}
+
                     return error_generator()
                 return error_msg
-            api_key = self.valves.ANTHROPIC_API_KEY
-        elif self.valves.PROVIDER == "openai":
-            if not self.valves.OPENAI_API_KEY or len(self.valves.OPENAI_API_KEY) < 32:
+            api_key = self.valves.api_key
+        elif self.valves.provider == Provider.OPENAI:
+            if not self.valves.api_key or len(self.valves.api_key) < 32:
                 error_msg = "Error: Invalid or missing OpenAI API key"
                 logger.error(error_msg)
                 if body.get("stream", False):
@@ -132,9 +129,9 @@ class Pipeline:
                         yield {"type": "text", "text": error_msg}
                     return error_generator()
                 return error_msg
-            api_key = self.valves.OPENAI_API_KEY
+            api_key = self.valves.api_key
         else:
-            error_msg = f"Error: Unsupported provider {self.valves.PROVIDER}"
+            error_msg = f"Error: Unsupported provider {self.valves.provider}"
             logger.error(error_msg)
             if body.get("stream", False):
                 def error_generator():
@@ -150,9 +147,9 @@ class Pipeline:
 
         # Set provider based on selected model
         if model_id == "anthropic":
-            self.valves.PROVIDER = "anthropic"
+            self.valves.provider = "anthropic"
         elif model_id == "openai":
-            self.valves.PROVIDER = "openai"
+            self.valves.provider = "openai"
         else:
             error_msg = f"Unsupported model: {model_id}"
             logger.error(error_msg)
@@ -197,7 +194,7 @@ class Pipeline:
                 def output_callback(content: Dict):
                     logger.debug(f"DEBUG: Received content: {content}")
                     if content["type"] == "text":
-                        logger.info(f"Assistant: {content['text']}")
+                        logger.debug(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
 
                 def tool_callback(result, tool_id):
@@ -231,9 +228,9 @@ class Pipeline:
                 def run_loop():
                     try:
                         api_key = (
-                            self.valves.OPENAI_API_KEY
-                            if self.valves.PROVIDER == "openai"
-                            else self.valves.ANTHROPIC_API_KEY
+                            self.valves.api_key
+                            if self.valves.provider == Provider.OPENAI
+                            else self.valves.api_key
                         )
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
@@ -241,13 +238,13 @@ class Pipeline:
                         loop.run_until_complete(
                             process_messages(
                                 model=(
-                                    self.valves.OPENAI_MODEL_ID
-                                    if self.valves.PROVIDER == "openai"
-                                    else self.valves.MODEL_ID
+                                    self.valves.model
+                                    if self.valves.provider == Provider.OPENAI
+                                    else self.valves.model
                                 ),
                                 provider=(
                                     APIProvider.OPENAI
-                                    if self.valves.PROVIDER == "openai"
+                                    if self.valves.provider == Provider.OPENAI
                                     else APIProvider.ANTHROPIC
                                 ),
                                 system_prompt_suffix=system_prompt_suffix,
@@ -257,7 +254,7 @@ class Pipeline:
                                 api_key=api_key,
                                 max_tokens=1024,
                                 temperature=body.get(
-                                    "temperature", self.valves.TEMPERATURE
+                                    "temperature", self.valves.temperature
                                 ),
                                 disable_logging=body.get("disable_logging", False),
                             )

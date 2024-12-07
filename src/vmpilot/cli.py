@@ -40,12 +40,10 @@ def create_mock_messages(command: str) -> List[Dict]:
 async def main(command: str, temperature: float, provider: str, model: str):
     """Main CLI execution flow"""
     pipeline = Pipeline()
-    pipeline.valves.PROVIDER = provider
-
-    if provider == "openai":
-        pipeline.valves.OPENAI_MODEL_ID = model
-    else:
-        pipeline.valves.MODEL_ID = model
+    # Convert provider string to enum
+    provider_enum = next(p for p in Provider if p.value == provider)
+    pipeline.valves.provider = provider_enum
+    pipeline.valves.model = model
 
     # Create mock pipeline call parameters
     body = create_mock_body(temperature)
@@ -95,6 +93,8 @@ async def main(command: str, temperature: float, provider: str, model: str):
 
 
 if __name__ == "__main__":
+    from vmpilot.config import Provider, config
+
     parser = argparse.ArgumentParser(description="VMPilot CLI using LangChain")
     parser.add_argument("command", help="Command to execute")
     parser.add_argument(
@@ -108,16 +108,24 @@ if __name__ == "__main__":
         "-p",
         "--provider",
         type=str,
-        default="anthropic",
-        choices=["anthropic", "openai"],
-        help="API provider to use (default: anthropic)",
+        default=config.default_provider,
+        choices=[p.value for p in Provider],
+        help=f"API provider to use (default: {config.default_provider})",
     )
+
+    # Add model argument with dynamic help text
+    default_model = config.get_default_model()
+    model_help = "Available models:\n"
+    for provider in Provider:
+        prov_config = config.get_provider_config(provider)
+        model_help += f"\n{provider.value}: {', '.join(prov_config.available_models)}"
+
     parser.add_argument(
         "-m",
         "--model",
         type=str,
-        default="claude-3-5-sonnet-20241022",
-        help="Model to use (default: claude-3-5-sonnet-20241022 for Anthropic, gpt-4 for OpenAI)",
+        default=default_model,
+        help=f"Model to use (default: {default_model})\n{model_help}",
     )
     args = parser.parse_args()
 
