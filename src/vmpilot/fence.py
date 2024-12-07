@@ -28,7 +28,18 @@ class FenceShellTool(ShellTool):
         response = self.llm.invoke(f"{prompt}\nInput: {query}")
         if hasattr(response, "content"):
             response = response.content
-        return json.loads(response)
+
+        response = response.strip()
+        if not response.startswith("{") or not response.endswith("}"):
+            raise RuntimeError(f"Unexpected non-JSON response: {response}")
+
+        try:
+            result = json.loads(response)
+            if not all(k in result for k in ["command", "language"]):
+                raise ValueError(f"Missing required keys in response: {response}")
+            return result
+        except (json.JSONDecodeError, ValueError) as e:
+            raise RuntimeError(f"Invalid JSON response: {response}. Error: {e}")
 
     def _wrap_output(self, language: str, output: str) -> str:
         # Wrap the shell output in Markdown code fences
@@ -36,15 +47,18 @@ class FenceShellTool(ShellTool):
 
     def _run(self, commands: Union[str, List[str]]) -> str:
         if isinstance(commands, list):
-            commands = " ".join(commands)
+            commands = " && ".join(commands)
 
         # Get command and expected language
-        result = self._get_command_and_language(commands)
-        command = result["command"]
-        language = result["language"]
+        try:
+            result = self._get_command_and_language(commands)
+            command = result["command"]
+            language = result.get("language", "plaintext")
 
-        # Run the shell command and capture output
-        raw_output = super()._run(command)
+            # Run the shell command and capture output
+            raw_output = super()._run(command)
 
-        # Return the wrapped output
-        return self._wrap_output(language, raw_output)
+            # Return the wrapped output
+            return self._wrap_output(language, raw_output)
+        except Exception as e:
+            raise RuntimeError(f"Error processing command: {commands}. Error: {e}")

@@ -36,13 +36,15 @@ logger.propagate = False
 TOOL_OUTPUT_LINES = 7
 
 
-from .config import Provider, config
+from vmpilot.config import Provider, config
 
 
 class Pipeline:
     class Valves(BaseModel):
         # Required runtime parameters
-        api_key: str = ""
+        anthropic_api_key: str = ""
+        openai_api_key: str = ""
+        api_key: str = ""  # Will be set based on active provider
         pipelines_dir: str = ""
 
         # Model configuration
@@ -57,6 +59,11 @@ class Pipeline:
             super().__init__(**data)
             if not self.model:
                 self.model = config.get_default_model(self.provider)
+            # Set initial API key based on provider
+            if self.provider == Provider.ANTHROPIC:
+                self.api_key = self.anthropic_api_key
+            else:
+                self.api_key = self.openai_api_key
 
     def __init__(self):
         self.name = "VMPilot Pipeline"
@@ -65,7 +72,8 @@ class Pipeline:
 
         # Initialize valves with environment variables and defaults
         self.valves = self.Valves(
-            api_key=os.getenv("ANTHROPIC_API_KEY", ""),
+            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
+            openai_api_key=os.getenv("OPENAI_API_KEY", ""),
             pipelines_dir=os.getenv("PIPELINES_DIR", ""),
         )
 
@@ -88,8 +96,8 @@ class Pipeline:
             },
             {
                 "id": "openai",
-                "name": "OpenAI (GPT-4)",
-                "description": "Execute commands using OpenAI's GPT-4 model",
+                "name": "OpenAI (GPT-4o)",
+                "description": "Execute commands using OpenAI's GPT-4o model",
             },
         ]
 
@@ -145,11 +153,15 @@ class Pipeline:
         if body.get("title", False):
             return "VMPilot Pipeline"
 
-        # Set provider based on selected model
+        # Set provider and model based on selected model_id
         if model_id == "anthropic":
-            self.valves.provider = "anthropic"
+            self.valves.provider = Provider.ANTHROPIC
+            self.valves.api_key = self.valves.anthropic_api_key
+            self.valves.model = config.get_default_model(Provider.ANTHROPIC)
         elif model_id == "openai":
-            self.valves.provider = "openai"
+            self.valves.provider = Provider.OPENAI
+            self.valves.api_key = self.valves.openai_api_key
+            self.valves.model = config.get_default_model(Provider.OPENAI)
         else:
             error_msg = f"Unsupported model: {model_id}"
             logger.error(error_msg)

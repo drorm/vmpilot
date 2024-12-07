@@ -45,7 +45,7 @@ class ModelConfig(BaseModel):
             ),
             Provider.OPENAI: ProviderConfig(
                 default_model="gpt-4",
-                available_models=["gpt-4", "gpt-3.5-turbo"],
+                available_models=["gpt-4"],
                 api_key_path="~/.openai",
                 api_key_env="OPENAI_API_KEY",
             ),

@@ -15,9 +15,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-from .config import Provider as APIProvider, config
-
-
 from typing import Any, Callable, Dict, List
 from datetime import datetime
 import platform
@@ -27,6 +24,8 @@ from langchain_openai import ChatOpenAI
 from langchain_community.agent_toolkits import FileManagementToolkit
 from vmpilot.fence import FenceShellTool
 from vmpilot.tools.langchain_edit import FileEditTool
+from vmpilot.config import Provider as APIProvider, config
+
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
