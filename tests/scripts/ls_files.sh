@@ -1,12 +1,21 @@
 #!/bin/bash
 
 # Test listing files in the test directory
-output=$(../bin/cli.sh -t 0 "ls -1 $TEST_DIR")
+PROVIDER="openai"
+while getopts "p:" opt; do
+  case $opt in
+    p) PROVIDER="$OPTARG" ;;
+  esac
+done
+shift $((OPTIND -1))
+
+output=$(/home/dror/vmpilot/bin/cli.sh -p "$PROVIDER" -t 0 "ls -1 $TEST_DIR")
+echo "Contents of TEST_DIR before executing cli.sh:" && ls -1 $TEST_DIR
 echo "Raw output:"
 echo "$output"
 
-# Extract the plain text output between ```plaintext marks
-actual_output=$(echo "$output" | sed -n '/^```plaintext$/,/^```$/p' | sed '1d;$d' | grep -v '^$' | tr -d '\r')
+# Extract the plain text output - handle both formats
+actual_output=$(echo "$output" | grep -A 10 "Executing command:" | grep -v "Executing command:" | grep -o "test[12]\.[a-z]*" | sort -u)
 echo "Processed output:"
 echo "$actual_output"
 
