@@ -44,8 +44,8 @@ class ModelConfig(BaseModel):
                 beta_flags={"computer-use-2024-10-22": "true"},
             ),
             Provider.OPENAI: ProviderConfig(
-                default_model="gpt-4",
-                available_models=["gpt-4"],
+                default_model="gpt-4o",
+                available_models=["gpt-4o", "gpt-4"],
                 api_key_path="~/.openai",
                 api_key_env="OPENAI_API_KEY",
             ),

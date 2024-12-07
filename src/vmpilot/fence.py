@@ -49,6 +49,10 @@ class FenceShellTool(ShellTool):
         if isinstance(commands, list):
             commands = " && ".join(commands)
 
+        # For gpt-4o, just return the raw output since it handles its own fencing
+        if hasattr(self.llm, "model_name") and self.llm.model_name == "gpt-4o":
+            return super()._run(commands)
+
         # Get command and expected language
         try:
             result = self._get_command_and_language(commands)
