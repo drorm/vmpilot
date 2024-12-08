@@ -50,9 +50,6 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * Only execute valid bash commands
 * Use bash to view files using commands like cat, head, tail, or less
 * Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
-* You have a maximum of 5 operations to complete each task
-* Each command execution counts as one operation
-* If you reach the operation limit without completing the task, respond with "OPERATION LIMIT REACHED: [current status and what remains to be done]"
 </IMPORTANT>
 
 <TOOLS>
