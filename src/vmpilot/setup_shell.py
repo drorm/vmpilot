@@ -54,8 +54,6 @@ class SetupShellTool(ShellTool):
         if isinstance(commands, list):
             commands = " && ".join(commands)
 
-        logger.info(f"Running: {commands}")
-
         # Run the shell command and capture output
         raw_output = super()._run(commands)
 
@@ -64,5 +62,5 @@ class SetupShellTool(ShellTool):
         if commands.endswith(".md"):
             language = "markdown"
 
-        # Return the wrapped output with command included
-        return self._wrap_output(language, f"$ {commands}\n{raw_output}")
+        # Return with command as bold text before the fenced output
+        return f"\n**$ {commands}**\n{self._wrap_output(language, raw_output)}"
