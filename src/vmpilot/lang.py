@@ -34,6 +34,7 @@ from vmpilot.tools.langchain_edit import FileEditTool
 
 # Flag to enable beta features in Anthropic API
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
+PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
 # The system prompt that's passed on from webui.
 prompt_suffix: ContextVar[Optional[Any]] = ContextVar("prompt_suffix", default=None)
@@ -64,13 +65,20 @@ def _modify_state_messages(state: AgentState):
     # Keep the last N messages in the state as well as the system prompt
     N_MESSAGES = 30
 
-    # Our global system prompt
-    system_prompt = SYSTEM_PROMPT
-    # Append the suffix to the system prompt
+    # Handle system prompt with potential cache control
     suffix = prompt_suffix.get()
-    system_prompt = f"{system_prompt}\n\n{suffix}"
+    if isinstance(suffix, dict):
+        # Handle prompt with cache control
+        system_message = SystemMessage(
+            content=suffix["text"],
+            additional_kwargs={"cache_control": suffix.get("cache_control")}
+        )
+    else:
+        # Regular system prompt without cache control
+        system_prompt = f"{SYSTEM_PROMPT}\n\n{suffix}"
+        system_message = SystemMessage(content=system_prompt)
 
-    messages = [SystemMessage(content=system_prompt)] + state["messages"][:N_MESSAGES]
+    messages = [system_message] + state["messages"][:N_MESSAGES]
     return messages
 
 
@@ -122,7 +130,7 @@ async def create_agent(
             anthropic_api_key=api_key,
             timeout=30,  # Add 30-second timeout
             model_kwargs={
-                "extra_headers": {"anthropic-beta": COMPUTER_USE_BETA_FLAG},
+                "extra_headers": {"anthropic-beta": f"{COMPUTER_USE_BETA_FLAG},{PROMPT_CACHING_BETA_FLAG}"},
             },
         )
     elif provider == APIProvider.OPENAI:
@@ -144,6 +152,8 @@ async def create_agent(
 
     return agent
 
+
+from .prompt_cache import inject_prompt_caching, create_ephemeral_system_prompt, add_cache_control
 
 async def process_messages(
     *,
@@ -175,7 +185,12 @@ async def process_messages(
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
 
-    prompt_suffix.set(system_prompt_suffix)
+    # Handle prompt caching for Anthropic provider
+    if provider == APIProvider.ANTHROPIC:
+        inject_prompt_caching(messages)
+        prompt_suffix.set(create_ephemeral_system_prompt(SYSTEM_PROMPT, system_prompt_suffix))
+    else:
+        prompt_suffix.set(system_prompt_suffix)
     logger.debug("DEBUG: Creating agent")
     # Create agent
     agent = await create_agent(model, api_key, provider, temperature, max_tokens)
