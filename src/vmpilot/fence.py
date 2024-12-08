@@ -46,7 +46,11 @@ class FenceShellTool(ShellTool):
         # Wrap the shell output in Markdown code fences
         return f"\n```{language}\n{output}\n```\n"
 
-    def _run(self, commands: Union[str, List[str]], run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+    def _run(
+        self,
+        commands: Union[str, List[str]],
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -> str:
         if isinstance(commands, list):
             commands = " && ".join(commands)
 
