@@ -22,7 +22,7 @@ import platform
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
 from langchain_community.agent_toolkits import FileManagementToolkit
-from vmpilot.fence import FenceShellTool
+from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.langchain_edit import FileEditTool
 from vmpilot.config import Provider as APIProvider, config
 
@@ -86,7 +86,7 @@ def setup_tools(llm=None):
     # Initialize Shell Tool with fencing capability if LLM is provided
     if llm is not None:
         try:
-            shell_tool = FenceShellTool(llm=llm)
+            shell_tool = SetupShellTool(llm=llm)
             shell_tool.description = """Execute bash commands in the system. Input should be a single command string. Example inputs:
             - ls /path
             - cat file.txt
@@ -95,7 +95,7 @@ def setup_tools(llm=None):
             The output will be automatically formatted with appropriate markdown syntax."""
             tools.append(shell_tool)
         except Exception as e:
-            logger.error(f"Error: Error creating FenceShellTool: {e}")
+            logger.error(f"Error: Error creating SetupShellTool: {e}")
 
     # Add file editing tool (excluding view operations which are handled by shell tool)
     tools.append(FileEditTool(view_in_shell=True))

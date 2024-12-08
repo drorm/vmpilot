@@ -59,5 +59,10 @@ class SetupShellTool(ShellTool):
         # Run the shell command and capture output
         raw_output = super()._run(commands)
 
+        # Determine language based on file extension
+        language = "plaintext"
+        if commands.endswith(".md"):
+            language = "markdown"
+
         # Return the wrapped output with command included
-        return self._wrap_output("plaintext", f"$ {commands}\n{raw_output}")
+        return self._wrap_output(language, f"$ {commands}\n{raw_output}")

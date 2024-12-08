@@ -22,7 +22,9 @@ class ProviderConfig(BaseModel):
     api_key_path: str = Field(description="Default path to API key file")
     api_key_env: str = Field(description="Environment variable name for API key")
     beta_flags: Dict[str, str] = Field(default_factory=dict)
-    recursion_limit: int = Field(default=25, description="Maximum number of recursive steps the model can take")
+    recursion_limit: int = Field(
+        default=25, description="Maximum number of recursive steps the model can take"
+    )
 
 
 class ModelConfig(BaseModel):
