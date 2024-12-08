@@ -1,8 +1,9 @@
-from langchain_community.tools import ShellTool
+from .tools.shelltool import ShellTool
 from langchain_core.language_models import BaseChatModel
 from pydantic import Field
 import json
-from typing import Union, List
+from typing import Union, List, Optional
+from langchain_core.callbacks import CallbackManagerForToolRun
 
 
 class FenceShellTool(ShellTool):
@@ -45,7 +46,7 @@ class FenceShellTool(ShellTool):
         # Wrap the shell output in Markdown code fences
         return f"\n```{language}\n{output}\n```\n"
 
-    def _run(self, commands: Union[str, List[str]]) -> str:
+    def _run(self, commands: Union[str, List[str]], run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         if isinstance(commands, list):
             commands = " && ".join(commands)
 
