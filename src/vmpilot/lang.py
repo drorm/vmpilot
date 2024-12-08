@@ -1,6 +1,6 @@
 """
 LangChain-based implementation for VMPilot's core functionality.
-Replaces the original loop.py with LangChain tools and agents.
+Replaces the original loop.py from Claude Computer Use with LangChain tools and agents.
 """
 
 import logging
@@ -31,6 +31,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt.chat_agent_executor import AgentState
 
+# Flag to enable beta features in Anthropic API
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
 
 # The system prompt that's passed on from webui.
