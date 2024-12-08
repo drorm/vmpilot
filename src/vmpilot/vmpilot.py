@@ -155,7 +155,7 @@ class Pipeline:
                 return error_generator()
             return error_msg
 
-        from vmpilot.lang import process_messages, APIProvider
+        from vmpilot.lang import APIProvider, process_messages
 
         # Handle title request
         if body.get("title", False):

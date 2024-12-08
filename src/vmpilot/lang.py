@@ -5,8 +5,8 @@ Replaces the original loop.py from Claude Computer Use with LangChain tools and 
 
 import logging
 import os
-from enum import StrEnum
 from contextvars import ContextVar
+from enum import StrEnum
 from typing import Optional
 
 # Configure logging
@@ -15,21 +15,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-from typing import Any, Callable, Dict, List
-from datetime import datetime
 import platform
+from datetime import datetime
+from typing import Any, Callable, Dict, List
 
 from langchain_anthropic import ChatAnthropic
-from langchain_openai import ChatOpenAI
 from langchain_community.agent_toolkits import FileManagementToolkit
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.prebuilt import create_react_agent
+from langgraph.prebuilt.chat_agent_executor import AgentState
+
+from vmpilot.config import Provider as APIProvider
+from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.langchain_edit import FileEditTool
-from vmpilot.config import Provider as APIProvider, config
-
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langgraph.prebuilt import create_react_agent
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.prebuilt.chat_agent_executor import AgentState
 
 # Flag to enable beta features in Anthropic API
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"

@@ -1,9 +1,9 @@
-from typing import Optional, Type
+from typing import Any, Optional, Type
+
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
-from typing import Any
 
-from .core_edit import CoreEditTool, Command
+from .core_edit import Command, CoreEditTool
 
 
 class FileEditInput(BaseModel):
