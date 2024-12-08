@@ -1,5 +1,5 @@
 """
-LangChain-based implementation for VMPilot's core functionality.
+LangChain-based implementation for VMPilot's agent functionality.
 Replaces the original loop.py from Claude Computer Use with LangChain tools and agents.
 """
 
@@ -71,7 +71,7 @@ def _modify_state_messages(state: AgentState):
         # Handle prompt with cache control
         system_message = SystemMessage(
             content=suffix["text"],
-            additional_kwargs={"cache_control": suffix.get("cache_control")}
+            additional_kwargs={"cache_control": suffix.get("cache_control")},
         )
     else:
         # Regular system prompt without cache control
@@ -130,7 +130,9 @@ async def create_agent(
             anthropic_api_key=api_key,
             timeout=30,  # Add 30-second timeout
             model_kwargs={
-                "extra_headers": {"anthropic-beta": f"{COMPUTER_USE_BETA_FLAG},{PROMPT_CACHING_BETA_FLAG}"},
+                "extra_headers": {
+                    "anthropic-beta": f"{COMPUTER_USE_BETA_FLAG},{PROMPT_CACHING_BETA_FLAG}"
+                },
             },
         )
     elif provider == APIProvider.OPENAI:
@@ -153,7 +155,12 @@ async def create_agent(
     return agent
 
 
-from .prompt_cache import inject_prompt_caching, create_ephemeral_system_prompt, add_cache_control
+from .prompt_cache import (
+    inject_prompt_caching,
+    create_ephemeral_system_prompt,
+    add_cache_control,
+)
+
 
 async def process_messages(
     *,
@@ -188,7 +195,9 @@ async def process_messages(
     # Handle prompt caching for Anthropic provider
     if provider == APIProvider.ANTHROPIC:
         inject_prompt_caching(messages)
-        prompt_suffix.set(create_ephemeral_system_prompt(SYSTEM_PROMPT, system_prompt_suffix))
+        prompt_suffix.set(
+            create_ephemeral_system_prompt(SYSTEM_PROMPT, system_prompt_suffix)
+        )
     else:
         prompt_suffix.set(system_prompt_suffix)
     logger.debug("DEBUG: Creating agent")
