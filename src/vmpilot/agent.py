@@ -155,7 +155,7 @@ async def create_agent(
     return agent
 
 
-from .prompt_cache import (
+from vmpilot.prompt_cache import (
     inject_prompt_caching,
     create_ephemeral_system_prompt,
     add_cache_control,
@@ -217,12 +217,32 @@ async def process_messages(
                     # Handle structured content
                     for item in msg["content"]:
                         if item["type"] == "text":
+                            # Preserve cache control if present
+                            additional_kwargs = {}
+                            if "cache_control" in item:
+                                additional_kwargs["cache_control"] = item[
+                                    "cache_control"
+                                ]
                             formatted_messages.append(
-                                HumanMessage(content=item["text"])
+                                HumanMessage(
+                                    content=item["text"],
+                                    additional_kwargs=(
+                                        additional_kwargs if additional_kwargs else None
+                                    ),
+                                )
                             )
             elif msg["role"] == "assistant":
                 if isinstance(msg["content"], str):
-                    formatted_messages.append(AIMessage(content=msg["content"]))
+                    formatted_messages.append(
+                        AIMessage(
+                            content=msg["content"],
+                            additional_kwargs=(
+                                {"cache_control": {"type": "ephemeral"}}
+                                if provider == APIProvider.ANTHROPIC
+                                else None
+                            ),
+                        )
+                    )
                 elif isinstance(msg["content"], list):
                     # Combine all content parts into one message
                     content_parts = []
@@ -239,7 +259,14 @@ async def process_messages(
                             )
                     if content_parts:
                         formatted_messages.append(
-                            AIMessage(content="\n".join(content_parts))
+                            AIMessage(
+                                content="\n".join(content_parts),
+                                additional_kwargs=(
+                                    {"cache_control": {"type": "ephemeral"}}
+                                    if provider == APIProvider.ANTHROPIC
+                                    else None
+                                ),
+                            )
                         )
 
         logger.debug(f"Formatted {len(formatted_messages)} messages")
