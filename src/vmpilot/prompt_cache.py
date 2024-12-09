@@ -1,6 +1,6 @@
 """Prompt caching functionality for VMPilot."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 
 def inject_prompt_caching(messages: List[Dict[str, Any]]) -> None:

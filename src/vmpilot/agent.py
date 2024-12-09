@@ -5,10 +5,11 @@ Replaces the original loop.py from Claude Computer Use with LangChain tools and 
 
 import logging
 import os
-import httpx
 from contextvars import ContextVar
 from enum import StrEnum
 from typing import Optional
+
+import httpx
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -195,9 +196,9 @@ async def create_agent(
 
 
 from vmpilot.prompt_cache import (
-    inject_prompt_caching,
-    create_ephemeral_system_prompt,
     add_cache_control,
+    create_ephemeral_system_prompt,
+    inject_prompt_caching,
 )
 
 
