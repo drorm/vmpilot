@@ -17,8 +17,10 @@ if __name__ == "__main__":
 
 try:
     from .vmpilot import Pipeline  # Try relative import first
+    from .config import Provider, config
 except ImportError:
     from vmpilot import Pipeline  # Fallback to direct import
+    from vmpilot.config import Provider, config
 
 
 def create_mock_body(temperature: float = 0.7) -> Dict:
@@ -104,7 +106,6 @@ async def main(command: str, temperature: float, provider: str, model: str):
 
 
 if __name__ == "__main__":
-    from vmpilot.config import Provider, config
 
     parser = argparse.ArgumentParser(description="VMPilot CLI using LangChain")
     parser.add_argument("command", help="Command to execute")
@@ -128,8 +129,13 @@ if __name__ == "__main__":
     default_model = config.get_default_model()
     model_help = "Available models:\n"
     for provider in Provider:
-        prov_config = config.get_provider_config(provider)
-        model_help += f"\n{provider.value}: {', '.join(prov_config.available_models)}"
+        try:
+            prov_config = config.get_provider_config(provider)
+            if isinstance(prov_config, dict) and 'available_models' in prov_config:
+                models_str = ', '.join(prov_config['available_models'])
+                model_help += f"\n{provider.value}: {models_str}"
+        except Exception as e:
+            continue
 
     parser.add_argument(
         "-m",

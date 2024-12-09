@@ -32,8 +32,11 @@ stream_handler.setFormatter(log_format)
 logger.addHandler(stream_handler)
 logger.propagate = False
 
+# Import centralized configuration
+from vmpilot.config import config
+
 # Number of lines to show in tool output before truncating
-TOOL_OUTPUT_LINES = 7
+TOOL_OUTPUT_LINES = config.get_pipeline_setting('tool_output_lines')
 
 
 from vmpilot.config import Provider, config
@@ -48,13 +51,13 @@ class Pipeline:
         pipelines_dir: str = ""
 
         # Model configuration
-        provider: Provider = config.default_provider
+        provider: Provider = Provider(config.default_provider)
         model: str = ""  # Will be set based on provider's default
-        recursion_limit: int = 25  # Will be set based on provider's config
+        recursion_limit: int = config.get_pipeline_setting('recursion_limit')
 
-        # Inference parameters with OpenWebUI-compatible defaults
-        temperature: float = 0.8
-        max_tokens: int = 2048
+        # Inference parameters from config
+        temperature: float = config.get_pipeline_setting('temperature')
+        max_tokens: int = config.get_pipeline_setting('max_tokens')
 
         def __init__(self, **data):
             super().__init__(**data)
@@ -169,7 +172,7 @@ class Pipeline:
         elif model_id == "openai":
             self.valves.provider = Provider.OPENAI
             self.valves.api_key = self.valves.openai_api_key
-            self.valves.model = config.get_default_model(Provider.OPENAI)
+            self.valves.model = config.get_default_model()
         else:
             error_msg = f"Unsupported model: {model_id}"
             logger.error(error_msg)
@@ -255,7 +258,7 @@ class Pipeline:
                         )
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
-                        logger.debug(f"body: {body}")
+                        logger.info(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(
                                 model=(
