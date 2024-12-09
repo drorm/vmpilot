@@ -11,7 +11,7 @@ from enum import StrEnum
 from typing import Optional
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 # Set logging levels for specific loggers
 logger = logging.getLogger(__name__)
 
@@ -68,18 +68,44 @@ def _modify_state_messages(state: AgentState):
 
     # Handle system prompt with potential cache control
     suffix = prompt_suffix.get()
-    if isinstance(suffix, dict):
-        # Handle prompt with cache control
-        system_message = SystemMessage(
-            content=suffix["text"],
-            additional_kwargs={"cache_control": suffix.get("cache_control")},
-        )
+    if isinstance(suffix, list):
+        # Handle structured system prompt array
+        system_messages = []
+        for item in suffix:
+            if (
+                not isinstance(item, dict)
+                or "type" not in item
+                or item["type"] != "text"
+            ):
+                continue
+
+            text = item.get("text", "").strip()
+            if not text:
+                continue
+
+            additional_kwargs = {}
+            if "cache_control" in item:
+                additional_kwargs["cache_control"] = item["cache_control"]
+
+            system_messages.append(
+                SystemMessage(content=text, additional_kwargs=additional_kwargs)
+            )
+
+        if system_messages:
+            messages = system_messages + state["messages"][:N_MESSAGES]
+        else:
+            # Fallback to basic system message
+            messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"][
+                :N_MESSAGES
+            ]
     else:
         # Regular system prompt without cache control
-        system_prompt = f"{SYSTEM_PROMPT}\n\n{suffix}"
+        system_prompt = SYSTEM_PROMPT
+        if suffix and isinstance(suffix, str) and suffix.strip():
+            system_prompt = f"{system_prompt}\n\n{suffix.strip()}"
         system_message = SystemMessage(content=system_prompt)
+        messages = [system_message] + state["messages"][:N_MESSAGES]
 
-    messages = [system_message] + state["messages"][:N_MESSAGES]
     return messages
 
 
@@ -115,17 +141,6 @@ def setup_tools(llm=None):
     return tools
 
 
-# Custom transport for header debugging
-class HeaderDebugTransport(httpx.AsyncHTTPTransport):
-    async def handle_async_request(self, request):
-        if "anthropic" in request.url.host:
-            print("\n=== Anthropic API Headers ===")
-            for header, value in request.headers.items():
-                print(f"{header}: {value}")
-            print("========================\n")
-        return await super().handle_async_request(request)
-
-
 async def create_agent(
     model: str,
     api_key: str,
@@ -135,17 +150,11 @@ async def create_agent(
 ):
     """Create a LangChain agent with the configured tools."""
     if provider == APIProvider.ANTHROPIC:
-        print("\n=== Creating Anthropic LLM with headers ===")
         headers = {
             "anthropic-beta": f"{COMPUTER_USE_BETA_FLAG},{PROMPT_CACHING_BETA_FLAG}",
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
-        print("Headers being set:")
-        for k, v in headers.items():
-            print(f"{k}: {v}")
-        print("===============================\n")
-
         llm = ChatAnthropic(
             model=model,
             temperature=temperature,
@@ -156,6 +165,13 @@ async def create_agent(
                 "extra_headers": {
                     "anthropic-beta": f"{COMPUTER_USE_BETA_FLAG},{PROMPT_CACHING_BETA_FLAG}"
                 },
+                "system": [
+                    {
+                        "type": "text",
+                        "text": SYSTEM_PROMPT,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
             },
         )
     elif provider == APIProvider.OPENAI:
@@ -217,10 +233,10 @@ async def process_messages(
 
     # Handle prompt caching for Anthropic provider
     if provider == APIProvider.ANTHROPIC:
+        # Don't set system prompt in prompt_suffix since it's handled in model_kwargs
+        prompt_suffix.set(None)
+        # Just inject caching for message history
         inject_prompt_caching(messages)
-        prompt_suffix.set(
-            create_ephemeral_system_prompt(SYSTEM_PROMPT, system_prompt_suffix)
-        )
     else:
         prompt_suffix.set(system_prompt_suffix)
     logger.debug("DEBUG: Creating agent")
