@@ -212,7 +212,9 @@ async def process_messages(
             logger.debug(f"Processing message: {msg}")
             if msg["role"] == "user":
                 if isinstance(msg["content"], str):
-                    formatted_messages.append(HumanMessage(content=msg["content"]))
+                    formatted_messages.append(
+                        HumanMessage(content=msg["content"], additional_kwargs={})
+                    )
                 elif isinstance(msg["content"], list):
                     # Handle structured content
                     for item in msg["content"]:
@@ -226,9 +228,7 @@ async def process_messages(
                             formatted_messages.append(
                                 HumanMessage(
                                     content=item["text"],
-                                    additional_kwargs=(
-                                        additional_kwargs if additional_kwargs else None
-                                    ),
+                                    additional_kwargs=additional_kwargs if additional_kwargs else {}
                                 )
                             )
             elif msg["role"] == "assistant":
