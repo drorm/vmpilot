@@ -5,12 +5,13 @@ Replaces the original loop.py from Claude Computer Use with LangChain tools and 
 
 import logging
 import os
+import httpx
 from contextvars import ContextVar
 from enum import StrEnum
 from typing import Optional
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 # Set logging levels for specific loggers
 logger = logging.getLogger(__name__)
 
@@ -114,6 +115,17 @@ def setup_tools(llm=None):
     return tools
 
 
+# Custom transport for header debugging
+class HeaderDebugTransport(httpx.AsyncHTTPTransport):
+    async def handle_async_request(self, request):
+        if "anthropic" in request.url.host:
+            print("\n=== Anthropic API Headers ===")
+            for header, value in request.headers.items():
+                print(f"{header}: {value}")
+            print("========================\n")
+        return await super().handle_async_request(request)
+
+
 async def create_agent(
     model: str,
     api_key: str,
@@ -123,6 +135,17 @@ async def create_agent(
 ):
     """Create a LangChain agent with the configured tools."""
     if provider == APIProvider.ANTHROPIC:
+        print("\n=== Creating Anthropic LLM with headers ===")
+        headers = {
+            "anthropic-beta": f"{COMPUTER_USE_BETA_FLAG},{PROMPT_CACHING_BETA_FLAG}",
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        print("Headers being set:")
+        for k, v in headers.items():
+            print(f"{k}: {v}")
+        print("===============================\n")
+
         llm = ChatAnthropic(
             model=model,
             temperature=temperature,
@@ -228,7 +251,9 @@ async def process_messages(
                             formatted_messages.append(
                                 HumanMessage(
                                     content=item["text"],
-                                    additional_kwargs=additional_kwargs if additional_kwargs else {}
+                                    additional_kwargs=(
+                                        additional_kwargs if additional_kwargs else {}
+                                    ),
                                 )
                             )
             elif msg["role"] == "assistant":
