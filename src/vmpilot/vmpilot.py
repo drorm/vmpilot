@@ -187,6 +187,7 @@ class Pipeline:
                 # Extract system message
                 if role == "system" and isinstance(content, str):
                     system_prompt_suffix = content
+                    logger.debug(f"System message: {system_prompt_suffix}")
                     continue
 
                 if isinstance(content, str):

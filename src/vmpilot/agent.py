@@ -146,6 +146,7 @@ async def create_agent(
     model: str,
     api_key: str,
     provider: APIProvider,
+    system_prompt_suffix: str = "",
     temperature: float = 0.7,
     max_tokens: int = 4096,
 ):
@@ -169,7 +170,12 @@ async def create_agent(
                 "system": [
                     {
                         "type": "text",
-                        "text": SYSTEM_PROMPT,
+                        "text": SYSTEM_PROMPT
+                        + (
+                            "\n\n" + system_prompt_suffix
+                            if system_prompt_suffix
+                            else ""
+                        ),
                         "cache_control": {"type": "ephemeral"},
                     }
                 ],
@@ -232,17 +238,18 @@ async def process_messages(
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
 
+    # Set prompt suffix for both providers
+    prompt_suffix.set(system_prompt_suffix)
+
     # Handle prompt caching for Anthropic provider
     if provider == APIProvider.ANTHROPIC:
-        # Don't set system prompt in prompt_suffix since it's handled in model_kwargs
-        prompt_suffix.set(None)
-        # Just inject caching for message history
+        # Inject caching for message history
         inject_prompt_caching(messages)
-    else:
-        prompt_suffix.set(system_prompt_suffix)
     logger.debug("DEBUG: Creating agent")
     # Create agent
-    agent = await create_agent(model, api_key, provider, temperature, max_tokens)
+    agent = await create_agent(
+        model, api_key, provider, system_prompt_suffix, temperature, max_tokens
+    )
     logger.debug("DEBUG: Agent created successfully")
 
     # Convert messages to LangChain format
@@ -282,8 +289,7 @@ async def process_messages(
                     )
                     formatted_messages.append(
                         AIMessage(
-                            content=msg["content"],
-                            additional_kwargs=additional_kwargs
+                            content=msg["content"], additional_kwargs=additional_kwargs
                         )
                     )
                 elif isinstance(msg["content"], list):
@@ -309,7 +315,7 @@ async def process_messages(
                         formatted_messages.append(
                             AIMessage(
                                 content="\n".join(content_parts),
-                                additional_kwargs=additional_kwargs
+                                additional_kwargs=additional_kwargs,
                             )
                         )
 
