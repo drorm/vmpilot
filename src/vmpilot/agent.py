@@ -275,14 +275,15 @@ async def process_messages(
                             )
             elif msg["role"] == "assistant":
                 if isinstance(msg["content"], str):
+                    additional_kwargs = (
+                        {"cache_control": {"type": "ephemeral"}}
+                        if provider == APIProvider.ANTHROPIC
+                        else {}
+                    )
                     formatted_messages.append(
                         AIMessage(
                             content=msg["content"],
-                            additional_kwargs=(
-                                {"cache_control": {"type": "ephemeral"}}
-                                if provider == APIProvider.ANTHROPIC
-                                else None
-                            ),
+                            additional_kwargs=additional_kwargs
                         )
                     )
                 elif isinstance(msg["content"], list):
@@ -300,14 +301,15 @@ async def process_messages(
                                 f"Tool use: {item['name']}\nOutput: {tool_output}"
                             )
                     if content_parts:
+                        additional_kwargs = (
+                            {"cache_control": {"type": "ephemeral"}}
+                            if provider == APIProvider.ANTHROPIC
+                            else {}
+                        )
                         formatted_messages.append(
                             AIMessage(
                                 content="\n".join(content_parts),
-                                additional_kwargs=(
-                                    {"cache_control": {"type": "ephemeral"}}
-                                    if provider == APIProvider.ANTHROPIC
-                                    else None
-                                ),
+                                additional_kwargs=additional_kwargs
                             )
                         )
 
