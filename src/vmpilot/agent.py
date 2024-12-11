@@ -5,21 +5,31 @@ Replaces the original loop.py from Claude Computer Use with LangChain tools and 
 
 import logging
 import os
+import threading
+import psutil
 from contextvars import ContextVar
 from enum import StrEnum
 from typing import Optional
+import json
+from datetime import datetime
 
 import httpx
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-# Set logging levels for specific loggers
+# Configure logging with enhanced format for debugging and analysis
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s\n",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+# Create and configure the logger
 logger = logging.getLogger(__name__)
 
 
 import platform
 from datetime import datetime
 from typing import Any, Callable, Dict, List
+import traceback
 
 from langchain_anthropic import ChatAnthropic
 from langchain_community.agent_toolkits import FileManagementToolkit
@@ -61,6 +71,132 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * Use the bash tool to execute system commands. Provide commands as a single string.
 * Use the str_replace_editor tool for editing files.
 </TOOLS>"""
+
+
+def log_chain_of_thought(thought_type: str, content: Any):
+    """
+    Log chain of thought with detailed context
+
+    Args:
+        thought_type: Type of thought (e.g., 'tool_selection', 'reasoning', 'planning')
+        content: The actual thought content
+    """
+    log_message(
+        "CHAIN_OF_THOUGHT",
+        {
+            "type": thought_type,
+            "content": content,
+            "timestamp": datetime.now().isoformat(),
+            "memory_usage": psutil.Process().memory_info().rss / 1024 / 1024,  # MB
+            "context": {
+                "tool_history": getattr(log_chain_of_thought, "tool_history", []),
+                "step_count": getattr(log_chain_of_thought, "step_count", 0) + 1,
+            },
+        },
+        "debug",
+    )
+    # Update step count
+    log_chain_of_thought.step_count = getattr(log_chain_of_thought, "step_count", 0) + 1
+
+
+class ToolTracker:
+    """Tracks tool execution statistics and chain of thought"""
+
+    def __init__(self):
+        self.stats = {
+            "tool_calls": {},
+            "execution_times": {},
+            "chain_of_thought": [],
+            "cache_hits": 0,
+            "cache_misses": 0,
+        }
+
+    def log_tool_execution(self, tool_name: str, args: dict, thought: str = None):
+        """Log a tool execution with metadata"""
+        if tool_name not in self.stats["tool_calls"]:
+            self.stats["tool_calls"][tool_name] = []
+
+        execution_record = {
+            "timestamp": datetime.now().isoformat(),
+            "args": args,
+            "thought": thought,
+        }
+        self.stats["tool_calls"][tool_name].append(execution_record)
+
+        if thought:
+            self.stats["chain_of_thought"].append(
+                {
+                    "timestamp": execution_record["timestamp"],
+                    "thought": thought,
+                    "tool": tool_name,
+                }
+            )
+
+    def log_cache_event(self, hit: bool):
+        """Log cache hit/miss"""
+        if hit:
+            self.stats["cache_hits"] += 1
+        else:
+            self.stats["cache_misses"] += 1
+
+    def get_stats(self):
+        """Get current statistics"""
+        return {
+            "tools": {
+                name: len(calls) for name, calls in self.stats["tool_calls"].items()
+            },
+            "total_thoughts": len(self.stats["chain_of_thought"]),
+            "cache": {
+                "hits": self.stats["cache_hits"],
+                "misses": self.stats["cache_misses"],
+                "hit_ratio": (
+                    self.stats["cache_hits"]
+                    / (self.stats["cache_hits"] + self.stats["cache_misses"])
+                    if (self.stats["cache_hits"] + self.stats["cache_misses"]) > 0
+                    else 0
+                ),
+            },
+        }
+
+
+# Global tool tracker instance
+tool_tracker = ToolTracker()
+
+
+def log_message(category: str, message: Any, level: str = "info"):
+    """Structured logging helper for consistent formatting with enhanced metadata
+
+    Args:
+        category: The logging category/component
+        message: The message to log (can be any type)
+        level: Logging level (debug, info, warning, error)
+    """
+    log_func = getattr(logger, level)
+    try:
+        if isinstance(message, (dict, list)):
+            # Convert non-serializable objects to strings in dictionaries
+            def serialize_value(v):
+                try:
+                    json.dumps(v)
+                    return v
+                except (TypeError, ValueError):
+                    return str(v)
+
+            if isinstance(message, dict):
+                serializable_message = {
+                    k: serialize_value(v) for k, v in message.items()
+                }
+            else:  # list
+                serializable_message = [serialize_value(v) for v in message]
+            msg_content = json.dumps(serializable_message, indent=2)
+        else:
+            msg_content = str(message)
+
+        formatted_msg = f"{category}: {msg_content}"
+
+        log_func(formatted_msg)
+    except Exception as e:
+        log_func(f"{category}: Error formatting message: {str(e)}")
 
 
 def _modify_state_messages(state: AgentState):
@@ -216,7 +352,7 @@ async def process_messages(
     disable_logging: bool = False,
     recursion_limit: int = None,
 ) -> List[dict]:
-    logger.debug(f"DEBUG: model={model}, provider={provider}")
+    log_message("CONFIG", {"model": model, "provider": str(provider)}, "debug")
     """Process messages through the agent and handle outputs."""
     # Get recursion limit from config if not explicitly set
     if recursion_limit is None:
@@ -240,16 +376,19 @@ async def process_messages(
         inject_prompt_caching(messages)
     else:
         prompt_suffix.set(system_prompt_suffix)
-    logger.debug("DEBUG: Creating agent")
     # Create agent
     agent = await create_agent(model, api_key, provider, temperature, max_tokens)
-    logger.debug("DEBUG: Agent created successfully")
+    log_message("AGENT", "Agent initialized successfully", "debug")
 
     # Convert messages to LangChain format
     formatted_messages = []
     try:
         for msg in messages:
-            logger.debug(f"Processing message: {msg}")
+            log_message(
+                "MESSAGE_PROCESSING",
+                {"role": msg["role"], "content_type": type(msg["content"]).__name__},
+                "debug",
+            )
             if msg["role"] == "user":
                 if isinstance(msg["content"], str):
                     formatted_messages.append(
@@ -311,9 +450,13 @@ async def process_messages(
                             )
                         )
 
-        logger.debug(f"Formatted {len(formatted_messages)} messages")
+        log_message(
+            "MESSAGE_PROCESSING",
+            f"Successfully formatted {len(formatted_messages)} messages",
+            "debug",
+        )
     except Exception as e:
-        logger.error(f"Error formatting messages: {e}")
+        log_message("ERROR", {"error": str(e), "phase": "message_formatting"}, "error")
         raise
 
     # Stream agent responses
@@ -331,16 +474,67 @@ async def process_messages(
                 },
                 stream_mode="values",
             ):
-                logger.debug(f"Got response: {response}")
+                log_message("RESPONSE", response, "debug")
                 try:
-                    logger.debug(
-                        {"type": "text", "text": f"RAW LLM RESPONSE: {response}\n"}
+                    log_message(
+                        "LLM_RESPONSE", {"type": "text", "content": response}, "debug"
                     )
 
                     # Handle different response types
                     if "messages" in response:
                         message = response["messages"][-1]
                         content = message.content
+
+                        logger.debug(f"Received message: {message}")
+                        log_message(
+                            "MESSAGE_CONTENT",
+                            {
+                                "type": type(message).__name__,
+                                "content_type": type(content).__name__,
+                                "length": len(str(content)),
+                                "additional_kwargs": getattr(
+                                    message, "additional_kwargs", {}
+                                ),
+                                "response_metadata": getattr(
+                                    message, "response_metadata", {}
+                                ),
+                                "tool_calls": getattr(message, "tool_calls", []),
+                                "usage_metadata": getattr(
+                                    message, "usage_metadata", {}
+                                ),
+                                "raw_content": str(content),
+                            },
+                            "debug",
+                        )
+
+                        log_message(
+                            "MESSAGE_CONTENT",
+                            {
+                                type(message).__name__: str(content),
+                            },
+                            "info",
+                        )
+                        # Extract and log token usage and caching information
+                        response_metadata = getattr(message, "response_metadata", {})
+                        usage_metadata = getattr(message, "usage_metadata", {})
+                        tool_calls = getattr(message, "tool_calls", [])
+
+                        log_message(
+                            "TOKEN_USAGE",
+                            {
+                                "usage": response_metadata.get("usage", {}),
+                                "tool_calls": [
+                                    {
+                                        "name": tool["name"],
+                                        "args": tool["args"],
+                                        "type": tool["type"],
+                                    }
+                                    for tool in tool_calls
+                                ],
+                                "usage_metadata": usage_metadata,
+                            },
+                            "info",
+                        )
 
                         if isinstance(content, str):
                             # Skip if the content exactly matches the last user message
@@ -376,11 +570,28 @@ async def process_messages(
                                             item["name"],
                                         )
                                 else:
-                                    logger.warning(
-                                        f"Unknown content item type: {type(item)}"
+                                    log_message(
+                                        "WARNING",
+                                        {
+                                            "issue": "unknown_content_type",
+                                            "type": str(type(item)),
+                                        },
+                                        "warning",
                                     )
                 except Exception as e:
-                    logger.error(f"Error processing response: {e}")
+                    log_message(
+                        "ERROR",
+                        {
+                            "phase": "response_processing",
+                            "error": str(e),
+                            "stack_trace": (
+                                "".join(traceback.format_tb(e.__traceback__))
+                                if e.__traceback__
+                                else None
+                            ),
+                        },
+                        "error",
+                    )
                     output_callback(
                         {"type": "text", "text": f"Error processing response: {str(e)}"}
                     )
@@ -389,9 +600,23 @@ async def process_messages(
             message = ""
             if "Recursion limit" in error_message and "reached" in error_message:
                 message = f" I've done {recursion_limit} steps in a row. Let me know if you'd like me to continue. "
-                logger.info(message)
+                log_message(
+                    "RECURSION", {"limit": recursion_limit, "message": message}, "info"
+                )
             else:
-                logger.error(f"Error in agent stream: {e}")
+                log_message(
+                    "ERROR",
+                    {
+                        "phase": "agent_stream",
+                        "error": str(e),
+                        "stack_trace": (
+                            "".join(traceback.format_tb(e.__traceback__))
+                            if e.__traceback__
+                            else None
+                        ),
+                    },
+                    "error",
+                )
                 message = f"Error in agent stream: {str(e)}"
             output_callback({"type": "text", "text": f"{message}"})
 
