@@ -3,27 +3,17 @@ LangChain-based implementation for VMPilot's agent functionality.
 Replaces the original loop.py from Claude Computer Use with LangChain tools and agents.
 """
 
-import logging
 import os
 import threading
 import psutil
 from contextvars import ContextVar
 from enum import StrEnum
 from typing import Optional
-import json
 from datetime import datetime
 
 import httpx
 
-# Configure logging with enhanced format for debugging and analysis
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s\n",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
-# Create and configure the logger
-logger = logging.getLogger(__name__)
+from .agent_logging import log_message, log_error
 
 
 import platform
@@ -71,42 +61,6 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * Use the bash tool to execute system commands. Provide commands as a single string.
 * Use the str_replace_editor tool for editing files.
 </TOOLS>"""
-
-
-def log_message(category: str, message: Any, level: str = "info"):
-    """Structured logging helper for consistent formatting with enhanced metadata
-
-    Args:
-        category: The logging category/component
-        message: The message to log (can be any type)
-        level: Logging level (debug, info, warning, error)
-    """
-    log_func = getattr(logger, level)
-    try:
-        if isinstance(message, (dict, list)):
-            # Convert non-serializable objects to strings in dictionaries
-            def serialize_value(v):
-                try:
-                    json.dumps(v)
-                    return v
-                except (TypeError, ValueError):
-                    return str(v)
-
-            if isinstance(message, dict):
-                serializable_message = {
-                    k: serialize_value(v) for k, v in message.items()
-                }
-            else:  # list
-                serializable_message = [serialize_value(v) for v in message]
-            msg_content = json.dumps(serializable_message, indent=2)
-        else:
-            msg_content = str(message)
-
-        formatted_msg = f"{category}: {msg_content}"
-
-        log_func(formatted_msg)
-    except Exception as e:
-        log_func(f"{category}: Error formatting message: {str(e)}")
 
 
 def _modify_state_messages(state: AgentState):
@@ -179,7 +133,7 @@ def setup_tools(llm=None):
             The output will be automatically formatted with appropriate markdown syntax."""
             tools.append(shell_tool)
         except Exception as e:
-            logger.error(f"Error: Error creating SetupShellTool: {e}")
+            log_error("TOOLS", e, "setup_shell_tool")
 
     # Add file editing tool (excluding view operations which are handled by shell tool)
     tools.append(FileEditTool(view_in_shell=True))
@@ -269,14 +223,12 @@ async def process_messages(
         provider_config = config.get_provider_config(provider)
         recursion_limit = provider_config.recursion_limit
 
-    logging.getLogger("httpx").setLevel(logging.WARNING)
     if disable_logging:
         # Disable all logging if flag is set
-        logging.getLogger("vmpilot").setLevel(logging.WARNING)
-        logging.getLogger("httpx").setLevel(logging.ERROR)
-        logging.getLogger("httpcore").setLevel(logging.ERROR)
-        logging.getLogger("asyncio").setLevel(logging.ERROR)
-        logger.setLevel(logging.ERROR)
+        import logging
+
+        for logger_name in ["httpx", "vmpilot", "httpcore", "asyncio"]:
+            logging.getLogger(logger_name).setLevel(logging.ERROR)
 
     # Handle prompt caching for Anthropic provider
     if provider == APIProvider.ANTHROPIC:
@@ -371,7 +323,11 @@ async def process_messages(
 
     # Stream agent responses
     thread_id = f"vmpilot-{os.getpid()}"
-    logger.debug(f"Starting agent stream with {len(formatted_messages)} messages")
+    log_message(
+        "AGENT_STREAM",
+        f"Starting stream with {len(formatted_messages)} messages",
+        "debug",
+    )
 
     async def process_stream():
         try:
@@ -395,7 +351,7 @@ async def process_messages(
                         message = response["messages"][-1]
                         content = message.content
 
-                        logger.debug(f"Received message: {message}")
+                        log_message("MESSAGE_RECEIVED", str(message), "debug")
                         log_message(
                             "MESSAGE_CONTENT",
                             {
@@ -422,7 +378,7 @@ async def process_messages(
                             {
                                 type(message).__name__: str(content),
                             },
-                            "info",
+                            "debug",
                         )
                         # Extract and log token usage and caching information
                         response_metadata = getattr(message, "response_metadata", {})
