@@ -25,24 +25,29 @@ class SetupShellTool(ShellTool):
     class Config:
         arbitrary_types_allowed = True
 
-    def _get_command_and_language(self, query: str) -> Dict[str, str]:
-        # Prompt to generate the shell command and expected language
+    def _detect_output_language(self, command: str, output: str) -> str:
+        """Use LLM to detect the appropriate language for syntax highlighting"""
         prompt = (
-            "You will help generate shell commands and predict the language for syntax highlighting.\n"
-            "Based on the following input, provide the shell command to run "
-            "and the expected language for the output in Markdown.\n\n"
-            "Input: {query}\n"
+            "Based on the input, generate shell commands to run and predict the language for syntax highlighting.\n"
+            "The syntax highlighting is for markdown. Respond with a single word like 'python', "
+            "'bash', 'json', etc. For regular command output use 'plaintext'.\n\n"
+            f"Command: {command}\n"
+            f"Output Sample: {output[:200]}...\n\n"
+            "Language:"
         )
 
         response = self.llm.invoke(prompt)
-        if hasattr(response, "content"):
-            response = response.content
+        language = (
+            response.content.strip().lower()
+            if hasattr(response, "content")
+            else response.strip().lower()
+        )
 
-        try:
-            result = ShellCommandResponse.parse_raw(response)
-            return result.dict()
-        except Exception as e:
-            raise RuntimeError(f"Error parsing command response: {e}")
+        # Fallback to plaintext if language is empty or too long
+        if not language or len(language) > 20:
+            language = "plaintext"
+
+        return language
 
     def _wrap_output(self, language: str, output: str) -> str:
         """Wrap the shell output in Markdown code fences"""
@@ -58,11 +63,10 @@ class SetupShellTool(ShellTool):
 
         # Run the shell command and capture output
         raw_output = super()._run(commands)
+        logger.debug(f"Shell output: {raw_output}")
 
-        # Determine language based on file extension
-        language = "plaintext"
-        if commands.endswith(".md"):
-            language = "markdown"
+        # Detect appropriate language for the output
+        language = self._detect_output_language(commands, raw_output)
 
         # Return with command as bold text before the fenced output
         return f"\n**$ {commands}**\n{self._wrap_output(language, raw_output)}"
