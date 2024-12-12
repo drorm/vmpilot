@@ -412,7 +412,7 @@ async def process_messages(
 
                                         elif item.get("type") == "tool_use":
                                             # Log tool usage declaration
-                                            logger.info(
+                                            logger.debug(
                                                 f"Tool use declared: {item['name']}"
                                             )
 
