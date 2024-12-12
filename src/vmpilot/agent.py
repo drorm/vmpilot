@@ -151,12 +151,30 @@ async def create_agent(
     max_tokens: int = 4096,
 ):
     """Create a LangChain agent with the configured tools."""
+    enable_prompt_caching = False
+    betas = [COMPUTER_USE_BETA_FLAG]
+
+    if provider == APIProvider.ANTHROPIC:
+        enable_prompt_caching = True
+
+    if enable_prompt_caching:
+        betas.append(PROMPT_CACHING_BETA_FLAG)
+
     if provider == APIProvider.ANTHROPIC:
         headers = {
-            "anthropic-beta": f"{COMPUTER_USE_BETA_FLAG},{PROMPT_CACHING_BETA_FLAG}",
+            "anthropic-beta": ",".join(betas),
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
+        system_content = {
+            "type": "text",
+            "text": SYSTEM_PROMPT
+            + ("\n\n" + system_prompt_suffix if system_prompt_suffix else ""),
+        }
+
+        if enable_prompt_caching:
+            system_content["cache_control"] = {"type": "ephemeral"}
+
         llm = ChatAnthropic(
             model=model,
             temperature=temperature,
@@ -164,21 +182,8 @@ async def create_agent(
             anthropic_api_key=api_key,
             timeout=30,  # Add 30-second timeout
             model_kwargs={
-                "extra_headers": {
-                    "anthropic-beta": f"{COMPUTER_USE_BETA_FLAG},{PROMPT_CACHING_BETA_FLAG}"
-                },
-                "system": [
-                    {
-                        "type": "text",
-                        "text": SYSTEM_PROMPT
-                        + (
-                            "\n\n" + system_prompt_suffix
-                            if system_prompt_suffix
-                            else ""
-                        ),
-                        "cache_control": {"type": "ephemeral"},
-                    }
-                ],
+                "extra_headers": {"anthropic-beta": ",".join(betas)},
+                "system": [system_content],
             },
         )
     elif provider == APIProvider.OPENAI:
@@ -242,7 +247,9 @@ async def process_messages(
     prompt_suffix.set(system_prompt_suffix)
 
     # Handle prompt caching for Anthropic provider
-    if provider == APIProvider.ANTHROPIC:
+    enable_prompt_caching = provider == APIProvider.ANTHROPIC
+
+    if enable_prompt_caching:
         # Inject caching for message history
         inject_prompt_caching(messages)
     logger.debug("DEBUG: Creating agent")

@@ -14,14 +14,17 @@ def inject_prompt_caching(messages: List[Dict[str, Any]]) -> None:
     for message in reversed(messages):
         if message["role"] == "user" and isinstance(message.get("content"), list):
             content = message["content"]
-            if breakpoints_remaining > 0 and content:
+            if not content:
+                continue
+            if breakpoints_remaining > 0:
                 breakpoints_remaining -= 1
                 # Add cache control to the last content item
                 content[-1]["cache_control"] = {"type": "ephemeral"}
-            elif breakpoints_remaining <= 0 and content:
-                # Remove cache control if present
-                if "cache_control" in content[-1]:
-                    del content[-1]["cache_control"]
+            else:
+                # Explicitly remove cache control from older messages
+                content[-1].pop("cache_control", None)
+                # We only need to remove one extra turn's cache control
+                break
 
 
 def add_cache_control(content: Dict[str, Any]) -> Dict[str, Any]:
