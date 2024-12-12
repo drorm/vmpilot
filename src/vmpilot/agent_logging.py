@@ -17,11 +17,12 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
 def _serialize_message(message: Union[Dict, list, Any]) -> str:
     """Serialize message to JSON string, converting non-serializable objects to strings."""
     if not isinstance(message, (dict, list)):
         return str(message)
-        
+
     def serialize_value(v):
         try:
             json.dumps(v)
@@ -33,10 +34,11 @@ def _serialize_message(message: Union[Dict, list, Any]) -> str:
         serializable_message = {k: serialize_value(v) for k, v in message.items()}
     else:  # list
         serializable_message = [serialize_value(v) for v in message]
-    
+
     return json.dumps(serializable_message, indent=2)
 
-def log_message(category: str, message: Any, level: str = "info") -> None:
+
+def log_message(category: str, message: Any, level: str = "debug") -> None:
     """Log a message with consistent formatting."""
     log_func = getattr(logger, level)
     try:
@@ -45,6 +47,7 @@ def log_message(category: str, message: Any, level: str = "info") -> None:
     except Exception as e:
         log_func(f"{category}: Error formatting message: {str(e)}")
 
+
 def log_error(category: str, error: Exception, phase: str) -> None:
     """Log an error with stack trace."""
     log_message(
@@ -52,20 +55,24 @@ def log_error(category: str, error: Exception, phase: str) -> None:
         {
             "phase": phase,
             "error": str(error),
-            "stack_trace": "".join(traceback.format_tb(error.__traceback__)) if error.__traceback__ else None
+            "stack_trace": (
+                "".join(traceback.format_tb(error.__traceback__))
+                if error.__traceback__
+                else None
+            ),
         },
-        "error"
+        "error",
     )
 
-def log_message_processing(role: str, content_type: str) -> None:
+
+def log_message_processing(role: str, content_type: str, level: str = "debug") -> None:
     """Log when a message is being processed"""
     log_message(
-        "MESSAGE_PROCESSING",
-        {"role": role, "content_type": content_type},
-        "debug"
+        "MESSAGE_PROCESSING", {"role": role, "content_type": content_type}, level
     )
 
-def log_message_content(message: Any, content: Any) -> None:
+
+def log_message_content(message: Any, content: Any, level: str = "debug") -> None:
     """Log detailed message content information"""
     log_message(
         "MESSAGE_CONTENT",
@@ -79,15 +86,16 @@ def log_message_content(message: Any, content: Any) -> None:
             "usage_metadata": getattr(message, "usage_metadata", {}),
             "raw_content": str(content),
         },
-        "debug"
+        level,
     )
 
-def log_token_usage(message: Any) -> None:
+
+def log_token_usage(message: Any, level: str = "debug") -> None:
     """Log token usage and related metadata"""
     response_metadata = getattr(message, "response_metadata", {})
     usage_metadata = getattr(message, "usage_metadata", {})
     tool_calls = getattr(message, "tool_calls", [])
-    
+
     log_message(
         "TOKEN_USAGE",
         {
@@ -102,19 +110,21 @@ def log_token_usage(message: Any) -> None:
             ],
             "usage_metadata": usage_metadata,
         },
-        "debug"
+        level,
     )
 
-def log_tool_message(message: Any) -> None:
+
+def log_tool_message(message: Any, level: str = "debug") -> None:
     """Log when a tool message is received"""
     log_message("TOOL_MESSAGE_RECEIVED", str(message), "debug")
 
-def log_message_received(message: Any) -> None:
+
+def log_message_received(message: Any, level: str = "debug") -> None:
     """Log when any message is received"""
     log_message(
         "MESSAGE_RECEIVED",
         {
             type(message).__name__: str(message),
         },
-        "debug"
+        level,
     )
