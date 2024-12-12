@@ -12,6 +12,16 @@ from typing import Optional
 import httpx
 
 # Configure logging
+from .agent_logging import (
+    log_message,
+    log_error,
+    log_message_processing,
+    log_message_content,
+    log_token_usage,
+    log_tool_message,
+    log_message_received,
+)
+
 logging.basicConfig(level=logging.INFO)
 # Set logging levels for specific loggers
 logger = logging.getLogger(__name__)
@@ -264,6 +274,7 @@ async def process_messages(
     try:
         for msg in messages:
             logger.debug(f"Processing message: {msg}")
+            log_message_processing(msg["role"], type(msg["content"]).__name__)
             if msg["role"] == "user":
                 if isinstance(msg["content"], str):
                     formatted_messages.append(
@@ -357,6 +368,11 @@ async def process_messages(
                         message = response["messages"][-1]
                         content = message.content
 
+                        if type(message).__name__ == "ToolMessage":
+                            log_tool_message(message)
+                        log_message_received(message)
+                        log_message_content(message, content)
+                        log_token_usage(message)
                         if isinstance(content, str):
                             # Skip if the content exactly matches the last user message
                             if (
@@ -375,6 +391,7 @@ async def process_messages(
                                             {"type": "text", "text": item["text"]}
                                         )
                                     elif item.get("type") == "tool_use":
+                                        # First notify about the tool being used
                                         output_callback(
                                             {
                                                 "type": "tool_use",
@@ -382,14 +399,26 @@ async def process_messages(
                                                 "input": item.get("input", {}),
                                             }
                                         )
-                                        # Pass tool output back to agent
-                                        tool_output_callback(
-                                            {
-                                                "output": item.get("output", ""),
+
+                                        # Then handle the tool output as a proper result
+                                        if "output" in item:
+                                            tool_result = {
+                                                "output": item["output"],
                                                 "error": None,
-                                            },
-                                            item["name"],
-                                        )
+                                            }
+                                            # Send tool result through callback
+                                            tool_output_callback(
+                                                tool_result, item["name"]
+                                            )
+
+                                            # Also emit the output as a tool result
+                                            output_callback(
+                                                {
+                                                    "type": "tool_result",
+                                                    "name": item["name"],
+                                                    "output": tool_result,
+                                                }
+                                            )
                                 else:
                                     logger.warning(
                                         f"Unknown content item type: {type(item)}"
