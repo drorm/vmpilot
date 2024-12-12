@@ -164,6 +164,7 @@ async def create_agent(
     enable_prompt_caching = False
     betas = [COMPUTER_USE_BETA_FLAG]
 
+    # openai caches automatically
     if provider == APIProvider.ANTHROPIC:
         enable_prompt_caching = True
 
@@ -366,63 +367,72 @@ async def process_messages(
                     # Handle different response types
                     if "messages" in response:
                         message = response["messages"][-1]
-                        content = message.content
 
-                        if type(message).__name__ == "ToolMessage":
-                            log_tool_message(message)
+                        # Log message receipt and usage for all message types
                         log_message_received(message)
-                        log_message_content(message, content)
                         log_token_usage(message)
-                        if isinstance(content, str):
-                            # Skip if the content exactly matches the last user message
-                            if (
-                                formatted_messages
-                                and isinstance(formatted_messages[-1], HumanMessage)
-                                and content.strip()
-                                == formatted_messages[-1].content.strip()
-                            ):
-                                continue
-                            output_callback({"type": "text", "text": content})
-                        elif isinstance(content, list):
-                            for item in content:
-                                if isinstance(item, dict):
-                                    if item.get("type") == "text":
-                                        output_callback(
-                                            {"type": "text", "text": item["text"]}
-                                        )
-                                    elif item.get("type") == "tool_use":
-                                        # First notify about the tool being used
-                                        output_callback(
-                                            {
-                                                "type": "tool_use",
-                                                "name": item["name"],
-                                                "input": item.get("input", {}),
-                                            }
-                                        )
 
-                                        # Then handle the tool output as a proper result
-                                        if "output" in item:
-                                            tool_result = {
-                                                "output": item["output"],
-                                                "error": None,
-                                            }
-                                            # Send tool result through callback
-                                            tool_output_callback(
-                                                tool_result, item["name"]
-                                            )
+                        from langchain_core.messages import (
+                            ToolMessage,
+                            AIMessage,
+                            HumanMessage,
+                        )
 
-                                            # Also emit the output as a tool result
+                        if isinstance(message, ToolMessage):
+                            logger.debug(f"isinstance message: {message}")
+                            # Handle tool message responses
+                            log_tool_message(message)
+                            log_message_content(message, message.content)
+
+                            tool_result = {"output": message.content, "error": None}
+                            tool_output_callback(tool_result, message.name)
+
+                        elif isinstance(message, AIMessage):
+                            content = message.content
+                            log_message_content(message, content)
+
+                            if isinstance(content, str):
+                                # Skip if content matches last user message
+                                if (
+                                    formatted_messages
+                                    and isinstance(formatted_messages[-1], HumanMessage)
+                                    and content.strip()
+                                    == formatted_messages[-1].content.strip()
+                                ):
+                                    continue
+                                output_callback({"type": "text", "text": content})
+
+                            elif isinstance(content, list):
+                                for item in content:
+                                    if isinstance(item, dict):
+                                        if item.get("type") == "text":
                                             output_callback(
-                                                {
-                                                    "type": "tool_result",
-                                                    "name": item["name"],
-                                                    "output": tool_result,
-                                                }
+                                                {"type": "text", "text": item["text"]}
                                             )
-                                else:
-                                    logger.warning(
-                                        f"Unknown content item type: {type(item)}"
-                                    )
+
+                                        elif item.get("type") == "tool_use":
+                                            # Log tool usage declaration
+                                            logger.info(
+                                                f"Tool use declared: {item['name']}"
+                                            )
+
+                                            # Handle tool output if present
+                                            if "output" in item:
+                                                tool_result = {
+                                                    "output": item["output"],
+                                                    "error": None,
+                                                }
+                                                tool_output_callback(
+                                                    tool_result, item["name"]
+                                                )
+                                    else:
+                                        logger.warning(
+                                            f"Unknown content item type: {type(item)}"
+                                        )
+                        else:
+                            logger.debug(
+                                f"Unhandled message type: {type(message).__name__}"
+                            )
                 except Exception as e:
                     logger.error(f"Error processing response: {e}")
                     output_callback(

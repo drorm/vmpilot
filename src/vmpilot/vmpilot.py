@@ -33,7 +33,7 @@ logger.addHandler(stream_handler)
 logger.propagate = False
 
 # Number of lines to show in tool output before truncating
-TOOL_OUTPUT_LINES = 7
+TOOL_OUTPUT_LINES = 15
 
 
 from vmpilot.config import Provider, config
@@ -213,13 +213,13 @@ class Pipeline:
                 loop_done = threading.Event()
 
                 def output_callback(content: Dict):
-                    logger.debug(f"DEBUG: Received content: {content}")
+                    logger.debug(f"Received content: {content}")
                     if content["type"] == "text":
                         logger.debug(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
 
                 def tool_callback(result, tool_id):
-                    logger.debug(f"DEBUG: Tool callback received result: {result}")
+                    logger.debug(f"Tool callback received result: {result}")
                     outputs = []
 
                     # Handle dictionary results (from FileEditTool)
@@ -234,17 +234,14 @@ class Pipeline:
                             if hasattr(result, "exit_code") and result.exit_code:
                                 outputs.append(f"Exit code: {result.exit_code}")
                             outputs.append(result.error)
-                        if hasattr(result, "output") and result.output:
-                            outputs.append(f"\n```plain\n{result.output}\n```\n")
 
                     logger.debug("Tool callback queueing outputs:")
                     for output in outputs:
                         output_lines = str(output).splitlines()
                         truncated_output = "\n".join(output_lines[:TOOL_OUTPUT_LINES])
                         if len(output_lines) > TOOL_OUTPUT_LINES:
-                            truncated_output += f"\n... (and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)"
-                        logger.info(f"{truncated_output}")
-                        output_queue.put(output)
+                            truncated_output += f"\n...\n```\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
+                        output_queue.put(truncated_output)
 
                 def run_loop():
                     try:
