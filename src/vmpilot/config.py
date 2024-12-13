@@ -1,11 +1,20 @@
 """
 Configuration management for VMPilot providers and models.
+Uses configuration from config.ini in the root directory.
 """
 
+import os
+from configparser import ConfigParser
 from enum import StrEnum
 from typing import Dict, Optional
+from pathlib import Path
 
 from pydantic import BaseModel, Field
+
+# Read configuration file
+config_path = Path(__file__).parent.parent.parent / "config.ini"
+parser = ConfigParser()
+parser.read(config_path)
 
 
 class Provider(StrEnum):
@@ -32,30 +41,36 @@ class ModelConfig(BaseModel):
     """Global model configuration"""
 
     providers: Dict[Provider, ProviderConfig] = Field(default_factory=dict)
-    default_provider: Provider = Provider.ANTHROPIC
+    default_provider: Provider
 
     def __init__(self):
-        super().__init__()
-        self.providers = {
-            Provider.ANTHROPIC: ProviderConfig(
-                default_model="claude-3-5-sonnet-20241022",
-                available_models=[
-                    "claude-3-5-sonnet-20241022",
-                    "claude-3-opus-20240229",
-                ],
-                api_key_path="~/.anthropic/api_key",
-                api_key_env="ANTHROPIC_API_KEY",
-                beta_flags={"computer-use-2024-10-22": "true"},
-                recursion_limit=25,
-            ),
-            Provider.OPENAI: ProviderConfig(
-                default_model="gpt-4o",
-                available_models=["gpt-4o", "gpt-4"],
-                api_key_path="~/.openai",
-                api_key_env="OPENAI_API_KEY",
-                recursion_limit=25,
-            ),
-        }
+        # Read from config.ini
+        default_provider = parser.get("general", "default_provider")
+        recursion_limit = parser.getint("model", "recursion_limit")
+
+        # Initialize providers
+        providers = {}
+        for provider in Provider:
+            if parser.has_section(provider.value):
+                section = parser[provider.value]
+                beta_flags = {}
+                if "beta_flags" in section:
+                    for flag_pair in section["beta_flags"].split(","):
+                        key, value = flag_pair.split(":")
+                        beta_flags[key] = value
+
+                providers[provider] = ProviderConfig(
+                    default_model=section["default_model"],
+                    available_models=section["available_models"].split(","),
+                    api_key_path=section["api_key_path"],
+                    api_key_env=section["api_key_env"],
+                    beta_flags=beta_flags,
+                    recursion_limit=recursion_limit,
+                )
+
+        super().__init__(
+            providers=providers, default_provider=Provider(default_provider)
+        )
 
     def get_provider_config(
         self, provider: Optional[Provider] = None
@@ -79,4 +94,4 @@ class ModelConfig(BaseModel):
 config = ModelConfig()
 
 # Number of lines to show in tool output before truncating
-TOOL_OUTPUT_LINES = 15
+TOOL_OUTPUT_LINES = parser.getint("general", "tool_output_lines")
