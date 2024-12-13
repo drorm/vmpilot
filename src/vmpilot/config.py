@@ -77,3 +77,6 @@ class ModelConfig(BaseModel):
 
 # Global configuration instance
 config = ModelConfig()
+
+# Number of lines to show in tool output before truncating
+TOOL_OUTPUT_LINES = 15

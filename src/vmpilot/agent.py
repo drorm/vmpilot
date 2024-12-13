@@ -9,6 +9,8 @@ from contextvars import ContextVar
 from enum import StrEnum
 from typing import Optional
 
+from vmpilot.config import TOOL_OUTPUT_LINES
+
 import httpx
 
 # Configure logging
@@ -68,6 +70,8 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * Only execute valid bash commands
 * Use bash to view files using commands like cat, head, tail, or less
 * Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
+* The output of the command is passed fully to you, but truncated to {TOOL_OUTPUT_LINES} lines when shown to the user
+
 </IMPORTANT>
 
 <TOOLS>

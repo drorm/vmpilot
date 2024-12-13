@@ -32,8 +32,8 @@ stream_handler.setFormatter(log_format)
 logger.addHandler(stream_handler)
 logger.propagate = False
 
-# Number of lines to show in tool output before truncating
-TOOL_OUTPUT_LINES = 15
+# Import tool output truncation setting
+from vmpilot.config import TOOL_OUTPUT_LINES
 
 
 from vmpilot.config import Provider, config
