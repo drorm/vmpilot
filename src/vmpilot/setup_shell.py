@@ -31,5 +31,4 @@ class SetupShellTool(ShellTool):
             command=command, language=language, run_manager=run_manager
         )
 
-        # Add the original command as a bold header before the output
-        return f"\n**$ {command}**\n{result}"
+        return f"\n{result}"
