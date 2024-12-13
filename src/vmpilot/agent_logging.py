@@ -3,8 +3,8 @@ Logging utilities for the VMPilot agent.
 Provides structured logging functionality with enhanced metadata and formatting.
 """
 
-import logging
 import json
+import logging
 import traceback
 from typing import Any, Dict, Union
 

@@ -33,10 +33,7 @@ logger.addHandler(stream_handler)
 logger.propagate = False
 
 # Import tool output truncation setting
-from vmpilot.config import TOOL_OUTPUT_LINES
-
-
-from vmpilot.config import Provider, config
+from vmpilot.config import TOOL_OUTPUT_LINES, Provider, config
 
 
 class Pipeline:

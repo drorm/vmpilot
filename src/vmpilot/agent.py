@@ -9,19 +9,19 @@ from contextvars import ContextVar
 from enum import StrEnum
 from typing import Optional
 
-from vmpilot.config import TOOL_OUTPUT_LINES
-
 import httpx
+
+from vmpilot.config import TOOL_OUTPUT_LINES
 
 # Configure logging
 from .agent_logging import (
-    log_message,
     log_error,
-    log_message_processing,
+    log_message,
     log_message_content,
+    log_message_processing,
+    log_message_received,
     log_token_usage,
     log_tool_message,
-    log_message_received,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -380,9 +380,9 @@ async def process_messages(
                         log_token_usage(message)
 
                         from langchain_core.messages import (
-                            ToolMessage,
                             AIMessage,
                             HumanMessage,
+                            ToolMessage,
                         )
 
                         if isinstance(message, ToolMessage):
