@@ -62,6 +62,9 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 </SYSTEM_CAPABILITY>
 
 <IMPORTANT>
+* When using the shell tool, provide both command and language parameters:
+  - command: The shell command to execute (e.g. "ls -l", "cat file.py")
+  - language: Output syntax highlighting (e.g. "bash", "python", "text")
 * Only execute valid bash commands
 * Use bash to view files using commands like cat, head, tail, or less
 * Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
