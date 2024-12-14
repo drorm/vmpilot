@@ -3,13 +3,13 @@ Configuration management for VMPilot providers and models.
 Uses configuration from config.ini in the root directory.
 """
 
+import logging
 import os
 import sys
 from configparser import ConfigParser
 from enum import StrEnum
-from typing import Dict, Optional
 from pathlib import Path
-import logging
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 

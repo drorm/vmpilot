@@ -41,8 +41,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
 
-from vmpilot.config import Provider as APIProvider, config, TEMPERATURE, MAX_TOKENS
-
+from vmpilot.config import MAX_TOKENS, TEMPERATURE
+from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.langchain_edit import FileEditTool
