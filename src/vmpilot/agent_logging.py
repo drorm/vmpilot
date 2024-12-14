@@ -124,9 +124,19 @@ def log_message_processing(role: str, content_type: str, level: str = "debug") -
 
 
 def log_message_content(message: Any, content: Any, level: str = "debug") -> None:
-    """Log detailed message content information"""
+    """Log message content in both simple and detailed format"""
+    # Log simple content with just the raw content in a readable format
     log_message(
         "MESSAGE_CONTENT",
+        {
+            "content": str(content).strip(),
+        },
+        level,
+    )
+
+    # Log full detailed content information
+    log_message(
+        "MESSAGE_CONTENT_FULL",
         {
             "type": type(message).__name__,
             "content_type": type(content).__name__,
@@ -142,27 +152,25 @@ def log_message_content(message: Any, content: Any, level: str = "debug") -> Non
 
 
 def log_token_usage(message: Any, level: str = "debug") -> None:
-    """Log token usage and related metadata"""
+    """Log token usage and related metadata in a single line"""
     response_metadata = getattr(message, "response_metadata", {})
     usage_metadata = getattr(message, "usage_metadata", {})
-    tool_calls = getattr(message, "tool_calls", [])
+    usage = response_metadata.get("usage", {})
 
-    log_message(
-        "TOKEN_USAGE",
-        {
-            "usage": response_metadata.get("usage", {}),
-            "tool_calls": [
-                {
-                    "name": tool["name"],
-                    "args": tool["args"],
-                    "type": tool["type"],
-                }
-                for tool in tool_calls
-            ],
-            "usage_metadata": usage_metadata,
-        },
-        level,
-    )
+    # Combine all token usage into a single line
+    token_info = {
+        "prompt_tokens": usage.get(
+            "prompt_tokens", usage_metadata.get("prompt_tokens", 0)
+        ),
+        "completion_tokens": usage.get(
+            "completion_tokens", usage_metadata.get("completion_tokens", 0)
+        ),
+        "total_tokens": usage.get(
+            "total_tokens", usage_metadata.get("total_tokens", 0)
+        ),
+    }
+
+    log_message("TOKEN_USAGE", token_info, level)
 
 
 def log_tool_message(message: Any, level: str = "debug") -> None:

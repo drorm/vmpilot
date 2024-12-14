@@ -383,7 +383,6 @@ async def process_messages(
                 },
                 stream_mode="values",
             ):
-                logger.debug(f"Got response: {response}")
                 try:
                     logger.debug(
                         {"type": "text", "text": f"RAW LLM RESPONSE: {response}\n"}
