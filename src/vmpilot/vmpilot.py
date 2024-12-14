@@ -40,6 +40,7 @@ from vmpilot.config import (
     TEMPERATURE,
     MAX_TOKENS,
     RECURSION_LIMIT,
+    DEFAULT_PROVIDER,
 )
 
 
@@ -52,7 +53,7 @@ class Pipeline:
         pipelines_dir: str = ""
 
         # Model configuration
-        provider: Provider = config.default_provider
+        provider: Provider = Provider(DEFAULT_PROVIDER)
         model: str = ""  # Will be set based on provider's default
         recursion_limit: int = RECURSION_LIMIT  # Will be set based on provider's config
 

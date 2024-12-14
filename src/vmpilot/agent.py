@@ -180,6 +180,11 @@ async def create_agent(
         betas.append(PROMPT_CACHING_BETA_FLAG)
 
     if provider == APIProvider.ANTHROPIC:
+        # Get beta flags from config
+        provider_config = config.get_provider_config(APIProvider.ANTHROPIC)
+        if provider_config.beta_flags:
+            betas.extend([flag for flag in provider_config.beta_flags.keys()])
+
         headers = {
             "anthropic-beta": ",".join(betas),
             "anthropic-version": "2023-06-01",
