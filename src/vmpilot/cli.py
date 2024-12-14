@@ -21,12 +21,12 @@ except ImportError:
     from vmpilot import Pipeline  # Fallback to direct import
 
 
-def create_mock_body(temperature: float = 0.7) -> Dict:
+def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
     """Create a mock body for pipeline calls"""
     return {
         "temperature": temperature,
         "stream": True,
-        "debug": False,  # Set to True to enable debug logging
+        "debug": debug,  # Set to True to enable debug logging
         "max_tokens": 8192,  # For LangChain compatibility
     }
 
@@ -48,7 +48,9 @@ def create_mock_messages(command: str) -> List[Dict]:
     ]
 
 
-async def main(command: str, temperature: float, provider: str, model: str):
+async def main(
+    command: str, temperature: float, provider: str, model: str, debug: bool = False
+):
     """Main CLI execution flow"""
     pipeline = Pipeline()
     # Convert provider string to enum
@@ -57,7 +59,12 @@ async def main(command: str, temperature: float, provider: str, model: str):
     pipeline.valves.model = model
 
     # Create mock pipeline call parameters
-    body = create_mock_body(temperature)
+    if debug:
+        from vmpilot.agent import set_logging_level
+
+        set_logging_level("DEBUG")
+
+    body = create_mock_body(temperature, debug)
     messages = create_mock_messages(command)
 
     # Execute pipeline
@@ -138,6 +145,14 @@ if __name__ == "__main__":
         default=default_model,
         help=f"Model to use (default: {default_model})\n{model_help}",
     )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Enable debug logging",
+    )
     args = parser.parse_args()
 
-    asyncio.run(main(args.command, args.temperature, args.provider, args.model))
+    asyncio.run(
+        main(args.command, args.temperature, args.provider, args.model, args.debug)
+    )

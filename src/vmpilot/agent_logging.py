@@ -6,7 +6,58 @@ Provides structured logging functionality with enhanced metadata and formatting.
 import json
 import logging
 import traceback
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional
+
+# Global logger instances
+logger = None
+ALL_LOGGERS = []  # Keep track of all loggers
+
+
+def setup_logging(level: str = "INFO") -> None:
+    """
+    Setup global logging configuration with the specified level.
+
+    Args:
+        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    """
+    global logger
+
+    # Convert string level to logging constant
+    numeric_level = getattr(logging, level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f"Invalid log level: {level}")
+
+    # Configure root logger
+    logging.basicConfig(
+        level=numeric_level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    # Update all registered loggers
+    for logger in ALL_LOGGERS:
+        logger.setLevel(numeric_level)
+
+    logger = logging.getLogger("vmpilot")
+    logger.setLevel(numeric_level)
+
+
+def get_logger(name: str) -> logging.Logger:
+    """
+    Get or create a logger with the specified name.
+    The logger will be tracked for global level management.
+
+    Args:
+        name: Name for the logger
+
+    Returns:
+        logging.Logger: Configured logger instance
+    """
+    logger = logging.getLogger(name)
+    if logger not in ALL_LOGGERS:
+        ALL_LOGGERS.append(logger)
+    return logger
+
 
 # Configure logging with enhanced format for debugging and analysis
 logging.basicConfig(

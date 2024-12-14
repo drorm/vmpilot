@@ -22,11 +22,23 @@ from .agent_logging import (
     log_message_received,
     log_token_usage,
     log_tool_message,
+    setup_logging,
+    get_logger,
 )
 
-logging.basicConfig(level=logging.INFO)
-# Set logging levels for specific loggers
-logger = logging.getLogger(__name__)
+
+def set_logging_level(level: str = "INFO") -> None:
+    """
+    Set the global logging level for all VMPilot components.
+
+    Args:
+        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    """
+    setup_logging(level)
+
+
+# Initialize default logging
+logger = get_logger(__name__)
 
 
 import platform
