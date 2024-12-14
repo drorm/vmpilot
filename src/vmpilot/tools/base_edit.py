@@ -82,7 +82,7 @@ class BaseEditTool:
         return (
             f"Here's the result of running `cat -n` on {file_descriptor}:\n```\n"
             + "\n".join(numbered_lines)
-            + "\n```\n"
+            + "\n```\n\n"
         )
 
     def maybe_truncate(self, text: str, max_length: int = 2000) -> str:
