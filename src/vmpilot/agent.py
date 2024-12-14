@@ -41,7 +41,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
 
-from vmpilot.config import Provider as APIProvider
+from vmpilot.config import Provider as APIProvider, config, TEMPERATURE, MAX_TOKENS
+
 from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.langchain_edit import FileEditTool
@@ -164,8 +165,8 @@ async def create_agent(
     api_key: str,
     provider: APIProvider,
     system_prompt_suffix: str = "",
-    temperature: float = 0.7,
-    max_tokens: int = 4096,
+    temperature: float = TEMPERATURE,
+    max_tokens: int = MAX_TOKENS,
 ):
     """Create a LangChain agent with the configured tools."""
     enable_prompt_caching = False
@@ -208,7 +209,7 @@ async def create_agent(
         llm = ChatOpenAI(
             model=model,
             temperature=temperature,
-            max_tokens=1024,
+            max_tokens=MAX_TOKENS,
             openai_api_key=api_key,
             timeout=30,
         )
@@ -240,8 +241,8 @@ async def process_messages(
     output_callback: Callable[[Dict], None],
     tool_output_callback: Callable[[Any, str], None],
     api_key: str,
-    max_tokens: int = 8192,
-    temperature: float = 0.7,
+    max_tokens: int = MAX_TOKENS,
+    temperature: float = TEMPERATURE,
     disable_logging: bool = False,
     recursion_limit: int = None,
 ) -> List[dict]:

@@ -95,3 +95,8 @@ config = ModelConfig()
 
 # Number of lines to show in tool output before truncating
 TOOL_OUTPUT_LINES = parser.getint("general", "tool_output_lines")
+
+# Inference parameters
+TEMPERATURE = parser.getfloat("inference", "temperature")
+MAX_TOKENS = parser.getint("inference", "max_tokens")
+RECURSION_LIMIT = parser.getint("model", "recursion_limit")

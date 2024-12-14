@@ -33,7 +33,14 @@ logger.addHandler(stream_handler)
 logger.propagate = False
 
 # Import tool output truncation setting
-from vmpilot.config import TOOL_OUTPUT_LINES, Provider, config
+from vmpilot.config import (
+    Provider,
+    config,
+    TOOL_OUTPUT_LINES,
+    TEMPERATURE,
+    MAX_TOKENS,
+    RECURSION_LIMIT,
+)
 
 
 class Pipeline:
@@ -47,11 +54,11 @@ class Pipeline:
         # Model configuration
         provider: Provider = config.default_provider
         model: str = ""  # Will be set based on provider's default
-        recursion_limit: int = 25  # Will be set based on provider's config
+        recursion_limit: int = RECURSION_LIMIT  # Will be set based on provider's config
 
-        # Inference parameters with OpenWebUI-compatible defaults
-        temperature: float = 0.8
-        max_tokens: int = 2048
+        # Inference parameters from config
+        temperature: float = TEMPERATURE
+        max_tokens: int = MAX_TOKENS
 
         def __init__(self, **data):
             super().__init__(**data)
