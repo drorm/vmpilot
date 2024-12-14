@@ -63,7 +63,7 @@ class ShellTool(BaseTool):
             # Format the output with the specified language and include the original command
             formatted_result = f"**$ {command}**\n"
             if result:
-                formatted_result += f"\n```{language}\n{result}\n```"
+                formatted_result += f"\n```{language}\n{result}\n```\n\n"
             return formatted_result
 
         except Exception as e:
