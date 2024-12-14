@@ -13,6 +13,7 @@ import logging
 import os
 import queue
 import threading
+import traceback
 from typing import Dict, Generator, Iterator, List, Union
 
 from pydantic import BaseModel
@@ -34,28 +35,28 @@ logger.propagate = False
 
 # Import tool output truncation setting
 from vmpilot.config import (
-    Provider,
-    config,
-    TOOL_OUTPUT_LINES,
-    TEMPERATURE,
+    DEFAULT_PROVIDER,
     MAX_TOKENS,
     RECURSION_LIMIT,
-    DEFAULT_PROVIDER,
+    TEMPERATURE,
+    TOOL_OUTPUT_LINES,
+    Provider,
+    config,
 )
 
 
 class Pipeline:
     class Valves(BaseModel):
-        # Required runtime parameters
+        # Runtime parameters
         anthropic_api_key: str = ""
         openai_api_key: str = ""
-        api_key: str = ""  # Will be set based on active provider
+        api_key: str = ""  # Set based on active provider
         pipelines_dir: str = ""
 
-        # Model configuration
+        # Model configuration (inherited from config)
         provider: Provider = Provider(DEFAULT_PROVIDER)
-        model: str = ""  # Will be set based on provider's default
-        recursion_limit: int = RECURSION_LIMIT  # Will be set based on provider's config
+        model: str = ""  # Set based on provider's default
+        recursion_limit: int = RECURSION_LIMIT
 
         # Inference parameters from config
         temperature: float = TEMPERATURE
@@ -63,16 +64,27 @@ class Pipeline:
 
         def __init__(self, **data):
             super().__init__(**data)
+            self._sync_with_config()
+
+        def _sync_with_config(self):
+            """Synchronize valve state with config defaults"""
             if not self.model:
                 self.model = config.get_default_model(self.provider)
+
+            provider_config = config.get_provider_config(self.provider)
             if self.recursion_limit is None:
-                provider_config = config.get_provider_config(self.provider)
                 self.recursion_limit = provider_config.recursion_limit
-            # Set initial API key based on provider
-            if self.provider == Provider.ANTHROPIC:
-                self.api_key = self.anthropic_api_key
-            else:
-                self.api_key = self.openai_api_key
+
+            # Update API key based on provider
+            self._update_api_key()
+
+        def _update_api_key(self):
+            """Update api_key based on current provider"""
+            self.api_key = (
+                self.anthropic_api_key
+                if self.provider == Provider.ANTHROPIC
+                else self.openai_api_key
+            )
 
     def __init__(self):
         self.name = "VMPilot Pipeline"
@@ -93,7 +105,9 @@ class Pipeline:
         logger.debug(f"on_shutdown:{__name__}")
 
     async def on_valves_updated(self):
-        logger.debug(f"on_valves_updated:{__name__}")
+        """Handle valve updates by re-syncing configuration"""
+        self.valves._sync_with_config()
+        logger.debug(f"Valves updated and synced with config")
 
     def pipelines(self) -> List[dict]:
         """Return list of supported models/pipelines"""
@@ -124,33 +138,11 @@ class Pipeline:
             logging.getLogger().setLevel(logging.ERROR)
             logger.disabled = True
 
-        # Validate API key based on provider
-        if self.valves.provider == Provider.ANTHROPIC:
-            if not self.valves.api_key or len(self.valves.api_key) < 32:
-                error_msg = "Error: Invalid or missing Anthropic API key"
-                logger.error(error_msg)
-                if body.get("stream", False):
-
-                    def error_generator():
-                        yield {"type": "text", "text": error_msg}
-
-                    return error_generator()
-                return error_msg
-            api_key = self.valves.api_key
-        elif self.valves.provider == Provider.OPENAI:
-            if not self.valves.api_key or len(self.valves.api_key) < 32:
-                error_msg = "Error: Invalid or missing OpenAI API key"
-                logger.error(error_msg)
-                if body.get("stream", False):
-
-                    def error_generator():
-                        yield {"type": "text", "text": error_msg}
-
-                    return error_generator()
-                return error_msg
-            api_key = self.valves.api_key
-        else:
-            error_msg = f"Error: Unsupported provider {self.valves.provider}"
+        # Validate API key
+        if not self.valves.api_key or len(self.valves.api_key) < 32:
+            error_msg = (
+                f"Error: Invalid or missing {self.valves.provider.value} API key"
+            )
             logger.error(error_msg)
             if body.get("stream", False):
 
@@ -166,17 +158,22 @@ class Pipeline:
         if body.get("title", False):
             return "VMPilot Pipeline"
 
-        # Set provider and model based on selected model_id
-        if model_id == "anthropic":
-            self.valves.provider = Provider.ANTHROPIC
-            self.valves.api_key = self.valves.anthropic_api_key
-            self.valves.model = config.get_default_model(Provider.ANTHROPIC)
-        elif model_id == "openai":
-            self.valves.provider = Provider.OPENAI
-            self.valves.api_key = self.valves.openai_api_key
-            self.valves.model = config.get_default_model(Provider.OPENAI)
-        else:
-            error_msg = f"Unsupported model: {model_id}"
+        # Update provider and related configuration based on model ID
+        try:
+            # Convert model_id to Provider enum and validate
+            try:
+                new_provider = Provider(model_id)
+            except ValueError:
+                error_msg = f"Unsupported model: {model_id}"
+                logger.error(error_msg)
+                return error_msg
+
+            # Update provider and sync configuration
+            self.valves.provider = new_provider
+            self.valves._sync_with_config()
+
+        except Exception as e:
+            error_msg = f"Error updating provider: {str(e)}"
             logger.error(error_msg)
             return error_msg
 
@@ -250,31 +247,18 @@ class Pipeline:
 
                 def run_loop():
                     try:
-                        api_key = (
-                            self.valves.api_key
-                            if self.valves.provider == Provider.OPENAI
-                            else self.valves.api_key
-                        )
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(
-                                model=(
-                                    self.valves.model
-                                    if self.valves.provider == Provider.OPENAI
-                                    else self.valves.model
-                                ),
-                                provider=(
-                                    APIProvider.OPENAI
-                                    if self.valves.provider == Provider.OPENAI
-                                    else APIProvider.ANTHROPIC
-                                ),
+                                model=self.valves.model,
+                                provider=APIProvider(self.valves.provider.value),
                                 system_prompt_suffix=system_prompt_suffix,
                                 messages=formatted_messages,
                                 output_callback=output_callback,
                                 tool_output_callback=tool_callback,
-                                api_key=api_key,
+                                api_key=self.valves.api_key,
                                 max_tokens=1024,
                                 temperature=body.get(
                                     "temperature", self.valves.temperature
@@ -287,6 +271,7 @@ class Pipeline:
                         )
                     except Exception as e:
                         logger.error(f"Error in sampling loop: {e}")
+                        logger.error("".join(traceback.format_tb(e.__traceback__)))
                     finally:
                         loop_done.set()
                         loop.close()
