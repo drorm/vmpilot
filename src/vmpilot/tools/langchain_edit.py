@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type
+from typing import Any, ClassVar, Optional, Type
 
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
@@ -63,7 +63,35 @@ class FileEditTool(BaseTool):
         result = await self.editor.execute(command, path, **kwargs)
         if not result.success:
             raise Exception(result.error or result.message)
-        return result.message
+
+        formatted_cmd = f"\n**$ {self._format_command(command, path, **kwargs)}**\n"
+        return formatted_cmd + result.message
+
+    MAX_DISPLAY_LENGTH: ClassVar[int] = 100  # Maximum length for displayed strings
+
+    def _truncate_str(self, s: str, max_len: int = None) -> str:
+        """Truncate string with ellipsis if too long"""
+        if max_len is None:
+            max_len = self.MAX_DISPLAY_LENGTH
+        if len(s) <= max_len:
+            return s
+        return s[: max_len - 3] + "..."
+
+    def _format_command(self, command: Command, path: str, **kwargs) -> str:
+        """Format the edit command for display"""
+        if command == "create":
+            content = self._truncate_str(kwargs.get("file_text", ""))
+            return f"create {path} '{content}'"
+        elif command == "str_replace":
+            old = self._truncate_str(kwargs.get("old_str", ""), 40)
+            new = self._truncate_str(kwargs.get("new_str", ""), 40)
+            return f"str_replace {path} '{old}' '{new}'"
+        elif command == "insert":
+            content = self._truncate_str(kwargs.get("new_str", ""))
+            return f"insert {path} line:{kwargs.get('insert_line', 0)} '{content}'"
+        elif command == "undo_edit":
+            return f"undo_edit {path}"
+        return f"{command} {path}"
 
     def _run(self, command: Command, path: str, **kwargs) -> str:
         """Synchronous execution of edit commands"""
@@ -77,4 +105,6 @@ class FileEditTool(BaseTool):
         result = asyncio.run(self.editor.execute(command, path, **kwargs))
         if not result.success:
             raise Exception(result.error or result.message)
-        return result.message
+
+        formatted_cmd = f"\n**$ {self._format_command(command, path, **kwargs)}**\n"
+        return formatted_cmd + result.message

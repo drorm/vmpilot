@@ -15,7 +15,7 @@ echo "Raw output:"
 echo "$output"
 
 # Extract the plain text output - handle both formats
-actual_output=$(echo "$output" | grep -A 10 "Executing command:" | grep -v "Executing command:" | grep -o "test[12]\.[a-z]*" | sort -u)
+actual_output=$(echo "$output" | grep -o "\`test[12]\.[a-z]*\`\|\btest[12]\.[a-z]*\b" | tr -d '\`' | sort -u)
 echo "Processed output:"
 echo "$actual_output"
 

@@ -34,7 +34,18 @@ def create_mock_body(temperature: float = 0.7) -> Dict:
 def create_mock_messages(command: str) -> List[Dict]:
     """Create initial message history with user command"""
     # Format messages for LangChain compatibility
-    return [{"role": "user", "content": [{"type": "text", "text": command}]}]
+    return [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": command,
+                    "cache_control": {"type": "persistent"},
+                }
+            ],
+        }
+    ]
 
 
 async def main(command: str, temperature: float, provider: str, model: str):

@@ -1,3 +1,5 @@
+"""Tool for executing shell commands with proper output formatting."""
+
 import json
 import logging
 import platform
@@ -13,37 +15,66 @@ from pydantic import BaseModel, Field, model_validator
 logger = logging.getLogger(__name__)
 
 
+class ShellInput(BaseModel):
+    """Input schema for shell commands."""
+
+    command: str = Field(description="The shell command to execute")
+    language: str = Field(
+        default="bash",
+        description="Output language for syntax highlighting (e.g. 'bash', 'python', 'text')",
+    )
+
+
 class ShellTool(BaseTool):
-    """Tool for executing shell commands."""
+    """Tool for executing shell commands with formatted output."""
 
     name: str = "shell"
-    description: str = (
-        "Execute bash commands in the system. Input should be a single command string."
-    )
+    description: str = """Execute bash commands in the system. Input should be a single command string. Examples:
+            - ls /path
+            - cat file.txt
+            - head -n 10 file.md
+            - grep pattern file
+            The output will be automatically formatted with appropriate markdown syntax."""
+    args_schema: Type[BaseModel] = ShellInput
 
     def _run(
         self,
-        commands: Union[str, List[str]],
+        command: str,
+        language: str = "bash",
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        """Run the shell command."""
-        if isinstance(commands, list):
-            commands = " && ".join(commands)
-
+        """Execute shell command and return formatted output."""
         try:
+            # Execute the command
             output = subprocess.run(
-                commands, shell=True, capture_output=True, text=True
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                executable="/bin/bash",
             )
-            if output.returncode != 0 and output.stderr:
-                return f"Error: {output.stderr}"
-            return output.stdout if output.stdout else output.stderr
+
+            # Combine stdout and stderr if there's an error
+            if output.returncode != 0:
+                result = f"{output.stdout}\n{output.stderr}".strip()
+            else:
+                result = output.stdout.strip()
+
+            # Format the output with the specified language and include the original command
+            formatted_result = f"**$ {command}**\n"
+            if result:
+                formatted_result += f"\n```{language}\n{result}\n```\n\n"
+            return formatted_result
+
         except Exception as e:
+            logger.error(f"Error executing command '{command}': {str(e)}")
             return f"Error: {str(e)}"
 
     async def _arun(
         self,
-        commands: Union[str, List[str]],
+        command: str,
+        language: str = "bash",
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Run the shell command asynchronously."""
-        return self._run(commands, run_manager)
+        return self._run(command=command, language=language, run_manager=run_manager)

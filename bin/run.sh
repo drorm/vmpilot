@@ -1,6 +1,4 @@
 #!/bin/bash
-export ANTHROPIC_API_KEY=`cat ~/.anthropic/api_key`
-
 # Fail on any error
 set -e
 

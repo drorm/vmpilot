@@ -1,5 +1,5 @@
 """
-LangChain-based implementation for VMPilot's core functionality.
+LangChain-based implementation for VMPilot's agent functionality.
 Replaces the original loop.py from Claude Computer Use with LangChain tools and agents.
 """
 
@@ -9,7 +9,21 @@ from contextvars import ContextVar
 from enum import StrEnum
 from typing import Optional
 
+import httpx
+
+from vmpilot.config import TOOL_OUTPUT_LINES
+
 # Configure logging
+from .agent_logging import (
+    log_error,
+    log_message,
+    log_message_content,
+    log_message_processing,
+    log_message_received,
+    log_token_usage,
+    log_tool_message,
+)
+
 logging.basicConfig(level=logging.INFO)
 # Set logging levels for specific loggers
 logger = logging.getLogger(__name__)
@@ -27,6 +41,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
 
+from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
@@ -50,9 +65,14 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 </SYSTEM_CAPABILITY>
 
 <IMPORTANT>
+* When using the shell tool, provide both command and language parameters:
+  - command: The shell command to execute (e.g. "ls -l", "cat file.py")
+  - language: Output syntax highlighting (e.g. "bash", "python", "text")
 * Only execute valid bash commands
 * Use bash to view files using commands like cat, head, tail, or less
 * Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
+* The output of the command is passed fully to you, but truncated to {TOOL_OUTPUT_LINES} lines when shown to the user
+
 </IMPORTANT>
 
 <TOOLS>
@@ -67,18 +87,44 @@ def _modify_state_messages(state: AgentState):
 
     # Handle system prompt with potential cache control
     suffix = prompt_suffix.get()
-    if isinstance(suffix, dict):
-        # Handle prompt with cache control
-        system_message = SystemMessage(
-            content=suffix["text"],
-            additional_kwargs={"cache_control": suffix.get("cache_control")}
-        )
+    if isinstance(suffix, list):
+        # Handle structured system prompt array
+        system_messages = []
+        for item in suffix:
+            if (
+                not isinstance(item, dict)
+                or "type" not in item
+                or item["type"] != "text"
+            ):
+                continue
+
+            text = item.get("text", "").strip()
+            if not text:
+                continue
+
+            additional_kwargs = {}
+            if "cache_control" in item:
+                additional_kwargs["cache_control"] = item["cache_control"]
+
+            system_messages.append(
+                SystemMessage(content=text, additional_kwargs=additional_kwargs)
+            )
+
+        if system_messages:
+            messages = system_messages + state["messages"][:N_MESSAGES]
+        else:
+            # Fallback to basic system message
+            messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"][
+                :N_MESSAGES
+            ]
     else:
         # Regular system prompt without cache control
-        system_prompt = f"{SYSTEM_PROMPT}\n\n{suffix}"
+        system_prompt = SYSTEM_PROMPT
+        if suffix and isinstance(suffix, str) and suffix.strip():
+            system_prompt = f"{system_prompt}\n\n{suffix.strip()}"
         system_message = SystemMessage(content=system_prompt)
+        messages = [system_message] + state["messages"][:N_MESSAGES]
 
-    messages = [system_message] + state["messages"][:N_MESSAGES]
     return messages
 
 
@@ -118,11 +164,41 @@ async def create_agent(
     model: str,
     api_key: str,
     provider: APIProvider,
-    temperature: float = 0.7,
-    max_tokens: int = 4096,
+    system_prompt_suffix: str = "",
+    temperature: float = TEMPERATURE,
+    max_tokens: int = MAX_TOKENS,
 ):
     """Create a LangChain agent with the configured tools."""
+    enable_prompt_caching = False
+    betas = [COMPUTER_USE_BETA_FLAG]
+
+    # openai caches automatically
     if provider == APIProvider.ANTHROPIC:
+        enable_prompt_caching = True
+
+    if enable_prompt_caching:
+        betas.append(PROMPT_CACHING_BETA_FLAG)
+
+    if provider == APIProvider.ANTHROPIC:
+        # Get beta flags from config
+        provider_config = config.get_provider_config(APIProvider.ANTHROPIC)
+        if provider_config.beta_flags:
+            betas.extend([flag for flag in provider_config.beta_flags.keys()])
+
+        headers = {
+            "anthropic-beta": ",".join(betas),
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        system_content = {
+            "type": "text",
+            "text": SYSTEM_PROMPT
+            + ("\n\n" + system_prompt_suffix if system_prompt_suffix else ""),
+        }
+
+        if enable_prompt_caching:
+            system_content["cache_control"] = {"type": "ephemeral"}
+
         llm = ChatAnthropic(
             model=model,
             temperature=temperature,
@@ -130,14 +206,15 @@ async def create_agent(
             anthropic_api_key=api_key,
             timeout=30,  # Add 30-second timeout
             model_kwargs={
-                "extra_headers": {"anthropic-beta": f"{COMPUTER_USE_BETA_FLAG},{PROMPT_CACHING_BETA_FLAG}"},
+                "extra_headers": {"anthropic-beta": ",".join(betas)},
+                "system": [system_content],
             },
         )
     elif provider == APIProvider.OPENAI:
         llm = ChatOpenAI(
             model=model,
             temperature=temperature,
-            max_tokens=1024,
+            max_tokens=MAX_TOKENS,
             openai_api_key=api_key,
             timeout=30,
         )
@@ -153,7 +230,12 @@ async def create_agent(
     return agent
 
 
-from .prompt_cache import inject_prompt_caching, create_ephemeral_system_prompt, add_cache_control
+from vmpilot.prompt_cache import (
+    add_cache_control,
+    create_ephemeral_system_prompt,
+    inject_prompt_caching,
+)
+
 
 async def process_messages(
     *,
@@ -164,8 +246,8 @@ async def process_messages(
     output_callback: Callable[[Dict], None],
     tool_output_callback: Callable[[Any, str], None],
     api_key: str,
-    max_tokens: int = 8192,
-    temperature: float = 0.7,
+    max_tokens: int = MAX_TOKENS,
+    temperature: float = TEMPERATURE,
     disable_logging: bool = False,
     recursion_limit: int = None,
 ) -> List[dict]:
@@ -185,15 +267,20 @@ async def process_messages(
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
 
+    # Set prompt suffix for both providers
+    prompt_suffix.set(system_prompt_suffix)
+
     # Handle prompt caching for Anthropic provider
-    if provider == APIProvider.ANTHROPIC:
+    enable_prompt_caching = provider == APIProvider.ANTHROPIC
+
+    if enable_prompt_caching:
+        # Inject caching for message history
         inject_prompt_caching(messages)
-        prompt_suffix.set(create_ephemeral_system_prompt(SYSTEM_PROMPT, system_prompt_suffix))
-    else:
-        prompt_suffix.set(system_prompt_suffix)
     logger.debug("DEBUG: Creating agent")
     # Create agent
-    agent = await create_agent(model, api_key, provider, temperature, max_tokens)
+    agent = await create_agent(
+        model, api_key, provider, system_prompt_suffix, temperature, max_tokens
+    )
     logger.debug("DEBUG: Agent created successfully")
 
     # Convert messages to LangChain format
@@ -201,19 +288,42 @@ async def process_messages(
     try:
         for msg in messages:
             logger.debug(f"Processing message: {msg}")
+            log_message_processing(msg["role"], type(msg["content"]).__name__)
             if msg["role"] == "user":
                 if isinstance(msg["content"], str):
-                    formatted_messages.append(HumanMessage(content=msg["content"]))
+                    formatted_messages.append(
+                        HumanMessage(content=msg["content"], additional_kwargs={})
+                    )
                 elif isinstance(msg["content"], list):
                     # Handle structured content
                     for item in msg["content"]:
                         if item["type"] == "text":
+                            # Preserve cache control if present
+                            additional_kwargs = {}
+                            if "cache_control" in item:
+                                additional_kwargs["cache_control"] = item[
+                                    "cache_control"
+                                ]
                             formatted_messages.append(
-                                HumanMessage(content=item["text"])
+                                HumanMessage(
+                                    content=item["text"],
+                                    additional_kwargs=(
+                                        additional_kwargs if additional_kwargs else {}
+                                    ),
+                                )
                             )
             elif msg["role"] == "assistant":
                 if isinstance(msg["content"], str):
-                    formatted_messages.append(AIMessage(content=msg["content"]))
+                    additional_kwargs = (
+                        {"cache_control": {"type": "ephemeral"}}
+                        if provider == APIProvider.ANTHROPIC
+                        else {}
+                    )
+                    formatted_messages.append(
+                        AIMessage(
+                            content=msg["content"], additional_kwargs=additional_kwargs
+                        )
+                    )
                 elif isinstance(msg["content"], list):
                     # Combine all content parts into one message
                     content_parts = []
@@ -229,8 +339,16 @@ async def process_messages(
                                 f"Tool use: {item['name']}\nOutput: {tool_output}"
                             )
                     if content_parts:
+                        additional_kwargs = (
+                            {"cache_control": {"type": "ephemeral"}}
+                            if provider == APIProvider.ANTHROPIC
+                            else {}
+                        )
                         formatted_messages.append(
-                            AIMessage(content="\n".join(content_parts))
+                            AIMessage(
+                                content="\n".join(content_parts),
+                                additional_kwargs=additional_kwargs,
+                            )
                         )
 
         logger.debug(f"Formatted {len(formatted_messages)} messages")
@@ -262,45 +380,72 @@ async def process_messages(
                     # Handle different response types
                     if "messages" in response:
                         message = response["messages"][-1]
-                        content = message.content
 
-                        if isinstance(content, str):
-                            # Skip if the content exactly matches the last user message
-                            if (
-                                formatted_messages
-                                and isinstance(formatted_messages[-1], HumanMessage)
-                                and content.strip()
-                                == formatted_messages[-1].content.strip()
-                            ):
-                                continue
-                            output_callback({"type": "text", "text": content})
-                        elif isinstance(content, list):
-                            for item in content:
-                                if isinstance(item, dict):
-                                    if item.get("type") == "text":
-                                        output_callback(
-                                            {"type": "text", "text": item["text"]}
+                        # Log message receipt and usage for all message types
+                        log_message_received(message)
+                        log_token_usage(message)
+
+                        from langchain_core.messages import (
+                            AIMessage,
+                            HumanMessage,
+                            ToolMessage,
+                        )
+
+                        if isinstance(message, ToolMessage):
+                            logger.debug(f"isinstance message: {message}")
+                            # Handle tool message responses
+                            log_tool_message(message)
+                            log_message_content(message, message.content)
+
+                            tool_result = {"output": message.content, "error": None}
+                            tool_output_callback(tool_result, message.name)
+
+                        elif isinstance(message, AIMessage):
+                            content = message.content
+                            log_message_content(message, content)
+
+                            if isinstance(content, str):
+                                # Skip if content matches last user message
+                                if (
+                                    formatted_messages
+                                    and isinstance(formatted_messages[-1], HumanMessage)
+                                    and content.strip()
+                                    == formatted_messages[-1].content.strip()
+                                ):
+                                    continue
+                                output_callback({"type": "text", "text": content})
+
+                            elif isinstance(content, list):
+                                for item in content:
+                                    if isinstance(item, dict):
+                                        if item.get("type") == "text":
+                                            output_callback(
+                                                {"type": "text", "text": item["text"]}
+                                            )
+
+                                        elif item.get("type") == "tool_use":
+                                            # Log tool usage declaration
+                                            logger.debug(
+                                                f"Tool use declared: {item['name']}"
+                                            )
+
+                                            # Handle tool output if present
+                                            if "output" in item:
+                                                tool_result = {
+                                                    "output": item["output"],
+                                                    "error": None,
+                                                }
+                                                tool_output_callback(
+                                                    tool_result, item["name"]
+                                                )
+                                    else:
+                                        logger.warning(
+                                            f"Unknown content item type: {type(item)}"
                                         )
-                                    elif item.get("type") == "tool_use":
-                                        output_callback(
-                                            {
-                                                "type": "tool_use",
-                                                "name": item["name"],
-                                                "input": item.get("input", {}),
-                                            }
-                                        )
-                                        # Pass tool output back to agent
-                                        tool_output_callback(
-                                            {
-                                                "output": item.get("output", ""),
-                                                "error": None,
-                                            },
-                                            item["name"],
-                                        )
-                                else:
-                                    logger.warning(
-                                        f"Unknown content item type: {type(item)}"
-                                    )
+                        else:
+                            logger.debug(
+                                f"Unhandled message type: {type(message).__name__}"
+                            )
                 except Exception as e:
                     logger.error(f"Error processing response: {e}")
                     output_callback(
