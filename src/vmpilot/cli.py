@@ -48,21 +48,12 @@ def create_mock_messages(command: str) -> List[Dict]:
     ]
 
 
-async def main(command: str, temperature: float, provider: str, model: str):
+async def main(command: str, temperature: float, provider: str):
     """Main CLI execution flow"""
     pipeline = Pipeline()
     # Convert provider string to enum
     provider_enum = next(p for p in Provider if p.value == provider)
     pipeline.valves.provider = provider_enum
-    pipeline.valves.model = model
-
-    # Validate model for the specified provider
-    if not config.validate_model(args.model, provider_enum):
-        print(
-            f"Error: '{args.model}' is not a valid model for provider '{args.provider}'.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
 
     # Create mock pipeline call parameters
     body = create_mock_body(temperature)
@@ -132,20 +123,6 @@ if __name__ == "__main__":
         help=f"API provider to use (default: {config.default_provider})",
     )
 
-    # Add model argument with dynamic help text
-    default_model = config.get_default_model()
-    model_help = "Available models:\n"
-    for provider in Provider:
-        prov_config = config.get_provider_config(provider)
-        model_help += f"\n{provider.value}: {', '.join(prov_config.available_models)}"
-
-    parser.add_argument(
-        "-m",
-        "--model",
-        type=str,
-        default=default_model,
-        help=f"Model to use (default: {default_model})\n{model_help}",
-    )
     args = parser.parse_args()
 
-    asyncio.run(main(args.command, args.temperature, args.provider, args.model))
+    asyncio.run(main(args.command, args.temperature, args.provider))
