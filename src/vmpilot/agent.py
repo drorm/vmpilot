@@ -170,8 +170,8 @@ async def create_agent(
     max_tokens: int = MAX_TOKENS,
 ):
     """Create a LangChain agent with the configured tools."""
-    logger.info(f"Creating agent with model: {model}, provider: {provider}")
-    sys.exit(1)
+    # logger.info(f"Creating agent with model: {model}, provider: {provider}")
+    # sys.exit(1)
     enable_prompt_caching = False
     betas = [COMPUTER_USE_BETA_FLAG]
 
