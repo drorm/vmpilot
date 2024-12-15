@@ -56,13 +56,21 @@ async def main(command: str, temperature: float, provider: str, model: str):
     pipeline.valves.provider = provider_enum
     pipeline.valves.model = model
 
+    # Validate model for the specified provider
+    if not config.validate_model(args.model, provider_enum):
+        print(
+            f"Error: '{args.model}' is not a valid model for provider '{args.provider}'.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     # Create mock pipeline call parameters
     body = create_mock_body(temperature)
     messages = create_mock_messages(command)
 
     # Execute pipeline
     result = pipeline.pipe(
-        user_message=command, model_id=provider, messages=messages, body=body
+        user_message=command, model_id=args.provider, messages=messages, body=body
     )
 
     # Print each message in the stream
