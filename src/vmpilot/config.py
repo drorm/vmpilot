@@ -98,7 +98,6 @@ class ProviderConfig(BaseModel):
     """Configuration for a specific provider"""
 
     default_model: str
-    available_models: list[str]
     api_key_path: str = Field(description="Default path to API key file")
     api_key_env: str = Field(description="Environment variable name for API key")
     beta_flags: Dict[str, str] = Field(default_factory=dict)
@@ -135,7 +134,6 @@ class ModelConfig(BaseModel):
 
                     providers[provider] = ProviderConfig(
                         default_model=section["default_model"],
-                        available_models=section["available_models"].split(","),
                         api_key_path=section["api_key_path"],
                         api_key_env=section["api_key_env"],
                         beta_flags=beta_flags,
@@ -164,11 +162,6 @@ class ModelConfig(BaseModel):
     def get_default_model(self, provider: Optional[Provider] = None) -> str:
         """Get default model for specified provider"""
         return self.get_provider_config(provider).default_model
-
-    def validate_model(self, model: str, provider: Optional[Provider] = None) -> bool:
-        """Check if model is valid for specified provider"""
-        config = self.get_provider_config(provider)
-        return model in config.available_models
 
 
 # Global configuration instance

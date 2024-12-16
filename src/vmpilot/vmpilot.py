@@ -68,8 +68,8 @@ class Pipeline:
 
         def _sync_with_config(self):
             """Synchronize valve state with config defaults"""
-            if not self.model:
-                self.model = config.get_default_model(self.provider)
+            # Always get default model when provider changes
+            self.model = config.get_default_model(self.provider)
 
             provider_config = config.get_provider_config(self.provider)
             if self.recursion_limit is None:
@@ -160,17 +160,26 @@ class Pipeline:
 
         # Update provider and related configuration based on model ID
         try:
-            # Convert model_id to Provider enum and validate
+            # Handle provider change if model_id matches a provider name
             try:
-                new_provider = Provider(model_id)
+                if model_id.lower() in [p.value for p in Provider]:
+                    new_provider = Provider(model_id.lower())
+                    self.valves.provider = new_provider
+                    self.valves.model = (
+                        ""  # Reset model to force using provider default
+                    )
+                    self.valves._sync_with_config()
+                else:
+                    # Treat as actual model name
+                    if not config.validate_model(model_id, self.valves.provider):
+                        error_msg = f"Unsupported model: {model_id}"
+                        logger.error(error_msg)
+                        return error_msg
+                    self.valves.model = model_id
             except ValueError:
                 error_msg = f"Unsupported model: {model_id}"
                 logger.error(error_msg)
                 return error_msg
-
-            # Update provider and sync configuration
-            self.valves.provider = new_provider
-            self.valves._sync_with_config()
 
         except Exception as e:
             error_msg = f"Error updating provider: {str(e)}"
