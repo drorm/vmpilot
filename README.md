@@ -6,11 +6,11 @@ Only run this if you have enough knowledge about the security implications of ru
 
 ## Overview
 
-VMPilot is an AI-driven system operations assistant that provides command execution capabilities in virtual machines through CLI and API interfaces. It enables users to delegate terminal tasks to an AI/LLM pilot powered by Claude 3.5 Sonnet, which can execute multiple commands to accomplish requested operations. The system features real-time response streaming, comprehensive error handling, and robust security measures, while offering both command-line and API access methods.
+VMPilot provides a way to interact with an AI agent to perform tasks in a virtual machine. It is focused on pair programming, where the AI can help you with coding tasks, but it can also be used for other tasks as well.
+While the UI is similar to the chat interface of OpenAI and other AI models (thanks to OpenWebUI), it provides advanced capabilities by executing multiple commands in the virtual machine to accomplish the requested task.
+It is is available as an Open WebUI Pipeline, or a cli.
 
-It is available as an Open WebUI Pipeline, or a cli.
-
-It is derived from [Claude Computer Use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use) and [OpenWebUI Pipelines](https://docs.anthropic.com/en/docs/build-with-claude/openwebui-pipelines).
+It is inspired by [Claude Computer Use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use) and uses [OpenWebUI Pipelines](https://docs.anthropic.com/en/docs/build-with-claude/openwebui-pipelines).
 
 ## Dependencies
 
@@ -22,19 +22,6 @@ Core dependencies:
 To install dependencies:
 ```bash
 pip install -r requirements.txt
-```
-
-## Project Structure
-
-```
-.
-├── compute.py     -- Main pipeline implementation
-├── loop.py        -- Core agent loop for LLM interaction
-├── logger.py      -- Logging configuration
-└── tools/
-    ├── base.py    -- Base tool implementations
-    ├── bash.py    -- Bash command execution tool
-    └── ...
 ```
 
 
@@ -61,8 +48,8 @@ pip install -r requirements.txt
   - Exit status reporting
 
 - Model Support
-  - Currently using Claude 3.5 Sonnet
-  - Extensible to other API providers
+  - Primarily tested with Claude 3.5 Sonnet
+  - OpenAI API gpt4o support
 
 ## Installation
 

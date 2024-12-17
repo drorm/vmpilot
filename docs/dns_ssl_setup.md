@@ -2,13 +2,15 @@
 
 ## Overview
 This guide covers setting up secure access to your OpenWebUI and VMPilot Pipeline services using DNS and SSL certificates. We'll walk through setting up dynamic DNS and configuring Caddy as a reverse proxy with automatic SSL certificate management.
+This is optional and not only recommended for secure access to your services, it'll make your life easier to not have to deal with browser warnings about insecure connections.
+> [!CAUTION]
+While I tried to make this guide somewhat comprehensive, check with Claude or GPT for any additional steps or configurations that might be needed for your specific setup.
 
 ## Dynamic DNS Setup
-If you're running these services from a location without a static IP (like a home lab or dynamic IP environment):
+If you're running these services from a location without a static IP which is often the case with home servers, you'll need to set up dynamic DNS to ensure your domain/subdomain always points to the correct IP address.
 
 1. Choose a Dynamic DNS Provider
    - Options include No-IP, DuckDNS, or Cloudflare
-   - We recommend DuckDNS for its simplicity and free tier
 
 2. Register for Dynamic DNS
    - Create an account at your chosen provider
@@ -16,31 +18,13 @@ If you're running these services from a location without a static IP (like a hom
    - Note down your token/credentials
 
 3. Configure Dynamic DNS Client
-   ```bash
-   # Install ddclient for dynamic DNS updates
-   sudo apt-get install ddclient
-   
-   # Configure ddclient
-   sudo nano /etc/ddclient.conf
-   ```
-
-   Example configuration for DuckDNS:
-   ```
-   protocol=dyndns2
-   use=web
-   server=www.duckdns.org
-   login=your-token
-   password=your-token
-   your-subdomain.duckdns.org
-   ```
+  - follow the instructions for your chosen provider
 
 4. Start and Enable the Service
-   ```bash
-   sudo systemctl start ddclient
-   sudo systemctl enable ddclient
-   ```
 
 ## Caddy Server Setup
+
+Caddy is a lightweight web server that can handle automatic SSL certificate management and reverse proxying. We'll use Caddy to set up secure access to OpenWebUI and VMPilot Pipeline.
 
 1. Install Caddy
    ```bash
@@ -86,20 +70,6 @@ If you're running these services from a location without a static IP (like a hom
    dig pipeline.yourdomain.com
    ```
 
-## Security Considerations
-
-1. Firewall Configuration
-   ```bash
-   # Allow HTTP/HTTPS
-   sudo ufw allow 80/tcp
-   sudo ufw allow 443/tcp
-   ```
-
-2. Regular Updates
-   ```bash
-   sudo apt update
-   sudo apt upgrade
-   ```
 
 ## Troubleshooting
 

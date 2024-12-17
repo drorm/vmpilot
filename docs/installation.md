@@ -7,7 +7,7 @@ This guide provides comprehensive instructions for setting up VMPilot in your en
 - Linux-based operating system (Ubuntu 20.04 or later recommended)
 - Python 3.11 or later
 - Root access or sudo privileges
-- Domain name and SSL certificates configured ([see DNS and SSL Setup Guide](dns_ssl_setup.md))
+- Docker
 
 Before proceeding with this installation guide, ensure you have completed the [DNS and SSL Setup](dns_ssl_setup.md) to configure secure access to your services.
 
