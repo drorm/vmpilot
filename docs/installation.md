@@ -145,6 +145,11 @@ Common issues and solutions:
    - Check firewall settings
 
 2. Authentication errors:
-   - Verify API key in .env
+   - Verify API key in the UI
    - Check OpenWebUI pipeline configuration
+
+3. Model not found:
+  - Go to the connection settings as described above, and save the connection again.
+  - Go to the pipeline settings and save the pipeline again.
+  - Edit the workplace and make sure the pipeline is selected.
 
