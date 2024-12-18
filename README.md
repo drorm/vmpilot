@@ -1,4 +1,4 @@
-# Compute Pipeline
+# VMPilot
 
 > [!CAUTION]
 Only run this if you have enough knowledge about the security implications of running arbitrary commands in your virtual machine.
@@ -12,50 +12,23 @@ It is is available as an Open WebUI Pipeline, or a cli.
 
 It is inspired by [Claude Computer Use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use) and uses [OpenWebUI Pipelines](https://docs.anthropic.com/en/docs/build-with-claude/openwebui-pipelines).
 
-## Dependencies
-
-Core dependencies:
-- Python 3.11+
-- OpenWebUI Pipelines
-- Other dependencies as specified in requirements.txt
-
-To install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-
 ## Features
 
 ### Core Features
-- System prompt handling through message history
-  - Extracts and applies system prompts from conversation context
-  - Preserves system instructions across interactions
-
-- Code Output Processing
-  - Automatic programming language detection
-  - Smart code fence wrapping (\`\`\`language)
-  - Fallback to plain text for unknown content
-
-- Streaming Support
-  - Real-time response streaming
-  - Async queue-based implementation
-  - Support for both streaming and single-response modes
-
-- Tool Integration
-  - Structured tool output handling
-  - Error code and message capture
-  - Exit status reporting
-
+- The rich and advanced features of OpenWebUI 
+- Code Output Processing Automatic programming language detection,smart code fence wrapping 
+- Streaming Support. Support for both streaming and single-response modes
+- Tool Integration Structured tool output handling
 - Model Support
   - Primarily tested with Claude 3.5 Sonnet
   - OpenAI API gpt4o support
+  - Extensible to other API providers
 
 ## Installation
 
 For a complete setup, follow these guides in order:
 
-1. [DNS and SSL Setup](docs/dns_ssl_setup.md) - Configure secure access to your services
+1. [DNS and SSL Setup](docs/dns_ssl_setup.md) - Optional, but highly recommended to configure secure access to your services
 2. [Installation Guide](docs/installation.md) - Full installation instructions including OpenWebUI and pipeline setup
 3. [Usage Guide](docs/usage.md) - Learn how to use VMPilot effectively
 

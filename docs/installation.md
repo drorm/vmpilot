@@ -1,108 +1,134 @@
 # VMPilot Installation Guide
 
-This guide provides comprehensive instructions for setting up VMPilot in your environment. Follow these steps in order to ensure a proper installation and configuration.
+This guide provides comprehensive instructions for setting up VMPilot in your environment.
 
 ## Prerequisites
 
+- Docker
 - Linux-based operating system (Ubuntu 20.04 or later recommended)
 - Python 3.11 or later
 - Root access or sudo privileges
-- Docker
 
-Before proceeding with this installation guide, ensure you have completed the [DNS and SSL Setup](dns_ssl_setup.md) to configure secure access to your services.
+Before proceeding with this installation guide, it is recommended that you complete the [DNS and SSL Setup](dns_ssl_setup.md) to configure secure access to your services.
 
-## 1. Installing OpenWebUI
+VMPilot in its current form is meant for folks familiar with Docker and Linux. So rather than provide a docker container, we provide the instructions.
+
+## 1. Set up your virtual machine
+Set up a virtual machine with your standard configuration. You'll be sharing this machine with VMPilot, so set it up in a way that feels comfortable to you.
+
+- (gvisor)[https://gvisor.dev/docs/user_guide/install/] is recommended for Security. Enable your container runtime to use gvisor.
+- Once you have your virtual machine set up, you can proceed with the installation.
+
+## 2. Install the apps on your virtual machine.
+
+## 3. Installing OpenWebUI
 
 OpenWebUI serves as the frontend interface for VMPilot.
 
+Follow the instructions on the [OpenWebUI GitHub repository](https://github.com/open-webui/open-webui/)
+
 ```bash
-git clone https://github.com/open-webui/open-webui.git
-cd open-webui
-docker compose up -d
+pip install open-webui
 ```
 
-Verify the installation by accessing `http://localhost:3000`
-
-## 2. Installing OpenWebUI Pipelines
-
-OpenWebUI Pipelines is required for VMPilot integration.
+and then run the following command:
 
 ```bash
-cd open-webui
-docker compose exec backend pip install openwebui-pipelines
+open-webui serve
 ```
 
-## 3. Installing VMPilot
+You can, of course, follow one of the other methods suggested in the OpenWebUI documentation.
 
-### 3.1 Server Installation
+## 3.1 Create a new user
+Create a new user on OpenWebUI which, as the first user, will make you the admin user.
 
-1. Clone the VMPilot repository:
+
+## 4. Install OpenWebUI Pipelines
+
+[OpenWebUI Pipelines](https://github.com/open-webui/pipelines) is required for VMPilot integration.
+
 ```bash
+cd ~
+git clone https://github.com/open-webui/pipelines
+```
+
+This will clone the repository to your home directory. This is the default location for VMPilot to look for the pipelines.
+
+## 4.1 Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+You don't need to run the pipelines server, as VMPIlot will run it.
+
+
+## 5. Installing VMPilot
+
+### 5.1 Server Installation
+
+Clone the VMPilot repository:
+```bash
+cd ~
 git clone https://github.com/yourusername/vmpilot.git
 cd vmpilot
 ```
 
-2. Install dependencies:
+Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Configure environment variables:
-```bash
-cp .env.example .env
-nano .env
-```
+Set up your credentials.
+The defaults are:
+- Anthropic: ~/.anthropic/api\_key
+- OpenAI: ~/.openai
 
-Add your configuration:
-```
-ANTHROPIC_API_KEY=your_api_key_here
-VMPILOT_PORT=9099
-```
+### 5.2 Check the configuration
 
-4. Start the VMPilot server:
+Look at vmpilot/src/vmpilot/config.py and make sure the configuration is correct for your setup.
+
+### 5.3 Start VMPilot 
 ```bash
-python src/server.py
+~/vmpilot/bin/run.sh
 ```
 
 ### 3.2 OpenWebUI Client Configuration
 
 1. Access the OpenWebUI interface at your domain or localhost:3000
 
-2. Navigate to Settings > Pipelines
+2 Open OpenWebUI in your browser
+2.1 Open OpenWebUI in your browser
+2.2 Click on your user name in the bottom left corner
+3.3 Click on Admin Panel
+3.4 Click on connections
 
-3. Add VMPilot Pipeline:
-   - Name: VMPilot
-   - URL: http://localhost:9099 (or your domain if using Caddy)
-   - Model: claude-3-5-sonnet-20241022
+3. Add VMPilot Connection:
+   - URL: http://localhost:9099 and the password
    - Click "Save"
 
 4. Enable the pipeline:
-   - Go to Models tab
-   - Find VMPilot in the list
-   - Toggle the "Enabled" switch
+   - Go to Pipelines tab
+   - Find the above url
+   - Enter the keys for the provider you want to use: OpenAI, Anthropic, or both.
+   - Click "Save"
 
 ## 4. Verification
 
 To verify your installation:
 
 1. Open OpenWebUI in your browser
-2. Select VMPilot from the model dropdown
-3. Try a simple command like "What's the current time?"
+2. Try a simple command like "Show me /home"
 
 ## 5. Tips for Effective Usage
 
-### 5.1 Performance Optimization
+### 5.1 Create a workspace
 
-- Keep your prompts clear and specific
-- Use system commands efficiently
-- Monitor resource usage
+Workspaces are very powerful since they allow you to group pipelines and prompt. 
 
-### 5.2 Security Considerations
+- Click on "Workspace"
+- Click on "+" to create a new workspace
+- Name it, enter a prompt and edit any other settings
+- Click "Save"
 
-- Regularly update all components
-- Use strong authentication
-- Monitor access logs
-- Keep API keys secure
 
 ### 5.3 Troubleshooting
 
@@ -117,37 +143,3 @@ Common issues and solutions:
    - Verify API key in .env
    - Check OpenWebUI pipeline configuration
 
-3. Caddy issues:
-   - Verify domain DNS settings
-   - Check Caddy logs: `sudo journalctl -u caddy`
-
-## 6. Maintenance
-
-Regular maintenance tasks:
-
-1. Update components:
-```bash
-# Update OpenWebUI
-cd open-webui
-git pull
-docker compose up -d
-
-# Update VMPilot
-cd vmpilot
-git pull
-pip install -r requirements.txt
-```
-
-2. Monitor logs:
-```bash
-# VMPilot logs
-tail -f vmpilot.log
-
-# OpenWebUI logs
-docker compose logs -f
-```
-
-## Support
-
-For additional support:
-- Documentation: [VMPilot Docs](https://github.com/drorm/vmpilot/docs)
