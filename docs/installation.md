@@ -110,11 +110,17 @@ Look at vmpilot/src/vmpilot/config.ini and make sure the configuration is correc
    - Enter the keys for the provider you want to use: OpenAI, Anthropic, or both.
    - Click "Save"
 
+Note: Because the VMPilot pipeline is a manifold pipeline, you'll see two models in the pipeline list:
+- VMPilot2 PipelineAnthropic (Claude)
+- VMPilot2 PipelineOpenAI (GPT-4o)
+
+Claude is currently the preferred model for VMPilot, since it has been tested more extensively.
+
 ## 4. Verification
 
 To verify your installation:
 
-1. Open OpenWebUI in your browser
+1. Open OpenWebUI in your browser. Choose one of the above models and start a conversation.
 2. Try a simple command like "Show me /home"
 
 ## 5. Tips for Effective Usage

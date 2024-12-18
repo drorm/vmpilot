@@ -46,12 +46,12 @@ from vmpilot.config import (
 
 
 class Pipeline:
+    api_key: str = ""  # Set based on active provider
+
     class Valves(BaseModel):
         # Runtime parameters
         anthropic_api_key: str = ""
         openai_api_key: str = ""
-        api_key: str = ""  # Set based on active provider
-        pipelines_dir: str = ""
 
         # Model configuration (inherited from config)
         provider: Provider = Provider(DEFAULT_PROVIDER)
@@ -80,7 +80,7 @@ class Pipeline:
 
         def _update_api_key(self):
             """Update api_key based on current provider"""
-            self.api_key = (
+            api_key = (
                 self.anthropic_api_key
                 if self.provider == Provider.ANTHROPIC
                 else self.openai_api_key
@@ -95,7 +95,6 @@ class Pipeline:
         self.valves = self.Valves(
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
             openai_api_key=os.getenv("OPENAI_API_KEY", ""),
-            pipelines_dir=os.getenv("PIPELINES_DIR", ""),
         )
 
     async def on_startup(self):
@@ -125,7 +124,7 @@ class Pipeline:
         ]
 
         # Only show models with valid API keys
-        return [model for model in models if len(self.valves.api_key) >= 32]
+        return [model for model in models if len(self.api_key) >= 32]
 
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
@@ -139,7 +138,7 @@ class Pipeline:
             logger.disabled = True
 
         # Validate API key
-        if not self.valves.api_key or len(self.valves.api_key) < 32:
+        if not self.api_key or len(self.api_key) < 32:
             error_msg = (
                 f"Error: Invalid or missing {self.valves.provider.value} API key"
             )
@@ -267,7 +266,7 @@ class Pipeline:
                                 messages=formatted_messages,
                                 output_callback=output_callback,
                                 tool_output_callback=tool_callback,
-                                api_key=self.valves.api_key,
+                                api_key=self.api_key,
                                 max_tokens=1024,
                                 temperature=body.get(
                                     "temperature", self.valves.temperature
