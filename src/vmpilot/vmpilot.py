@@ -80,7 +80,7 @@ class Pipeline:
 
         def _update_api_key(self):
             """Update api_key based on current provider"""
-            api_key = (
+            Pipeline.api_key = (
                 self.anthropic_api_key
                 if self.provider == Provider.ANTHROPIC
                 else self.openai_api_key
