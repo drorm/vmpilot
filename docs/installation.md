@@ -4,10 +4,9 @@ This guide provides comprehensive instructions for setting up VMPilot in your en
 
 ## Prerequisites
 
-- Docker
-- Linux-based operating system (Ubuntu 20.04 or later recommended)
-- Python 3.11 or later
-- Root access or sudo privileges
+- Docker container with:
+  - ubuntu 22.04 or later
+  - python 3.11 or later
 
 Before proceeding with this installation guide, it is recommended that you complete the [DNS and SSL Setup](dns_ssl_setup.md) to configure secure access to your services.
 
@@ -84,7 +83,7 @@ The defaults are:
 
 ### 5.2 Check the configuration
 
-Look at vmpilot/src/vmpilot/config.py and make sure the configuration is correct for your setup.
+Look at vmpilot/src/vmpilot/config.ini and make sure the configuration is correct for your setup.
 
 ### 5.3 Start VMPilot 
 ```bash
