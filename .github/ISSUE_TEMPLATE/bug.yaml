@@ -1,17 +1,92 @@
 name: Bug Report
-description: Report a problem with the application.
+description: Report an issue or unexpected behavior in the project.
+title: '[Bug Report] <Issue Title>'
 body:
   - type: markdown
     attributes:
       value: |
-        Please fill out all sections.
+        ## Important Notes
+
+        - **Before submitting a bug report**: Please check the Issues or Discussions section to see if a similar issue or feature request has already been posted.  
+        - If you’re unsure, start a discussion post first. This will help us efficiently focus on improving the project.
+
   - type: input
-    id: title
+    id: environment
     attributes:
-      label: Bug Title
-      placeholder: A short summary of the bug
+      label: Environment
+      description: |
+        Please provide the following details:
+        - **Open WebUI Version:** [e.g., v0.3.11]
+        - **Pipelines Version:** [e.g., v0.2.0, v0.1.32-rc1]
+        - **VMPilot Version:** [e.g., v0.1, 0.2]
+        - **Browser (if applicable):** [e.g., Chrome 100.0, Firefox 98.0]
+      placeholder: |
+        Open WebUI Version: 
+        Pipelines Version: 
+        VMPilot Version: 
+        Browser:
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      description: |
+        Confirm that you have done the following:
+      options:
+        - label: I have read and followed all the instructions provided in the README.md.
+        - label: I am on the latest version of Open WebUI, Pipelines, and VMPilot.
+        - label: I have provided the exact steps to reproduce the bug in the "Steps to Reproduce" section below.
+
   - type: textarea
-    id: steps
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: Describe what you expected to happen.
+      placeholder: E.g., The application should display a success message after submitting a valid form.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: Actual Behavior
+      description: Describe what actually happened.
+      placeholder: E.g., The application displayed an error instead of the success message.
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Summary
+      description: Provide a brief but clear summary of the bug.
+      placeholder: E.g., Submitting a valid form shows an error instead of success.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
     attributes:
       label: Steps to Reproduce
-      description: List the steps to reproduce the issue.
+      description: Outline the steps to reproduce the bug. Be as detailed as possible.
+      placeholder: |
+        1. Navigate to the main page.
+        2. Enter valid form data.
+        3. Click on the submit button.
+        4. Observe the error message.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs_and_screenshots
+    attributes:
+      label: Logs and Screenshots
+      description: Include relevant browser console logs or screenshots, if applicable.
+      placeholder: E.g., Browser console logs showing error details.
+
+  - type: textarea
+    id: additional_information
+    attributes:
+      label: Additional Information
+      description: Include any additional details that may help in understanding and reproducing the issue. This could include specific configurations, error messages, or anything else relevant to the bug.
+      placeholder: E.g., Specific configuration files or detailed error messages.
