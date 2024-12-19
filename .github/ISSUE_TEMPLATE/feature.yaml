@@ -1,0 +1,19 @@
+name: Feature Request
+description: Suggest a new feature for the project.
+title: '[Feature Request] <Feature Title>'
+body:
+  - type: input
+    id: description
+    attributes:
+      label: Feature Description
+      description: Briefly describe the feature you'd like to add. What does it do? How does it improve the project?
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this feature valuable to the project? How does it align with the project's goals?
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Possible Implementation
+      description: Do you have ideas on how this feature could be implemented? Outline any approaches or technologies you think might be suitable.
