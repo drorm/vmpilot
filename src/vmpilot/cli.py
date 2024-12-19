@@ -6,6 +6,7 @@ Usage: ./cli.py "your command here"
 
 import argparse
 import asyncio
+import logging
 import os
 import sys
 from pathlib import Path
@@ -21,12 +22,12 @@ except ImportError:
     from vmpilot import Pipeline  # Fallback to direct import
 
 
-def create_mock_body(temperature: float = 0.7) -> Dict:
+def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
     """Create a mock body for pipeline calls"""
     return {
         "temperature": temperature,
         "stream": True,
-        "debug": False,  # Set to True to enable debug logging
+        "debug": False,  # Can be enabled via -d flag
         "max_tokens": 8192,  # For LangChain compatibility
     }
 
@@ -48,7 +49,7 @@ def create_mock_messages(command: str) -> List[Dict]:
     ]
 
 
-async def main(command: str, temperature: float, provider: str):
+async def main(command: str, temperature: float, provider: str, debug: bool):
     """Main CLI execution flow"""
     pipeline = Pipeline()
     # Convert provider string to enum
@@ -56,7 +57,7 @@ async def main(command: str, temperature: float, provider: str):
     pipeline.valves.provider = provider_enum
 
     # Create mock pipeline call parameters
-    body = create_mock_body(temperature)
+    body = create_mock_body(temperature, debug)
     messages = create_mock_messages(command)
 
     # Execute pipeline
@@ -122,7 +123,21 @@ if __name__ == "__main__":
         choices=[p.value for p in Provider],
         help=f"API provider to use (default: {config.default_provider})",
     )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Enable debug mode",
+    )
 
     args = parser.parse_args()
 
-    asyncio.run(main(args.command, args.temperature, args.provider))
+    # Configure logging based on debug flag
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("vmpilot").setLevel(logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+        logging.getLogger("vmpilot").setLevel(logging.INFO)
+
+    asyncio.run(main(args.command, args.temperature, args.provider, args.debug))

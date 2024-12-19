@@ -13,6 +13,7 @@ from typing import Optional
 import httpx
 
 from vmpilot.config import TOOL_OUTPUT_LINES
+from vmpilot.llm_debug import enable_llm_debug
 
 # Configure logging
 from .agent_logging import (
@@ -221,6 +222,8 @@ async def create_agent(
             openai_api_key=api_key,
             timeout=30,
         )
+    # Enable debug wrapper for OpenAI LLM
+    # llm = enable_llm_debug(llm)
 
     # Set up tools with LLM for fencing capability
     tools = setup_tools(llm=llm)
