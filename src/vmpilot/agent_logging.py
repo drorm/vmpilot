@@ -96,22 +96,24 @@ def log_token_usage(message: Any, level: str = "debug") -> None:
     usage_metadata = getattr(message, "usage_metadata", {})
     tool_calls = getattr(message, "tool_calls", [])
 
-    log_message(
-        "TOKEN_USAGE",
-        {
-            "usage": response_metadata.get("usage", {}),
-            "tool_calls": [
-                {
-                    "name": tool["name"],
-                    "args": tool["args"],
-                    "type": tool["type"],
-                }
-                for tool in tool_calls
-            ],
-            "usage_metadata": usage_metadata,
-        },
-        level,
-    )
+    # Format the usage data as a comma-separated string
+    if usage_metadata:
+        input_tokens = usage_metadata.get("input_tokens", 0)
+        output_tokens = usage_metadata.get("output_tokens", 0)
+        total_tokens = usage_metadata.get("total_tokens", 0)
+        cache_read = usage_metadata.get("input_token_details", {}).get("cache_read", 0)
+        usage_str = f"{input_tokens},{output_tokens},{total_tokens},{cache_read}"
+    else:
+        return
+
+    # Only include tool_calls if there are any
+    log_data = {"usage_metadata": usage_str}
+    if tool_calls:
+        log_data["tool_calls"] = [
+            f'{tool["name"]}: {tool["args"]}' for tool in tool_calls
+        ]
+
+    log_message("TOKEN_USAGE", log_data, level)
 
 
 def log_tool_message(message: Any, level: str = "debug") -> None:
