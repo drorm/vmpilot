@@ -1,6 +1,10 @@
 """Prompt caching functionality for VMPilot."""
 
 from typing import Any, Dict, List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def inject_prompt_caching(messages: List[Dict[str, Any]]) -> None:
@@ -11,20 +15,32 @@ def inject_prompt_caching(messages: List[Dict[str, Any]]) -> None:
     Adapted from https://github.com/anthropics/anthropic-quickstarts/blob/main/computer-use-demo/computer_use_demo/loop.py
     """
     breakpoints_remaining = 3
+
     for message in reversed(messages):
-        if message["role"] == "user" and isinstance(message.get("content"), list):
+        if isinstance(message.get("content"), list):
             content = message["content"]
             if not content:
                 continue
-            if breakpoints_remaining > 0:
-                breakpoints_remaining -= 1
-                # Add cache control to the last content item
-                content[-1]["cache_control"] = {"type": "ephemeral"}
-            else:
-                # Explicitly remove cache control from older messages
-                content[-1].pop("cache_control", None)
-                # We only need to remove one extra turn's cache control
-                break
+            logger.info(f"Looking at message: {content[0]['text'][:60]}")
+
+            # For user messages or assistant messages with tool results
+            if message["role"] == "user" or (
+                message["role"] == "assistant"
+                and any("tool_calls" in item for item in content)
+            ):
+                if breakpoints_remaining > 0:
+                    # show the first 60 characters of this message
+                    logger.info(
+                        f"Adding cache control to message: {content[0]['text'][:60]}"
+                    )
+                    breakpoints_remaining -= 1
+                    # Add cache control to the last content item
+                    content[-1]["cache_control"] = {"type": "ephemeral"}
+                else:
+                    # Explicitly remove cache control from older messages
+                    content[-1].pop("cache_control", None)
+                    # We only need to remove one extra turn's cache control
+                    break
 
 
 def add_cache_control(content: Dict[str, Any]) -> Dict[str, Any]:
