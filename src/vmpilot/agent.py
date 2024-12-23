@@ -8,7 +8,6 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, cast
 
-import httpx
 from anthropic import (
     Anthropic,
     APIError,
@@ -27,10 +26,84 @@ from anthropic.types.beta import (
     BetaToolUseBlockParam,
 )
 
-from vmpilot.setup_shell import SetupShellTool
-from vmpilot.tools.langchain_edit import FileEditTool
-from vmpilot.tools.collection import ToolCollection
-from vmpilot.tools.base import ToolResult
+from .tools import BashTool, EditTool, ToolCollection, ToolResult
+import subprocess
+import os
+
+# Configure logging
+from .agent_logging import (
+    log_error,
+    log_message,
+    log_message_content,
+    log_message_processing,
+    log_message_received,
+    log_token_usage,
+    log_tool_message,
+)
+
+
+def execute_shell_command(command: str, language: str = "bash") -> ToolResult:
+    """Execute a shell command and return the result."""
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        output = result.stdout if result.returncode == 0 else f"Error: {result.stderr}"
+        return ToolResult(success=result.returncode == 0, output=output)
+    except Exception as e:
+        return ToolResult(success=False, output=str(e))
+
+
+def execute_file_edit(command: str, path: str, **kwargs) -> ToolResult:
+    """Execute file operations."""
+    try:
+        if command == "create":
+            if os.path.exists(path):
+                return ToolResult(success=False, output=f"File already exists: {path}")
+            with open(path, "w") as f:
+                f.write(kwargs.get("file_text", ""))
+            return ToolResult(success=True, output=f"Created file: {path}")
+
+        elif command == "str_replace":
+            if not os.path.exists(path):
+                return ToolResult(success=False, output=f"File not found: {path}")
+            with open(path, "r") as f:
+                content = f.read()
+            new_content = content.replace(kwargs["old_str"], kwargs["new_str"])
+            with open(path, "w") as f:
+                f.write(new_content)
+            return ToolResult(success=True, output=f"Replaced text in {path}")
+
+        elif command == "insert":
+            if not os.path.exists(path):
+                return ToolResult(success=False, output=f"File not found: {path}")
+            with open(path, "r") as f:
+                lines = f.readlines()
+            insert_at = kwargs["insert_line"]
+            lines.insert(insert_at, kwargs["new_str"] + "\n")
+            with open(path, "w") as f:
+                f.writelines(lines)
+            return ToolResult(
+                success=True, output=f"Inserted text at line {insert_at} in {path}"
+            )
+
+        return ToolResult(success=False, output=f"Unknown command: {command}")
+    except Exception as e:
+        return ToolResult(success=False, output=str(e))
+
+
+def handle_tool_use(tool_use: dict) -> ToolResult:
+    """Handle tool use by executing the specified tool."""
+    tool_name = tool_use.get("name")
+    tool_args = tool_use.get("args", {})
+
+    if tool_name == "shell":
+        return execute_shell_command(
+            tool_args["command"], tool_args.get("language", "bash")
+        )
+    elif tool_name == "edit_file":
+        return execute_file_edit(**tool_args)
+    else:
+        return ToolResult(success=False, output=f"Unknown tool: {tool_name}")
+
 
 # Import config from vmpilot
 from vmpilot.config import (
@@ -92,49 +165,6 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 </TOOLS>"""
 
 
-def setup_tools():
-    """Initialize and configure LangChain tools."""
-    # Suppress warning about shell tool safeguards
-    import warnings
-    from typing import Annotated, Union
-    from pydantic import BaseModel, Field
-
-    warnings.filterwarnings(
-        "ignore", category=UserWarning, module="langchain_community.tools.shell.tool"
-    )
-
-    tools = []
-
-    try:
-        shell_tool = SetupShellTool()
-        shell_tool.description = """Execute bash commands in the system. Input should be a single command string. Example inputs:
-        - ls /path
-        - cat file.txt
-        - head -n 10 file.md
-        - grep pattern file
-        The output will be automatically formatted with appropriate markdown syntax."""
-
-        # Convert to Anthropic format for caching if using Anthropic
-        if isinstance(llm, ChatAnthropic):
-            shell_tool["cache_control"] = {"type": "ephemeral"}
-
-        tools.append(shell_tool)
-        logger.info(f"shell_tool: {shell_tool}")
-    except Exception as e:
-        logger.error(f"Error: Error creating SetupShellTool: {e}")
-
-    # Add file editing tool (excluding view operations which are handled by shell tool)
-    edit_tool = FileEditTool(view_in_shell=True)
-
-    # if isinstance(llm, ChatAnthropic):
-    # edit_tool["cache_control"] = {"type": "ephemeral"}
-
-    tools.append(edit_tool)
-
-    # Return all tools
-    return tools
-
-
 async def sampling_loop(
     *,
     model: str,
@@ -151,6 +181,11 @@ async def sampling_loop(
     """
     Agentic sampling loop for the assistant/tool interaction of computer use.
     """
+    tool_collection = ToolCollection(
+        BashTool(),
+        EditTool(),
+    )
+
     system = BetaTextBlockParam(
         type="text",
         text=f"{SYSTEM_PROMPT}{' ' + system_prompt_suffix if system_prompt_suffix else ''}",
@@ -170,7 +205,6 @@ async def sampling_loop(
             # ever sensible to break the cache by truncating images
             system["cache_control"] = {"type": "ephemeral"}
 
-        tools = setup_tools()
         # Call the API
         # we use raw_response to provide debug information to streamlit. Your
         # implementation may be able call the SDK directly with:
@@ -181,9 +215,10 @@ async def sampling_loop(
                 messages=messages,
                 model=model,
                 system=[system],
-                tools=tools,
+                tools=tool_collection.to_params(),
                 betas=betas,
             )
+            logger.debug(f"API call successful: {raw_response}")
         except (APIStatusError, APIResponseValidationError) as e:
             logger.error(e.request, e.response, e)
             return messages
@@ -191,9 +226,10 @@ async def sampling_loop(
             logger.error(e.request, e.body, e)
             return messages
 
-        logger.info.http_response.request, raw_response.http_response, None
+        # logger.info.http_response.request, raw_response.http_response, None
 
         response = raw_response.parse()
+        # logger.info(f"API response: {response}")
 
         response_params = _response_to_params(response)
         messages.append(
@@ -220,6 +256,30 @@ async def sampling_loop(
             return messages
 
         messages.append({"content": tool_result_content, "role": "user"})
+        # Format tool results as properly structured messages
+        logger.debug(f"Processing tool results: {tool_result_content}")
+        formatted_tool_results = []
+        for result in tool_result_content:
+            # Create a formatted message that includes both tool use and result
+            if isinstance(result["content"], list):
+                for content in result["content"]:
+                    if content["type"] == "text":
+                        formatted_tool_results.append(
+                            {
+                                "type": "text",
+                                "text": f"Tool Result ({result['tool_use_id']}) {'[ERROR]' if result.get('is_error') else ''}:\n{content['text']}",
+                            }
+                        )
+            elif isinstance(result["content"], str):
+                formatted_tool_results.append(
+                    {
+                        "type": "text",
+                        "text": f"Tool Result ({result['tool_use_id']}):\n{result['content']}",
+                    }
+                )
+
+        # Add formatted results to message history
+        messages.append({"role": "user", "content": formatted_tool_results})
 
 
 def _response_to_params(
