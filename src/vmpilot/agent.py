@@ -282,12 +282,6 @@ async def process_messages(
     if enable_prompt_caching:
         # Inject caching for message history
         inject_prompt_caching(messages)
-    logger.debug("DEBUG: Creating agent")
-    # Create agent
-    agent = await create_agent(
-        model, api_key, provider, system_prompt_suffix, temperature, max_tokens
-    )
-    logger.debug("DEBUG: Agent created successfully")
 
     # Convert messages to LangChain format
     formatted_messages = []
@@ -361,6 +355,13 @@ async def process_messages(
     except Exception as e:
         logger.error(f"Error formatting messages: {e}")
         raise
+
+    logger.debug("DEBUG: Creating agent")
+    # Create agent after message formatting
+    agent = await create_agent(
+        model, api_key, provider, system_prompt_suffix, temperature, max_tokens
+    )
+    logger.debug("DEBUG: Agent created successfully")
 
     # Stream agent responses
     thread_id = f"vmpilot-{os.getpid()}"
