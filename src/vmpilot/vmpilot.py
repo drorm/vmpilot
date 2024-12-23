@@ -45,6 +45,29 @@ from vmpilot.config import (
 )
 
 
+logging.getLogger("vmpilot").setLevel(logging.DEBUG)
+logging.getLogger("httpx").setLevel(logging.DEBUG)
+logging.getLogger("httpcore").setLevel(logging.DEBUG)
+logging.getLogger("asyncio").setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
+logging.getLogger("httpx.content").setLevel(logging.DEBUG)
+
+TRACE_LEVEL_NUM = 5  # Custom log level below DEBUG (which is 10)
+logging.addLevelName(TRACE_LEVEL_NUM, "TRACE")
+
+
+def trace(self, message, *args, **kws):
+    if self.isEnabledFor(TRACE_LEVEL_NUM):
+        self._log(TRACE_LEVEL_NUM, message, args, **kws)
+
+
+logging.Logger.trace = trace
+
+logging.getLogger("httpx").setLevel(TRACE_LEVEL_NUM)
+logging.getLogger("httpcore").setLevel(TRACE_LEVEL_NUM)
+logging.basicConfig(level=TRACE_LEVEL_NUM)
+
+
 class Pipeline:
     api_key: str = ""  # Set based on active provider
 
@@ -151,7 +174,7 @@ class Pipeline:
                 return error_generator()
             return error_msg
 
-        from vmpilot.agent import APIProvider, process_messages
+        from vmpilot.agent import APIProvider, sampling_loop
 
         # Handle title request
         if body.get("title", False):
@@ -204,19 +227,51 @@ class Pipeline:
                     formatted_messages.append(
                         {
                             "role": role,
-                            "content": [{"type": "text", "text": content}],
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": content,
+                                    "cache_control": {"type": "ephemeral"},
+                                }
+                            ],
                         }
                     )
                 else:
-                    formatted_messages.append({"role": role, "content": content})
+                    logger.info(f"adding content: {content}")
+                    # set content cache control to ephemeral
+                    """
+                    for c in content:
+                        c["cache_control"] = {"type": "ephemeral"}
+                    formatted_messages.append(
+                        {
+                            "role": role,
+                            "content": content,
+                        }
+                    )
+                    """
+                    formatted_messages.append(
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "show me /home",
+                                    "cache_control": {"type": "ephemeral"},
+                                }
+                            ],
+                        }
+                    )
+                    logger.info(f"formatted_messages: {formatted_messages}")
 
             # Add current user message
+            """
             formatted_messages.append(
                 {
                     "role": "user",
                     "content": [{"type": "text", "text": user_message}],
                 }
             )
+            """
 
             def generate_responses():
                 output_queue = queue.Queue()
@@ -259,7 +314,7 @@ class Pipeline:
                         asyncio.set_event_loop(loop)
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
-                            process_messages(
+                            sampling_loop(
                                 model=self.valves.model,
                                 provider=APIProvider(self.valves.provider.value),
                                 system_prompt_suffix=system_prompt_suffix,
@@ -267,13 +322,9 @@ class Pipeline:
                                 output_callback=output_callback,
                                 tool_output_callback=tool_callback,
                                 api_key=self.api_key,
-                                max_tokens=1024,
+                                max_tokens=8192,
                                 temperature=body.get(
                                     "temperature", self.valves.temperature
-                                ),
-                                disable_logging=body.get("disable_logging", False),
-                                recursion_limit=body.get(
-                                    "recursion_limit", self.valves.recursion_limit
                                 ),
                             )
                         )

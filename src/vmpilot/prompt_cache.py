@@ -38,7 +38,7 @@ def inject_prompt_caching(messages: List[Dict[str, Any]]) -> None:
                     content[-1]["cache_control"] = {"type": "ephemeral"}
                 else:
                     # Explicitly remove cache control from older messages
-                    content[-1].pop("cache_control", None)
+                    # content[-1].pop("cache_control", None)
                     # We only need to remove one extra turn's cache control
                     break
 

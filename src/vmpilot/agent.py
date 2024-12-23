@@ -1,62 +1,71 @@
 """
-LangChain-based implementation for VMPilot's agent functionality.
-Replaces the original loop.py from Claude Computer Use with LangChain tools and agents.
+Agentic sampling loop that calls the Anthropic API and local implementation of anthropic-defined computer use tools.
 """
 
-import logging
-import os
-import sys
-from contextvars import ContextVar
+import platform
+from collections.abc import Callable
+from datetime import datetime
 from enum import StrEnum
-from typing import Optional
+from typing import Any, cast
 
 import httpx
-
-from vmpilot.config import TOOL_OUTPUT_LINES
-from vmpilot.llm_debug import enable_llm_debug
-
-# Configure logging
-from .agent_logging import (
-    log_error,
-    log_message,
-    log_message_content,
-    log_message_processing,
-    log_message_received,
-    log_token_usage,
-    log_tool_message,
+from anthropic import (
+    Anthropic,
+    APIError,
+    APIResponseValidationError,
+    APIStatusError,
+)
+from anthropic.types.beta import (
+    BetaCacheControlEphemeralParam,
+    BetaContentBlockParam,
+    BetaImageBlockParam,
+    BetaMessage,
+    BetaMessageParam,
+    BetaTextBlock,
+    BetaTextBlockParam,
+    BetaToolResultBlockParam,
+    BetaToolUseBlockParam,
 )
 
-logging.basicConfig(level=logging.INFO)
-# Set logging levels for specific loggers
-logger = logging.getLogger(__name__)
-
-
-import platform
-from datetime import datetime
-from typing import Any, Callable, Dict, List
-
-from langchain_anthropic import ChatAnthropic
-from langchain_community.agent_toolkits import FileManagementToolkit
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.prebuilt import create_react_agent
-from langgraph.prebuilt.chat_agent_executor import AgentState
-
-from vmpilot.config import MAX_TOKENS, TEMPERATURE
-from vmpilot.config import Provider as APIProvider
-from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.langchain_edit import FileEditTool
+from vmpilot.tools.collection import ToolCollection
+from vmpilot.tools.base import ToolResult
 
-# Flag to enable beta features in Anthropic API
+# Import config from vmpilot
+from vmpilot.config import (
+    DEFAULT_PROVIDER,
+    MAX_TOKENS,
+    RECURSION_LIMIT,
+    TEMPERATURE,
+    TOOL_OUTPUT_LINES,
+    Provider,
+    config,
+)
+
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
-# The system prompt that's passed on from webui.
-prompt_suffix: ContextVar[Optional[Any]] = ContextVar("prompt_suffix", default=None)
 
-# System prompt maintaining compatibility with original VMPilot
+class APIProvider(StrEnum):
+    ANTHROPIC = "anthropic"
+    BEDROCK = "bedrock"
+    VERTEX = "vertex"
+
+
+PROVIDER_TO_DEFAULT_MODEL_NAME: dict[APIProvider, str] = {
+    APIProvider.ANTHROPIC: "claude-3-5-sonnet-20241022",
+    APIProvider.BEDROCK: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    APIProvider.VERTEX: "claude-3-5-sonnet-v2@20241022",
+}
+
+
 SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
 * You can execute any valid bash command but do not install packages
@@ -83,57 +92,12 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 </TOOLS>"""
 
 
-def _modify_state_messages(state: AgentState):
-    # Keep the last N messages in the state as well as the system prompt
-    N_MESSAGES = 30
-
-    # Handle system prompt with potential cache control
-    suffix = prompt_suffix.get()
-    if isinstance(suffix, list):
-        # Handle structured system prompt array
-        system_messages = []
-        for item in suffix:
-            if (
-                not isinstance(item, dict)
-                or "type" not in item
-                or item["type"] != "text"
-            ):
-                continue
-
-            text = item.get("text", "").strip()
-            if not text:
-                continue
-
-            additional_kwargs = {}
-            if "cache_control" in item:
-                additional_kwargs["cache_control"] = item["cache_control"]
-
-            system_messages.append(
-                SystemMessage(content=text, additional_kwargs=additional_kwargs)
-            )
-
-        if system_messages:
-            messages = system_messages + state["messages"][:N_MESSAGES]
-        else:
-            # Fallback to basic system message
-            messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"][
-                :N_MESSAGES
-            ]
-    else:
-        # Regular system prompt without cache control
-        system_prompt = SYSTEM_PROMPT
-        if suffix and isinstance(suffix, str) and suffix.strip():
-            system_prompt = f"{system_prompt}\n\n{suffix.strip()}"
-        system_message = SystemMessage(content=system_prompt)
-        messages = [system_message] + state["messages"][:N_MESSAGES]
-
-    return messages
-
-
-def setup_tools(llm=None):
+def setup_tools():
     """Initialize and configure LangChain tools."""
     # Suppress warning about shell tool safeguards
     import warnings
+    from typing import Annotated, Union
+    from pydantic import BaseModel, Field
 
     warnings.filterwarnings(
         "ignore", category=UserWarning, module="langchain_community.tools.shell.tool"
@@ -141,334 +105,185 @@ def setup_tools(llm=None):
 
     tools = []
 
-    # Initialize Shell Tool with fencing capability if LLM is provided
-    if llm is not None:
-        try:
-            shell_tool = SetupShellTool(llm=llm)
-            shell_tool.description = """Execute bash commands in the system. Input should be a single command string. Example inputs:
-            - ls /path
-            - cat file.txt
-            - head -n 10 file.md
-            - grep pattern file
-            The output will be automatically formatted with appropriate markdown syntax."""
-            tools.append(shell_tool)
-        except Exception as e:
-            logger.error(f"Error: Error creating SetupShellTool: {e}")
+    try:
+        shell_tool = SetupShellTool()
+        shell_tool.description = """Execute bash commands in the system. Input should be a single command string. Example inputs:
+        - ls /path
+        - cat file.txt
+        - head -n 10 file.md
+        - grep pattern file
+        The output will be automatically formatted with appropriate markdown syntax."""
+
+        # Convert to Anthropic format for caching if using Anthropic
+        if isinstance(llm, ChatAnthropic):
+            shell_tool["cache_control"] = {"type": "ephemeral"}
+
+        tools.append(shell_tool)
+        logger.info(f"shell_tool: {shell_tool}")
+    except Exception as e:
+        logger.error(f"Error: Error creating SetupShellTool: {e}")
 
     # Add file editing tool (excluding view operations which are handled by shell tool)
-    tools.append(FileEditTool(view_in_shell=True))
+    edit_tool = FileEditTool(view_in_shell=True)
+
+    # if isinstance(llm, ChatAnthropic):
+    # edit_tool["cache_control"] = {"type": "ephemeral"}
+
+    tools.append(edit_tool)
 
     # Return all tools
     return tools
 
 
-async def create_agent(
-    model: str,
-    api_key: str,
-    provider: APIProvider,
-    system_prompt_suffix: str = "",
-    temperature: float = TEMPERATURE,
-    max_tokens: int = MAX_TOKENS,
-):
-    """Create a LangChain agent with the configured tools."""
-    # logger.info(f"Creating agent with model: {model}, provider: {provider}")
-    # sys.exit(1)
-    enable_prompt_caching = False
-    betas = [COMPUTER_USE_BETA_FLAG]
-
-    # openai caches automatically
-    if provider == APIProvider.ANTHROPIC:
-        enable_prompt_caching = True
-
-    if enable_prompt_caching:
-        betas.append(PROMPT_CACHING_BETA_FLAG)
-
-    if provider == APIProvider.ANTHROPIC:
-        # Get beta flags from config
-        provider_config = config.get_provider_config(APIProvider.ANTHROPIC)
-        if provider_config.beta_flags:
-            betas.extend([flag for flag in provider_config.beta_flags.keys()])
-
-        headers = {
-            "anthropic-beta": ",".join(betas),
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-        }
-        system_content = {
-            "type": "text",
-            "text": SYSTEM_PROMPT
-            + ("\n\n" + system_prompt_suffix if system_prompt_suffix else ""),
-        }
-
-        if enable_prompt_caching:
-            system_content["cache_control"] = {"type": "ephemeral"}
-
-        llm = ChatAnthropic(
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            anthropic_api_key=api_key,
-            timeout=30,  # Add 30-second timeout
-            model_kwargs={
-                "extra_headers": {"anthropic-beta": ",".join(betas)},
-                "system": [system_content],
-            },
-        )
-    elif provider == APIProvider.OPENAI:
-        llm = ChatOpenAI(
-            model=model,
-            temperature=temperature,
-            max_tokens=MAX_TOKENS,
-            openai_api_key=api_key,
-            timeout=30,
-        )
-    # Enable debug wrapper for OpenAI LLM
-    # llm = enable_llm_debug(llm)
-
-    # Set up tools with LLM for fencing capability
-    tools = setup_tools(llm=llm)
-
-    # Create React agent
-    agent = create_react_agent(
-        llm, tools, state_modifier=_modify_state_messages, checkpointer=MemorySaver()
-    )
-
-    return agent
-
-
-from vmpilot.prompt_cache import (
-    add_cache_control,
-    create_ephemeral_system_prompt,
-    inject_prompt_caching,
-)
-
-
-async def process_messages(
+async def sampling_loop(
     *,
     model: str,
     provider: APIProvider,
     system_prompt_suffix: str,
-    messages: List[dict],
-    output_callback: Callable[[Dict], None],
-    tool_output_callback: Callable[[Any, str], None],
+    messages: list[BetaMessageParam],
+    output_callback: Callable[[BetaContentBlockParam], None],
+    tool_output_callback: Callable[[ToolResult, str], None],
     api_key: str,
-    max_tokens: int = MAX_TOKENS,
-    temperature: float = TEMPERATURE,
-    disable_logging: bool = False,
-    recursion_limit: int = None,
-) -> List[dict]:
-    logger.debug(f"DEBUG: model={model}, provider={provider}")
-    """Process messages through the agent and handle outputs."""
-    # Get recursion limit from config if not explicitly set
-    if recursion_limit is None:
-        provider_config = config.get_provider_config(provider)
-        recursion_limit = provider_config.recursion_limit
-
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    if disable_logging:
-        # Disable all logging if flag is set
-        logging.getLogger("vmpilot").setLevel(logging.WARNING)
-        logging.getLogger("httpx").setLevel(logging.ERROR)
-        logging.getLogger("httpcore").setLevel(logging.ERROR)
-        logging.getLogger("asyncio").setLevel(logging.ERROR)
-        logger.setLevel(logging.ERROR)
-
-    # Set prompt suffix for both providers
-    prompt_suffix.set(system_prompt_suffix)
-
-    # Handle prompt caching for Anthropic provider
-    enable_prompt_caching = provider == APIProvider.ANTHROPIC
-
-    if enable_prompt_caching:
-        # Inject caching for message history
-        inject_prompt_caching(messages)
-
-    # Convert messages to LangChain format
-    formatted_messages = []
-    try:
-        for msg in messages:
-            logger.debug(f"Processing message: {msg}")
-            log_message_processing(msg["role"], type(msg["content"]).__name__)
-            if msg["role"] == "user":
-                if isinstance(msg["content"], str):
-                    formatted_messages.append(
-                        HumanMessage(content=msg["content"], additional_kwargs={})
-                    )
-                elif isinstance(msg["content"], list):
-                    # Handle structured content
-                    for item in msg["content"]:
-                        if item["type"] == "text":
-                            # Preserve cache control if present
-                            additional_kwargs = {}
-                            if "cache_control" in item:
-                                additional_kwargs["cache_control"] = item[
-                                    "cache_control"
-                                ]
-                            formatted_messages.append(
-                                HumanMessage(
-                                    content=item["text"],
-                                    additional_kwargs=(
-                                        additional_kwargs if additional_kwargs else {}
-                                    ),
-                                )
-                            )
-            elif msg["role"] == "assistant":
-                if isinstance(msg["content"], str):
-                    additional_kwargs = (
-                        {"cache_control": {"type": "ephemeral"}}
-                        if provider == APIProvider.ANTHROPIC
-                        else {}
-                    )
-                    formatted_messages.append(
-                        AIMessage(
-                            content=msg["content"], additional_kwargs=additional_kwargs
-                        )
-                    )
-                elif isinstance(msg["content"], list):
-                    # Combine all content parts into one message
-                    content_parts = []
-                    for item in msg["content"]:
-                        if item["type"] == "text":
-                            content_parts.append(item["text"])
-                        elif item["type"] == "tool_use":
-                            # Include tool name and output in the message
-                            tool_output = item.get("output", "")
-                            if isinstance(tool_output, dict):
-                                tool_output = tool_output.get("output", "")
-                            content_parts.append(
-                                f"Tool use: {item['name']}\nOutput: {tool_output}"
-                            )
-                    if content_parts:
-                        additional_kwargs = (
-                            {"cache_control": {"type": "ephemeral"}}
-                            if provider == APIProvider.ANTHROPIC
-                            else {}
-                        )
-                        formatted_messages.append(
-                            AIMessage(
-                                content="\n".join(content_parts),
-                                additional_kwargs=additional_kwargs,
-                            )
-                        )
-
-        logger.debug(f"Formatted {len(formatted_messages)} messages")
-    except Exception as e:
-        logger.error(f"Error formatting messages: {e}")
-        raise
-
-    logger.debug("DEBUG: Creating agent")
-    # Create agent after message formatting
-    agent = await create_agent(
-        model, api_key, provider, system_prompt_suffix, temperature, max_tokens
+    only_n_most_recent_images: int | None = None,
+    temperature: float,
+    max_tokens: int = 4096,
+):
+    """
+    Agentic sampling loop for the assistant/tool interaction of computer use.
+    """
+    system = BetaTextBlockParam(
+        type="text",
+        text=f"{SYSTEM_PROMPT}{' ' + system_prompt_suffix if system_prompt_suffix else ''}",
     )
-    logger.debug("DEBUG: Agent created successfully")
 
-    # Stream agent responses
-    thread_id = f"vmpilot-{os.getpid()}"
-    logger.debug(f"Starting agent stream with {len(formatted_messages)} messages")
+    while True:
+        enable_prompt_caching = False
+        betas = [COMPUTER_USE_BETA_FLAG]
+        if provider == APIProvider.ANTHROPIC:
+            client = Anthropic(api_key=api_key, max_retries=4)
+            enable_prompt_caching = True
 
-    async def process_stream():
+        if enable_prompt_caching:
+            betas.append(PROMPT_CACHING_BETA_FLAG)
+            _inject_prompt_caching(messages)
+            # Because cached reads are 10% of the price, we don't think it's
+            # ever sensible to break the cache by truncating images
+            system["cache_control"] = {"type": "ephemeral"}
+
+        tools = setup_tools()
+        # Call the API
+        # we use raw_response to provide debug information to streamlit. Your
+        # implementation may be able call the SDK directly with:
+        # `response = client.messages.create(...)` instead.
         try:
-            async for response in agent.astream(
-                {"messages": formatted_messages},
-                config={
-                    "thread_id": thread_id,
-                    "run_name": f"vmpilot-run-{thread_id}",
-                    "recursion_limit": recursion_limit,
-                },
-                stream_mode="values",
-            ):
-                logger.debug(f"Got response: {response}")
-                try:
-                    logger.debug(
-                        {"type": "text", "text": f"RAW LLM RESPONSE: {response}\n"}
-                    )
+            raw_response = client.beta.messages.with_raw_response.create(
+                max_tokens=max_tokens,
+                messages=messages,
+                model=model,
+                system=[system],
+                tools=tools,
+                betas=betas,
+            )
+        except (APIStatusError, APIResponseValidationError) as e:
+            logger.error(e.request, e.response, e)
+            return messages
+        except APIError as e:
+            logger.error(e.request, e.body, e)
+            return messages
 
-                    # Handle different response types
-                    if "messages" in response:
-                        message = response["messages"][-1]
+        logger.info.http_response.request, raw_response.http_response, None
 
-                        # Log message receipt and usage for all message types
-                        log_message_received(message)
-                        log_token_usage(message)
+        response = raw_response.parse()
 
-                        from langchain_core.messages import (
-                            AIMessage,
-                            HumanMessage,
-                            ToolMessage,
-                        )
+        response_params = _response_to_params(response)
+        messages.append(
+            {
+                "role": "assistant",
+                "content": response_params,
+            }
+        )
 
-                        if isinstance(message, ToolMessage):
-                            logger.debug(f"isinstance message: {message}")
-                            # Handle tool message responses
-                            log_tool_message(message)
-                            log_message_content(message, message.content)
+        tool_result_content: list[BetaToolResultBlockParam] = []
+        for content_block in response_params:
+            output_callback(content_block)
+            if content_block["type"] == "tool_use":
+                result = await tool_collection.run(
+                    name=content_block["name"],
+                    tool_input=cast(dict[str, Any], content_block["input"]),
+                )
+                tool_result_content.append(
+                    _make_api_tool_result(result, content_block["id"])
+                )
+                tool_output_callback(result, content_block["id"])
 
-                            tool_result = {"output": message.content, "error": None}
-                            tool_output_callback(tool_result, message.name)
+        if not tool_result_content:
+            return messages
 
-                        elif isinstance(message, AIMessage):
-                            content = message.content
-                            log_message_content(message, content)
+        messages.append({"content": tool_result_content, "role": "user"})
 
-                            if isinstance(content, str):
-                                # Skip if content matches last user message
-                                if (
-                                    formatted_messages
-                                    and isinstance(formatted_messages[-1], HumanMessage)
-                                    and content.strip()
-                                    == formatted_messages[-1].content.strip()
-                                ):
-                                    continue
-                                output_callback({"type": "text", "text": content})
 
-                            elif isinstance(content, list):
-                                for item in content:
-                                    if isinstance(item, dict):
-                                        if item.get("type") == "text":
-                                            output_callback(
-                                                {"type": "text", "text": item["text"]}
-                                            )
+def _response_to_params(
+    response: BetaMessage,
+) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
+    res: list[BetaTextBlockParam | BetaToolUseBlockParam] = []
+    for block in response.content:
+        if isinstance(block, BetaTextBlock):
+            res.append({"type": "text", "text": block.text})
+        else:
+            res.append(cast(BetaToolUseBlockParam, block.model_dump()))
+    return res
 
-                                        elif item.get("type") == "tool_use":
-                                            # Log tool usage declaration
-                                            logger.debug(
-                                                f"Tool use declared: {item['name']}"
-                                            )
 
-                                            # Handle tool output if present
-                                            if "output" in item:
-                                                tool_result = {
-                                                    "output": item["output"],
-                                                    "error": None,
-                                                }
-                                                tool_output_callback(
-                                                    tool_result, item["name"]
-                                                )
-                                    else:
-                                        logger.warning(
-                                            f"Unknown content item type: {type(item)}"
-                                        )
-                        else:
-                            logger.debug(
-                                f"Unhandled message type: {type(message).__name__}"
-                            )
-                except Exception as e:
-                    logger.error(f"Error processing response: {e}")
-                    output_callback(
-                        {"type": "text", "text": f"Error processing response: {str(e)}"}
-                    )
-        except Exception as e:
-            error_message = str(e)
-            message = ""
-            if "Recursion limit" in error_message and "reached" in error_message:
-                message = f" I've done {recursion_limit} steps in a row. Let me know if you'd like me to continue. "
-                logger.info(message)
+def _inject_prompt_caching(
+    messages: list[BetaMessageParam],
+):
+    """
+    Set cache breakpoints for the 3 most recent turns
+    one cache breakpoint is left for tools/system prompt, to be shared across sessions
+    """
+
+    breakpoints_remaining = 3
+    for message in reversed(messages):
+        if message["role"] == "user" and isinstance(
+            content := message["content"], list
+        ):
+            if breakpoints_remaining:
+                breakpoints_remaining -= 1
+                content[-1]["cache_control"] = BetaCacheControlEphemeralParam(
+                    {"type": "ephemeral"}
+                )
             else:
-                logger.error(f"Error in agent stream: {e}")
-                message = f"Error in agent stream: {str(e)}"
-            output_callback({"type": "text", "text": f"{message}"})
+                content[-1].pop("cache_control", None)
+                # we'll only every have one extra turn per loop
+                break
 
-    # Run the stream processor
-    await process_stream()
-    return messages
+
+def _make_api_tool_result(
+    result: ToolResult, tool_use_id: str
+) -> BetaToolResultBlockParam:
+    """Convert an agent ToolResult to an API ToolResultBlockParam."""
+    tool_result_content: list[BetaTextBlockParam | BetaImageBlockParam] | str = []
+    is_error = False
+    if result.error:
+        is_error = True
+        tool_result_content = _maybe_prepend_system_tool_result(result, result.error)
+    else:
+        if result.output:
+            tool_result_content.append(
+                {
+                    "type": "text",
+                    "text": _maybe_prepend_system_tool_result(result, result.output),
+                }
+            )
+    return {
+        "type": "tool_result",
+        "content": tool_result_content,
+        "tool_use_id": tool_use_id,
+        "is_error": is_error,
+    }
+
+
+def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str):
+    if result.system:
+        result_text = f"<system>{result.system}</system>\n{result_text}"
+    return result_text
