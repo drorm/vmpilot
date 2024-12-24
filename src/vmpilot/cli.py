@@ -49,7 +49,9 @@ def create_mock_messages(command: str) -> List[Dict]:
     ]
 
 
-async def main(command: str, temperature: float, provider: str, debug: bool):
+async def main(
+    command: str, temperature: float, provider: str, model: str, debug: bool
+):
     """Main CLI execution flow"""
     pipeline = Pipeline()
     # Convert provider string to enum
@@ -62,7 +64,11 @@ async def main(command: str, temperature: float, provider: str, debug: bool):
 
     # Execute pipeline
     result = pipeline.pipe(
-        user_message=command, model_id=args.provider, messages=messages, body=body
+        user_message=command,
+        model_id=args.provider,
+        model=args.model,
+        messages=messages,
+        body=body,
     )
 
     # Print each message in the stream
@@ -124,6 +130,13 @@ if __name__ == "__main__":
         help=f"API provider to use (default: {config.default_provider})",
     )
     parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        help="Model ID to use for the execution (default: configured default)",
+    )
+
+    parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
@@ -140,4 +153,6 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
         logging.getLogger("vmpilot").setLevel(logging.INFO)
 
-    asyncio.run(main(args.command, args.temperature, args.provider, args.debug))
+    asyncio.run(
+        main(args.command, args.temperature, args.provider, args.model, args.debug)
+    )

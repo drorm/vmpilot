@@ -68,8 +68,8 @@ class Pipeline:
 
         def _sync_with_config(self):
             """Synchronize valve state with config defaults"""
-            # Always get default model when provider changes
-            self.model = config.get_default_model(self.provider)
+            if not self.model:
+                self.model = config.get_default_model(self.provider)
 
             provider_config = config.get_provider_config(self.provider)
             if self.recursion_limit is None:
@@ -127,10 +127,15 @@ class Pipeline:
         return [model for model in models if len(self.api_key) >= 32]
 
     def pipe(
-        self, user_message: str, model_id: str, messages: List[dict], body: dict
+        self,
+        user_message: str,
+        model_id: str,
+        model: str,
+        messages: List[dict],
+        body: dict,
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
-        logger.debug(f"DEBUG: Starting pipe with message: {user_message}")
+        logger.debug(f"Starting pipe with message: {user_message}")
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -164,9 +169,10 @@ class Pipeline:
                 if model_id.lower() in [p.value for p in Provider]:
                     new_provider = Provider(model_id.lower())
                     self.valves.provider = new_provider
-                    self.valves.model = (
-                        ""  # Reset model to force using provider default
-                    )
+                    if not model:
+                        self.valves.model = ""
+                    else:
+                        self.valves.model = model
                     self.valves._sync_with_config()
                 else:
                     # Treat as actual model name
