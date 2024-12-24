@@ -13,7 +13,6 @@ from typing import Optional
 import httpx
 
 from vmpilot.config import TOOL_OUTPUT_LINES
-from vmpilot.llm_debug import enable_llm_debug
 
 # Configure logging
 from .agent_logging import (
@@ -74,7 +73,6 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * Use bash to view files using commands like cat, head, tail, or less
 * Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
 * The output of the command is passed fully to you, but truncated to {TOOL_OUTPUT_LINES} lines when shown to the user
-
 </IMPORTANT>
 
 <TOOLS>
@@ -222,10 +220,7 @@ async def create_agent(
             openai_api_key=api_key,
             timeout=30,
         )
-    # Enable debug wrapper for OpenAI LLM
-    # llm = enable_llm_debug(llm)
-
-    # Set up tools with LLM for fencing capability
+    # Set up tools with LLM
     tools = setup_tools(llm=llm)
 
     # Create React agent
@@ -243,7 +238,16 @@ from vmpilot.prompt_cache import (
 )
 
 
-async def process_messages(
+"""
+Handle a single request to the agent, processing messages and returning outputs.
+A single request may contain multiple messages, which are the history of the conversation.
+and will typically involve multiple actions by the agent, and multiple requests to the API/LLM.
+The request includes all the variables needed to make the request, including the model, provider, messages.
+The outputs are streamed back via the output_callback and tool_output_callback functions.
+"""
+
+
+async def handle_request(
     *,
     model: str,
     provider: APIProvider,
@@ -258,7 +262,6 @@ async def process_messages(
     recursion_limit: int = None,
 ) -> List[dict]:
     logger.debug(f"DEBUG: model={model}, provider={provider}")
-    """Process messages through the agent and handle outputs."""
     # Get recursion limit from config if not explicitly set
     if recursion_limit is None:
         provider_config = config.get_provider_config(provider)

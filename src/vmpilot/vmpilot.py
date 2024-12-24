@@ -151,7 +151,7 @@ class Pipeline:
                 return error_generator()
             return error_msg
 
-        from vmpilot.agent import APIProvider, process_messages
+        from vmpilot.agent import APIProvider, handle_request
 
         # Handle title request
         if body.get("title", False):
@@ -259,7 +259,7 @@ class Pipeline:
                         asyncio.set_event_loop(loop)
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
-                            process_messages(
+                            handle_request(
                                 model=self.valves.model,
                                 provider=APIProvider(self.valves.provider.value),
                                 system_prompt_suffix=system_prompt_suffix,
