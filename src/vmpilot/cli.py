@@ -22,11 +22,14 @@ except ImportError:
     from vmpilot import Pipeline  # Fallback to direct import
 
 
-def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
+def create_mock_body(
+    temperature: float = 0.7, debug: bool = False, model: str = ""
+) -> Dict:
     """Create a mock body for pipeline calls"""
     return {
         "temperature": temperature,
         "stream": True,
+        "model": model,
         "debug": False,  # Can be enabled via -d flag
         "max_tokens": 8192,  # For LangChain compatibility
     }
@@ -59,16 +62,12 @@ async def main(
     pipeline.valves.provider = provider_enum
 
     # Create mock pipeline call parameters
-    body = create_mock_body(temperature, debug)
+    body = create_mock_body(temperature, debug, model)
     messages = create_mock_messages(command)
 
     # Execute pipeline
     result = pipeline.pipe(
-        user_message=command,
-        model_id=args.provider,
-        model=args.model,
-        messages=messages,
-        body=body,
+        user_message=command, model_id=args.provider, messages=messages, body=body
     )
 
     # Print each message in the stream
