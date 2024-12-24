@@ -13,6 +13,7 @@ from typing import Optional
 import httpx
 
 from vmpilot.config import TOOL_OUTPUT_LINES
+from vmpilot.llm_debug import enable_llm_debug
 
 # Configure logging
 from .agent_logging import (
@@ -170,7 +171,8 @@ async def create_agent(
     max_tokens: int = MAX_TOKENS,
 ):
     """Create a LangChain agent with the configured tools."""
-    logger.debug(f"Creating agent with model: {model}, provider: {provider}")
+    # logger.info(f"Creating agent with model: {model}, provider: {provider}")
+    # sys.exit(1)
     enable_prompt_caching = False
     betas = [COMPUTER_USE_BETA_FLAG]
 
@@ -255,7 +257,7 @@ async def process_messages(
     disable_logging: bool = False,
     recursion_limit: int = None,
 ) -> List[dict]:
-    logger.debug(f"model={model}, provider={provider}")
+    logger.debug(f"DEBUG: model={model}, provider={provider}")
     """Process messages through the agent and handle outputs."""
     # Get recursion limit from config if not explicitly set
     if recursion_limit is None:
