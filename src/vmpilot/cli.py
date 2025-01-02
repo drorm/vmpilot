@@ -54,7 +54,7 @@ async def main(command: str, temperature: float, provider: str, debug: bool):
     pipeline = Pipeline()
     # Convert provider string to enum
     provider_enum = next(p for p in Provider if p.value == provider)
-    pipeline.valves.provider = provider_enum
+    pipeline.provider = provider_enum
 
     # Create mock pipeline call parameters
     body = create_mock_body(temperature, debug)

@@ -46,56 +46,53 @@ from vmpilot.config import (
 
 
 class Pipeline:
+    def _sync_with_config(self):
+        """Synchronize valve state with config defaults"""
+        # Always get default model when provider changes
+        self.model = config.get_default_model(self.provider)
+
+        provider_config = config.get_provider_config(self.provider)
+        if self.recursion_limit is None:
+            self.recursion_limit = provider_config.recursion_limit
+
     api_key: str = ""  # Set based on active provider
+    # Runtime parameters
+    anthropic_api_key = (os.getenv("ANTHROPIC_API_KEY", ""),)
+    openai_api_key = (os.getenv("OPENAI_API_KEY", ""),)
+
+    # Model configuration (inherited from config)
+    provider: Provider = Provider(DEFAULT_PROVIDER)
+    model: str = ""  # Set based on provider's default
+    recursion_limit: int = RECURSION_LIMIT
+
+    # Inference parameters from config
+    temperature: float = TEMPERATURE
+    max_tokens: int = MAX_TOKENS
+
+    """Synchronize pipe state with config defaults"""
+    # Always get default model when provider changes
+    model = config.get_default_model(provider)
+
+    provider_config = config.get_provider_config(provider)
+    if recursion_limit is None:
+        recursion_limit = provider_config.recursion_limit
+
+    print(f"Provider: {provider}")
+    """Update api_key based on current provider"""
+    api_key = anthropic_api_key if provider == Provider.ANTHROPIC else openai_api_key
+    print(f"API Key updated: {api_key}")
 
     class Valves(BaseModel):
-        # Runtime parameters
-        anthropic_api_key: str = ""
-        openai_api_key: str = ""
-
-        # Model configuration (inherited from config)
-        provider: Provider = Provider(DEFAULT_PROVIDER)
-        model: str = ""  # Set based on provider's default
-        recursion_limit: int = RECURSION_LIMIT
-
-        # Inference parameters from config
-        temperature: float = TEMPERATURE
-        max_tokens: int = MAX_TOKENS
-
         def __init__(self, **data):
             super().__init__(**data)
             self._sync_with_config()
-
-        def _sync_with_config(self):
-            """Synchronize valve state with config defaults"""
-            # Always get default model when provider changes
-            self.model = config.get_default_model(self.provider)
-
-            provider_config = config.get_provider_config(self.provider)
-            if self.recursion_limit is None:
-                self.recursion_limit = provider_config.recursion_limit
-
-            # Update API key based on provider
-            self._update_api_key()
-
-        def _update_api_key(self):
-            """Update api_key based on current provider"""
-            Pipeline.api_key = (
-                self.anthropic_api_key
-                if self.provider == Provider.ANTHROPIC
-                else self.openai_api_key
-            )
 
     def __init__(self):
         self.name = "VMPilot Pipeline"
         self.type = "manifold"
         self.id = "vmpilot"
 
-        # Initialize valves with environment variables and defaults
-        self.valves = self.Valves(
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
-            openai_api_key=os.getenv("OPENAI_API_KEY", ""),
-        )
+        self.valves = self.Valves()
 
     async def on_startup(self):
         logger.debug(f"on_startup:{__name__}")
@@ -105,7 +102,6 @@ class Pipeline:
 
     async def on_valves_updated(self):
         """Handle valve updates by re-syncing configuration"""
-        self.valves._sync_with_config()
         logger.debug(f"Valves updated and synced with config")
 
     def pipelines(self) -> List[dict]:
@@ -129,6 +125,7 @@ class Pipeline:
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
+        print(f"Self: {self.api_key}")
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"DEBUG: Starting pipe with message: {user_message}")
         # Disable logging if requested (e.g. when running from CLI)
@@ -139,9 +136,7 @@ class Pipeline:
 
         # Validate API key
         if not self.api_key or len(self.api_key) < 32:
-            error_msg = (
-                f"Error: Invalid or missing {self.valves.provider.value} API key"
-            )
+            error_msg = f"Error: Invalid or missing {self.provider.value} API key"
             logger.error(error_msg)
             if body.get("stream", False):
 
@@ -163,18 +158,15 @@ class Pipeline:
             try:
                 if model_id.lower() in [p.value for p in Provider]:
                     new_provider = Provider(model_id.lower())
-                    self.valves.provider = new_provider
-                    self.valves.model = (
-                        ""  # Reset model to force using provider default
-                    )
-                    self.valves._sync_with_config()
+                    provider = new_provider
+                    model = ""  # Reset model to force using provider default
                 else:
                     # Treat as actual model name
-                    if not config.validate_model(model_id, self.valves.provider):
+                    if not config.validate_model(model_id, self.provider):
                         error_msg = f"Unsupported model: {model_id}"
                         logger.error(error_msg)
                         return error_msg
-                    self.valves.model = model_id
+                    self.model = model_id
             except ValueError:
                 error_msg = f"Unsupported model: {model_id}"
                 logger.error(error_msg)
@@ -260,20 +252,18 @@ class Pipeline:
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(
-                                model=self.valves.model,
-                                provider=APIProvider(self.valves.provider.value),
+                                model=self.model,
+                                provider=APIProvider(self.provider.value),
                                 system_prompt_suffix=system_prompt_suffix,
                                 messages=formatted_messages,
                                 output_callback=output_callback,
                                 tool_output_callback=tool_callback,
                                 api_key=self.api_key,
                                 max_tokens=1024,
-                                temperature=body.get(
-                                    "temperature", self.valves.temperature
-                                ),
+                                temperature=body.get("temperature", self.temperature),
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=body.get(
-                                    "recursion_limit", self.valves.recursion_limit
+                                    "recursion_limit", self.recursion_limit
                                 ),
                             )
                         )
