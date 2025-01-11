@@ -47,7 +47,7 @@ from vmpilot.config import (
 
 class Pipeline:
     def _sync_with_config(self):
-        """Synchronize valve state with config defaults"""
+        """Synchronize state with config defaults"""
         # Always get default model when provider changes
         self.model = config.get_default_model(self.provider)
 
@@ -55,10 +55,21 @@ class Pipeline:
         if self.recursion_limit is None:
             self.recursion_limit = provider_config.recursion_limit
 
-    api_key: str = ""  # Set based on active provider
+        # Update API key based on provider
+        if self.provider == Provider.ANTHROPIC:
+            self.api_key = self.anthropic_api_key
+        else:
+            self.api_key = self.openai_api_key
+
+        logger.debug(f"Provider updated to: {self.provider}")
+        logger.debug(
+            f"API Key updated: {'valid' if len(self.api_key) >= 32 else 'invalid'}"
+        )
+
     # Runtime parameters
-    anthropic_api_key = (os.getenv("ANTHROPIC_API_KEY", ""),)
-    openai_api_key = (os.getenv("OPENAI_API_KEY", ""),)
+    api_key: str = ""  # Set based on active provider
+    anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
 
     # Model configuration (inherited from config)
     provider: Provider = Provider(DEFAULT_PROVIDER)
@@ -69,40 +80,25 @@ class Pipeline:
     temperature: float = TEMPERATURE
     max_tokens: int = MAX_TOKENS
 
-    """Synchronize pipe state with config defaults"""
-    # Always get default model when provider changes
-    model = config.get_default_model(provider)
-
-    provider_config = config.get_provider_config(provider)
-    if recursion_limit is None:
-        recursion_limit = provider_config.recursion_limit
-
-    print(f"Provider: {provider}")
-    """Update api_key based on current provider"""
-    api_key = anthropic_api_key if provider == Provider.ANTHROPIC else openai_api_key
-    print(f"API Key updated: {api_key}")
-
     class Valves(BaseModel):
+        name: str = "VMPilot Pipeline"
+
         def __init__(self, **data):
             super().__init__(**data)
-            self._sync_with_config()
 
     def __init__(self):
         self.name = "VMPilot Pipeline"
         self.type = "manifold"
         self.id = "vmpilot"
 
-        self.valves = self.Valves()
+        # Initialize configuration
+        self._sync_with_config()
 
     async def on_startup(self):
         logger.debug(f"on_startup:{__name__}")
 
     async def on_shutdown(self):
         logger.debug(f"on_shutdown:{__name__}")
-
-    async def on_valves_updated(self):
-        """Handle valve updates by re-syncing configuration"""
-        logger.debug(f"Valves updated and synced with config")
 
     def pipelines(self) -> List[dict]:
         """Return list of supported models/pipelines"""
@@ -125,7 +121,6 @@ class Pipeline:
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
-        print(f"Self: {self.api_key}")
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"DEBUG: Starting pipe with message: {user_message}")
         # Disable logging if requested (e.g. when running from CLI)

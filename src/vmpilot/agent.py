@@ -13,7 +13,6 @@ from typing import Optional
 import httpx
 
 from vmpilot.config import TOOL_OUTPUT_LINES
-from vmpilot.llm_debug import enable_llm_debug
 
 # Configure logging
 from .agent_logging import (
