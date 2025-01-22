@@ -34,7 +34,7 @@ import platform
 from datetime import datetime
 from typing import Any, Callable, Dict, List
 
-from langchain_anthropic import ChatAnthropic
+from .custom_chat import CachingChatAnthropic
 from langchain_community.agent_toolkits import FileManagementToolkit
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
@@ -57,6 +57,72 @@ prompt_suffix: ContextVar[Optional[Any]] = ContextVar("prompt_suffix", default=N
 
 # System prompt maintaining compatibility with original VMPilot
 SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
+* You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
+* You can execute any valid bash command but do not install packages
+* When using commands that are expected to output very large quantities of text, redirect into a tmp file
+* The current date is {datetime.today().strftime('%A, %B %-d, %Y')}
+* When using your bash tool with commands that are expected to output very large quantities of text, redirect into a tmp file and use str_replace_editor or `grep -n -B <lines before> -A <lines after> <query> <filename>` to confirm output.
+* When viewing a page it can be helpful to zoom out so that you can see everything on the page.  Either that, or make sure you scroll down to see everything before deciding something isn't available.
+</SYSTEM_CAPABILITY>
+
+<IMPORTANT>
+* When using the shell tool, provide both command and language parameters:
+  - command: The shell command to execute (e.g. "ls -l", "cat file.py")
+  - language: Output syntax highlighting (e.g. "bash", "python", "text")
+* Only execute valid bash commands
+* Use bash to view files using commands like cat, head, tail, or less
+* Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
+* The output of the command is passed fully to you, but truncated to {TOOL_OUTPUT_LINES} lines when shown to the user
+
+</IMPORTANT>
+
+<TOOLS>
+* Use the bash tool to execute system commands. Provide commands as a single string.
+* Use the str_replace_editor tool for editing files.
+* You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
+* You can execute any valid bash command but do not install packages
+* When using commands that are expected to output very large quantities of text, redirect into a tmp file
+* The current date is {datetime.today().strftime('%A, %B %-d, %Y')}
+* When using your bash tool with commands that are expected to output very large quantities of text, redirect into a tmp file and use str_replace_editor or `grep -n -B <lines before> -A <lines after> <query> <filename>` to confirm output.
+* When viewing a page it can be helpful to zoom out so that you can see everything on the page.  Either that, or make sure you scroll down to see everything before deciding something isn't available.
+</SYSTEM_CAPABILITY>
+
+<IMPORTANT>
+* When using the shell tool, provide both command and language parameters:
+  - command: The shell command to execute (e.g. "ls -l", "cat file.py")
+  - language: Output syntax highlighting (e.g. "bash", "python", "text")
+* Only execute valid bash commands
+* Use bash to view files using commands like cat, head, tail, or less
+* Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
+* The output of the command is passed fully to you, but truncated to {TOOL_OUTPUT_LINES} lines when shown to the user
+
+</IMPORTANT>
+
+<TOOLS>
+* Use the bash tool to execute system commands. Provide commands as a single string.
+* Use the str_replace_editor tool for editing files.
+* You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
+* You can execute any valid bash command but do not install packages
+* When using commands that are expected to output very large quantities of text, redirect into a tmp file
+* The current date is {datetime.today().strftime('%A, %B %-d, %Y')}
+* When using your bash tool with commands that are expected to output very large quantities of text, redirect into a tmp file and use str_replace_editor or `grep -n -B <lines before> -A <lines after> <query> <filename>` to confirm output.
+* When viewing a page it can be helpful to zoom out so that you can see everything on the page.  Either that, or make sure you scroll down to see everything before deciding something isn't available.
+</SYSTEM_CAPABILITY>
+
+<IMPORTANT>
+* When using the shell tool, provide both command and language parameters:
+  - command: The shell command to execute (e.g. "ls -l", "cat file.py")
+  - language: Output syntax highlighting (e.g. "bash", "python", "text")
+* Only execute valid bash commands
+* Use bash to view files using commands like cat, head, tail, or less
+* Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
+* The output of the command is passed fully to you, but truncated to {TOOL_OUTPUT_LINES} lines when shown to the user
+
+</IMPORTANT>
+
+<TOOLS>
+* Use the bash tool to execute system commands. Provide commands as a single string.
+* Use the str_replace_editor tool for editing files.
 * You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
 * You can execute any valid bash command but do not install packages
 * When using commands that are expected to output very large quantities of text, redirect into a tmp file
@@ -126,6 +192,12 @@ def _modify_state_messages(state: AgentState):
         system_message = SystemMessage(content=system_prompt)
         messages = [system_message] + state["messages"][:N_MESSAGES]
 
+    # logger.info(f"messages: {messages}")
+    # Add cache control to the last message
+    # if messages:
+    # messages[-1].cache_control = {"type": "ephemeral"}
+    # logger.info(f"messages[-1]: {messages[-1]}")
+    # messages[-1].additional_kwargs = {"cache_control": {"type": "ephemeral"}}
     return messages
 
 
@@ -170,7 +242,7 @@ async def create_agent(
     max_tokens: int = MAX_TOKENS,
 ):
     """Create a LangChain agent with the configured tools."""
-    # logger.info(f"Creating agent with model: {model}, provider: {provider}")
+    logger.info(f"Creating agent with model: {model}, provider: {provider}")
     # sys.exit(1)
     enable_prompt_caching = False
     betas = [COMPUTER_USE_BETA_FLAG]
@@ -184,6 +256,7 @@ async def create_agent(
 
     if provider == APIProvider.ANTHROPIC:
         # Get beta flags from config
+        logger.info("Getting beta flags from config")
         provider_config = config.get_provider_config(APIProvider.ANTHROPIC)
         if provider_config.beta_flags:
             betas.extend([flag for flag in provider_config.beta_flags.keys()])
@@ -193,6 +266,7 @@ async def create_agent(
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
+        logger.info(f"Headers: {headers}")
         system_content = {
             "type": "text",
             "text": SYSTEM_PROMPT
@@ -202,7 +276,8 @@ async def create_agent(
         if enable_prompt_caching:
             system_content["cache_control"] = {"type": "ephemeral"}
 
-        llm = ChatAnthropic(
+        logger.info("Creating CachingChatAnthropic agent")
+        llm = CachingChatAnthropic(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -226,6 +301,7 @@ async def create_agent(
     tools = setup_tools(llm=llm)
 
     # Create React agent
+    logger.debug("Creating React agent")
     agent = create_react_agent(
         llm, tools, state_modifier=_modify_state_messages, checkpointer=MemorySaver()
     )
@@ -279,7 +355,7 @@ async def process_messages(
     if enable_prompt_caching:
         # Inject caching for message history
         inject_prompt_caching(messages)
-    logger.debug("DEBUG: Creating agent")
+    logger.info("DEBUG: Creating agent")
     # Create agent
     agent = await create_agent(
         model, api_key, provider, system_prompt_suffix, temperature, max_tokens
@@ -317,11 +393,13 @@ async def process_messages(
                             )
             elif msg["role"] == "assistant":
                 if isinstance(msg["content"], str):
+                    """
                     additional_kwargs = (
                         {"cache_control": {"type": "ephemeral"}}
                         if provider == APIProvider.ANTHROPIC
                         else {}
                     )
+                    """
                     formatted_messages.append(
                         AIMessage(
                             content=msg["content"], additional_kwargs=additional_kwargs
@@ -342,11 +420,6 @@ async def process_messages(
                                 f"Tool use: {item['name']}\nOutput: {tool_output}"
                             )
                     if content_parts:
-                        additional_kwargs = (
-                            {"cache_control": {"type": "ephemeral"}}
-                            if provider == APIProvider.ANTHROPIC
-                            else {}
-                        )
                         formatted_messages.append(
                             AIMessage(
                                 content="\n".join(content_parts),
@@ -386,7 +459,7 @@ async def process_messages(
 
                         # Log message receipt and usage for all message types
                         log_message_received(message)
-                        log_token_usage(message)
+                        log_token_usage(message, "info")
 
                         from langchain_core.messages import (
                             AIMessage,
