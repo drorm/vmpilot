@@ -192,16 +192,11 @@ def _modify_state_messages(state: AgentState):
         system_message = SystemMessage(content=system_prompt)
         messages = [system_message] + state["messages"][:N_MESSAGES]
 
-    # logger.info(f"messages: {messages}")
-    # Add cache control to the last message
-    # if messages:
-    # messages[-1].cache_control = {"type": "ephemeral"}
-    # logger.info(f"messages[-1]: {messages[-1]}")
-    # messages[-1].additional_kwargs = {"cache_control": {"type": "ephemeral"}}
     return messages
 
 
 def setup_tools(llm=None):
+    global tools
     """Initialize and configure LangChain tools."""
     # Suppress warning about shell tool safeguards
     import warnings
@@ -216,6 +211,7 @@ def setup_tools(llm=None):
     if llm is not None:
         try:
             shell_tool = SetupShellTool(llm=llm)
+            shell_tool.name = "bash"
             shell_tool.description = """Execute bash commands in the system. Input should be a single command string. Example inputs:
             - ls /path
             - cat file.txt
@@ -227,7 +223,7 @@ def setup_tools(llm=None):
             logger.error(f"Error: Error creating SetupShellTool: {e}")
 
     # Add file editing tool (excluding view operations which are handled by shell tool)
-    tools.append(FileEditTool(view_in_shell=True))
+    # tools.append(FileEditTool(view_in_shell=True))
 
     # Return all tools
     return tools
@@ -242,7 +238,7 @@ async def create_agent(
     max_tokens: int = MAX_TOKENS,
 ):
     """Create a LangChain agent with the configured tools."""
-    logger.info(f"Creating agent with model: {model}, provider: {provider}")
+    logger.debug(f"Creating agent with model: {model}, provider: {provider}")
     # sys.exit(1)
     enable_prompt_caching = False
     betas = [COMPUTER_USE_BETA_FLAG]
@@ -256,7 +252,6 @@ async def create_agent(
 
     if provider == APIProvider.ANTHROPIC:
         # Get beta flags from config
-        logger.info("Getting beta flags from config")
         provider_config = config.get_provider_config(APIProvider.ANTHROPIC)
         if provider_config.beta_flags:
             betas.extend([flag for flag in provider_config.beta_flags.keys()])
@@ -266,7 +261,6 @@ async def create_agent(
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
-        logger.info(f"Headers: {headers}")
         system_content = {
             "type": "text",
             "text": SYSTEM_PROMPT
@@ -276,7 +270,6 @@ async def create_agent(
         if enable_prompt_caching:
             system_content["cache_control"] = {"type": "ephemeral"}
 
-        logger.info("Creating CachingChatAnthropic agent")
         llm = CachingChatAnthropic(
             model=model,
             temperature=temperature,
@@ -301,13 +294,14 @@ async def create_agent(
     tools = setup_tools(llm=llm)
 
     # Create React agent
-    logger.debug("Creating React agent")
     agent = create_react_agent(
         llm, tools, state_modifier=_modify_state_messages, checkpointer=MemorySaver()
     )
 
     return agent
 
+
+tools = []
 
 from vmpilot.prompt_cache import (
     add_cache_control,
@@ -330,6 +324,7 @@ async def process_messages(
     disable_logging: bool = False,
     recursion_limit: int = None,
 ) -> List[dict]:
+    global tools
     logger.debug(f"DEBUG: model={model}, provider={provider}")
     """Process messages through the agent and handle outputs."""
     # Get recursion limit from config if not explicitly set
@@ -355,7 +350,7 @@ async def process_messages(
     if enable_prompt_caching:
         # Inject caching for message history
         inject_prompt_caching(messages)
-    logger.info("DEBUG: Creating agent")
+    logger.debug("DEBUG: Creating agent")
     # Create agent
     agent = await create_agent(
         model, api_key, provider, system_prompt_suffix, temperature, max_tokens
@@ -437,6 +432,7 @@ async def process_messages(
     logger.debug(f"Starting agent stream with {len(formatted_messages)} messages")
 
     async def process_stream():
+        tools
         try:
             async for response in agent.astream(
                 {"messages": formatted_messages},
@@ -459,7 +455,7 @@ async def process_messages(
 
                         # Log message receipt and usage for all message types
                         log_message_received(message)
-                        log_token_usage(message, "info")
+                        # log_token_usage(message, "info")
 
                         from langchain_core.messages import (
                             AIMessage,
@@ -481,15 +477,128 @@ async def process_messages(
                             log_message_content(message, content)
 
                             if isinstance(content, str):
-                                # Skip if content matches last user message
-                                if (
-                                    formatted_messages
-                                    and isinstance(formatted_messages[-1], HumanMessage)
-                                    and content.strip()
-                                    == formatted_messages[-1].content.strip()
-                                ):
-                                    continue
+                                # First output the assistant's message
                                 output_callback({"type": "text", "text": content})
+
+                                # Then check for and handle tool calls
+                                tool_calls = message.additional_kwargs.get(
+                                    "tool_calls", []
+                                )
+                                if tool_calls:
+                                    logger.debug(f"Found tool calls: {tool_calls}")
+                                    for tool_call in tool_calls:
+                                        if tool_call["type"] == "function":
+                                            logger.debug(f"Tool call: is function")
+                                            tool_call_id = tool_call["id"]
+                                            tool_name = tool_call["function"]["name"]
+                                            tool_input = tool_call["function"][
+                                                "arguments"
+                                            ]
+
+                                            # Find the matching tool
+                                            logger.debug(f"tools: {tools}")
+                                            matching_tools = [
+                                                t for t in tools if t.name == tool_name
+                                            ]
+                                            logger.debug(
+                                                f"Matching tools: {matching_tools}"
+                                            )
+                                            if matching_tools:
+                                                tool = matching_tools[0]
+                                                try:
+                                                    # Execute the tool
+                                                    tool_result = await tool.ainvoke(
+                                                        tool_input
+                                                    )
+
+                                                    # Handle tool output
+                                                    output_callback(
+                                                        {
+                                                            "type": "text",
+                                                            "text": str(tool_result),
+                                                        }
+                                                    )
+                                                    logger.debug(
+                                                        f"Tool result: {tool_result}"
+                                                    )
+                                                    tool_output_callback(
+                                                        {
+                                                            "output": tool_result,
+                                                            "error": None,
+                                                        },
+                                                        tool_name,
+                                                    )
+
+                                                    # Add tool result to messages for continued conversation
+                                                    tool_message = ToolMessage(
+                                                        content=str(tool_result),
+                                                        name=tool_name,
+                                                        tool_call_id=tool_call_id,
+                                                    )
+                                                    formatted_messages.append(
+                                                        tool_message
+                                                    )
+
+                                                    # Get LLM's response to the tool output
+                                                    logger.debug(
+                                                        "Getting LLM response to tool output"
+                                                    )
+                                                    llm_response = await agent.ainvoke(
+                                                        {
+                                                            "messages": formatted_messages
+                                                        },
+                                                        config={
+                                                            "thread_id": thread_id,
+                                                            "run_name": f"vmpilot-run-{thread_id}-tool-response",
+                                                            "recursion_limit": recursion_limit,
+                                                        },
+                                                    )
+
+                                                    if "messages" in llm_response:
+                                                        ai_message = llm_response[
+                                                            "messages"
+                                                        ][-1]
+                                                        if isinstance(
+                                                            ai_message, AIMessage
+                                                        ):
+                                                            output_callback(
+                                                                {
+                                                                    "type": "text",
+                                                                    "text": ai_message.content,
+                                                                }
+                                                            )
+                                                            formatted_messages.append(
+                                                                ai_message
+                                                            )
+
+                                                except Exception as e:
+                                                    error_msg = f"Error executing tool {tool_name}: {str(e)}"
+                                                    logger.error(error_msg)
+                                                    output_callback(
+                                                        {
+                                                            "type": "text",
+                                                            "text": error_msg,
+                                                        }
+                                                    )
+                                                    tool_output_callback(
+                                                        {
+                                                            "output": None,
+                                                            "error": error_msg,
+                                                        },
+                                                        tool_name,
+                                                    )
+                                else:
+                                    # Skip if content matches last user message
+                                    if (
+                                        formatted_messages
+                                        and isinstance(
+                                            formatted_messages[-1], HumanMessage
+                                        )
+                                        and content.strip()
+                                        == formatted_messages[-1].content.strip()
+                                    ):
+                                        continue
+                                    output_callback({"type": "text", "text": content})
 
                             elif isinstance(content, list):
                                 for item in content:
@@ -505,14 +614,68 @@ async def process_messages(
                                                 f"Tool use declared: {item['name']}"
                                             )
 
-                                            # Handle tool output if present
-                                            if "output" in item:
-                                                tool_result = {
-                                                    "output": item["output"],
-                                                    "error": None,
-                                                }
-                                                tool_output_callback(
-                                                    tool_result, item["name"]
+                                            # Execute the tool
+                                            tool_name = item["name"]
+                                            tool_input = item["input"]
+
+                                            # Find the matching tool
+                                            matching_tools = [
+                                                t for t in tools if t.name == tool_name
+                                            ]
+                                            if matching_tools:
+                                                tool = matching_tools[0]
+                                                try:
+                                                    # Execute the tool
+                                                    if isinstance(tool_input, dict):
+                                                        tool_result = (
+                                                            await tool.ainvoke(
+                                                                tool_input
+                                                            )
+                                                        )
+                                                    else:
+                                                        tool_result = (
+                                                            await tool.ainvoke(
+                                                                {"input": tool_input}
+                                                            )
+                                                        )
+
+                                                    # Handle tool output
+                                                    output_callback(
+                                                        {
+                                                            "type": "text",
+                                                            "text": str(tool_result),
+                                                        }
+                                                    )
+                                                    tool_output_callback(
+                                                        {
+                                                            "output": tool_result,
+                                                            "error": None,
+                                                        },
+                                                        tool_name,
+                                                    )
+                                                except Exception as e:
+                                                    error_msg = f"Error executing tool {tool_name}: {str(e)}"
+                                                    logger.error(error_msg)
+                                                    output_callback(
+                                                        {
+                                                            "type": "text",
+                                                            "text": error_msg,
+                                                        }
+                                                    )
+                                                    tool_output_callback(
+                                                        {
+                                                            "output": None,
+                                                            "error": error_msg,
+                                                        },
+                                                        tool_name,
+                                                    )
+                                            else:
+                                                error_msg = (
+                                                    f"Tool {tool_name} not found"
+                                                )
+                                                logger.error(error_msg)
+                                                output_callback(
+                                                    {"type": "text", "text": error_msg}
                                                 )
                                     else:
                                         logger.warning(
