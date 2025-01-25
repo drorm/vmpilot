@@ -210,14 +210,6 @@ class Pipeline:
                 else:
                     formatted_messages.append({"role": role, "content": content})
 
-            # Add current user message
-            formatted_messages.append(
-                {
-                    "role": "user",
-                    "content": [{"type": "text", "text": user_message}],
-                }
-            )
-
             def generate_responses():
                 output_queue = queue.Queue()
                 loop_done = threading.Event()
