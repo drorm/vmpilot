@@ -209,6 +209,9 @@ class Pipeline:
                     )
                 else:
                     formatted_messages.append({"role": role, "content": content})
+                formatted_messages[-1]["content"][-1]["cache_control"] = {
+                    "type": "ephemeral"
+                }
 
             def generate_responses():
                 output_queue = queue.Queue()
