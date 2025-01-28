@@ -220,7 +220,7 @@ async def create_agent(
             openai_api_key=api_key,
             timeout=30,
         )
-    # Set up tools with LLM
+    # Set up tools with LLM for fencing capability
     tools = setup_tools(llm=llm)
 
     # Create React agent
