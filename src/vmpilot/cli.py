@@ -42,7 +42,6 @@ def create_mock_messages(command: str) -> List[Dict]:
                 {
                     "type": "text",
                     "text": command,
-                    "cache_control": {"type": "persistent"},
                 }
             ],
         }
