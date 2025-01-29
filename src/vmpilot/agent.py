@@ -139,13 +139,17 @@ def _modify_state_messages(state: AgentState):
 
     logger.info(f"Modified state messages: {messages}")
     """
-
+    messages = state["messages"][:N_MESSAGES]
     cached = 3  # antropic allows up to 4 and we use one for system
-    for message in reversed(state["messages"]):
+    for message in reversed(messages):
+        """
+        if cached > 0 and (
+            isinstance(message, HumanMessage)
+            or isinstance(message, ToolMessage)
+            or isinstance(message, AIMessage)
+        ):
+        """
         if cached > 0:
-            # if (
-            # isinstance(message, AIMessage) or isinstance(message, ToolMessage)
-            # ) and cached > 0:
             if isinstance(message.content, list):
                 for block in message.content:
                     block["cache_control"] = {"type": "ephemeral"}
@@ -153,13 +157,25 @@ def _modify_state_messages(state: AgentState):
                     cached -= 1
             else:
                 message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
-                logger.info(f"Added cache_eph message: {message}")
+                logger.info(
+                    f"Added cache_eph message: {message}, additional_kwargs: {message.additional_kwargs}"
+                )
                 cached -= 1
         else:
-            message.additional_kwargs.pop("cache_control", None)
+            if isinstance(message.content, list):
+                for block in message.content:
+                    block.pop("cache_control", None)
+            else:
+                message.additional_kwargs.pop("cache_control", None)
 
-    logger.info(f"Modified state messages: {state['messages']}")
-    return state["messages"]
+    def _format_message_for_logging(msg):
+        if isinstance(msg, ToolMessage):
+            return f"{msg.__class__.__name__}(content={msg.content!r}, name={msg.name!r}, tool_call_id={msg.tool_call_id!r}, additional_kwargs={msg.additional_kwargs!r})\n"
+        return str(msg)
+
+    formatted_messages = [_format_message_for_logging(msg) for msg in state["messages"]]
+    logger.info(f"Modified state messages: {formatted_messages}")
+    return messages
 
 
 def setup_tools(llm=None):
@@ -271,13 +287,6 @@ async def create_agent(
     return agent
 
 
-from vmpilot.prompt_cache import (
-    add_cache_control,
-    create_ephemeral_system_prompt,
-    inject_prompt_caching,
-)
-
-
 """
 Process messages through the agent and handle outputs
 """
@@ -319,9 +328,6 @@ async def process_messages(
     # Handle prompt caching for Anthropic provider
     enable_prompt_caching = provider == APIProvider.ANTHROPIC
 
-    if enable_prompt_caching:
-        # Inject caching for message history
-        inject_prompt_caching(messages)
     logger.debug("DEBUG: Creating agent")
     # Create agent
     agent = await create_agent(
