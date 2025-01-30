@@ -93,29 +93,19 @@ def log_message_content(message: Any, content: Any, level: str = "debug") -> Non
 def log_token_usage(message: Any, level: str = "debug") -> None:
     """Log token usage and related metadata"""
     response_metadata = getattr(message, "response_metadata", {})
-    usage_metadata = getattr(message, "usage_metadata", {})
-    tool_calls = getattr(message, "tool_calls", [])
+    usage = response_metadata.get("usage", {})
 
-    # if there's no usage metadata, return
-    if not usage_metadata:
+    # if there's no usage data, return
+    if not usage:
         return
 
-    log_message(
-        "TOKEN_USAGE",
-        {
-            "usage": response_metadata.get("usage", {}),
-            "tool_calls": [
-                {
-                    "name": tool["name"],
-                    "args": tool["args"],
-                    "type": tool["type"],
-                }
-                for tool in tool_calls
-            ],
-            "usage_metadata": usage_metadata,
-        },
-        level,
-    )
+    # Log token usage in single line format
+    logging.getLogger(__name__).info(
+        "TOKEN_USAGE: {'cache_creation_input_tokens': %d, 'cache_read_input_tokens': %d, 'input_tokens': %d, 'output_tokens': %d}",
+        usage.get('cache_creation_input_tokens', 0),
+        usage.get('cache_read_input_tokens', 0),
+        usage.get('input_tokens', 0),
+        usage.get('output_tokens', 0))
 
 
 def log_tool_message(message: Any, level: str = "debug") -> None:
