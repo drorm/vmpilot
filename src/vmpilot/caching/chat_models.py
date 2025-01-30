@@ -1,5 +1,4 @@
 import copy
-import json
 import re
 import warnings
 from functools import cached_property
@@ -138,12 +137,10 @@ def _merge_messages(
                         }
                     ]
                 )
-                print(f"checking toolresult for kwargs: {curr}")
                 if (
                     hasattr(curr, "additional_kwargs")
                     and "cache_control" in curr.additional_kwargs
                 ):
-                    print("setting cache_control for toolresult")
                     new.additional_kwargs = curr.additional_kwargs
                 curr = new
         last = merged[-1] if merged else None
@@ -183,7 +180,6 @@ def _format_messages(
     """
     system: Union[str, List[Dict], None] = None
     formatted_messages: List[Dict] = []
-    print(f"_format_ messages: {messages}")
 
     merged_messages = _merge_messages(messages)
     for i, message in enumerate(merged_messages):
@@ -215,9 +211,7 @@ def _format_messages(
             # populate content
             content = []
             for block in message.content:
-                print(f"block: {block}")
                 if isinstance(block, str):
-                    print("block is string")
                     content_block = {"type": "text", "text": message.content}
                     # Add cache_control to the content block if specified
                     if (
@@ -229,7 +223,6 @@ def _format_messages(
                         ]
                     content.append({"type": "text", "text": block})
                 elif isinstance(block, dict):
-                    print(f"block is dict {block}")
                     if "type" not in block:
                         raise ValueError("Dict content block must have a type key")
                     elif block["type"] == "image_url":
@@ -237,7 +230,6 @@ def _format_messages(
                         source = _format_image(block["image_url"]["url"])
                         content.append({"type": "image", "source": source})
                     elif block["type"] == "tool_use":
-                        print("block is dict tool_use")
                         # If a tool_call with the same id as a tool_use content block
                         # exists, the tool_call is preferred.
                         if isinstance(message, AIMessage) and block["id"] in [
@@ -254,10 +246,8 @@ def _format_messages(
                         else:
                             block.pop("text", None)
                             block["cache_control"] = {"type": "ephemeral"}
-                            print(f"added cache_control to tool_use block: {block}")
                             content.append(block)
                     elif block["type"] == "text":
-                        print(f"block is dict text {block.items()}")
                         text = block.get("text", "")
                         # Only add non-empty strings for now as empty ones are not
                         # accepted.
@@ -274,13 +264,8 @@ def _format_messages(
                             hasattr(message, "additional_kwargs")
                             and "cache_control" in message.additional_kwargs
                         ):
-                            print(f"added cache_control to text block: {block}")
                             block["cache_control"] = {"type": "ephemeral"}
-
                     elif block["type"] == "tool_result":
-                        print(
-                            f"block is tool_result additional_kwargs: {message.additional_kwargs}"
-                        )
                         tool_content = _format_messages(
                             [HumanMessage(block["content"])]
                         )[1][0]["content"]
@@ -288,7 +273,6 @@ def _format_messages(
                             hasattr(message, "additional_kwargs")
                             and "cache_control" in message.additional_kwargs
                         ):
-                            print(f"added cache_control to tool_result block: {block}")
                             content.append(
                                 {
                                     **block,
@@ -303,12 +287,10 @@ def _format_messages(
                         else:
                             content.append({**block, **{"content": tool_content}})
                     else:
-                        print("block is else")
                         if (
                             hasattr(message, "additional_kwargs")
                             and "cache_control" in message.additional_kwargs
                         ):
-                            print(f"added cache_control to generic block: {block}")
                             content_block["cache_control"] = message.additional_kwargs[
                                 "cache_control"
                             ]
@@ -319,7 +301,6 @@ def _format_messages(
                         f"{type(block)}"
                     )
         else:
-            print("message content is string")
             if (
                 hasattr(message, "additional_kwargs")
                 and "cache_control" in message.additional_kwargs
@@ -354,29 +335,7 @@ def _format_messages(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls)
             )
 
-        # Create the base message dict
-        message_dict = {"role": role, "content": content}
-
-        # If cache_control is specified in additional_kwargs, add it to the message
-        # if (
-        # hasattr(message, "additional_kwargs")
-        # and "cache_control" in message.additional_kwargs
-        # ):
-        # message_dict["cache_control"] = message.additional_kwargs["cache_control"]
-
-        print(f"message_dict: {message_dict}")
-        formatted_messages.append(message_dict)
-        # formatted_messages.append({"role": role, "content": content})
-
-    def _format_message_for_logging(msg):
-        if isinstance(msg, ToolMessage):
-            return f"{msg.__class__.__name__}(content={msg.content!r}, name={msg.name!r}, tool_call_id={msg.tool_call_id!r}, additional_kwargs={msg.additional_kwargs!r})\n"
-        return str(msg)
-
-    fmessages = [_format_message_for_logging(msg) for msg in formatted_messages]
-    prettyp = json.dumps(fmessages, indent=4)
-
-    print(f"formatted_messages: {prettyp}")
+        formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
 
@@ -733,7 +692,7 @@ class ChatAnthropic(BaseChatModel):
     def _get_ls_params(
         self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
-        """Get the parameters used to invoke the model."""
+        """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="anthropic",
@@ -900,15 +859,12 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        print("\n agenerate \n")
         if self.streaming:
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        # payload["messages"][-1]["content"][0]["cache_control"] = {"type": "ephemeral"}
-        # print(f"payload: {payload}")
         data = await self._async_client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
