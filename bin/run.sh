@@ -6,8 +6,8 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
-# Setup pipeline directory
-PIPELINES_DIR=~/pipelines
+# Setup pipeline directory - use environment variable if set, otherwise use default
+PIPELINES_DIR="${VMPILOT_PIPELINES_DIR:~/pipelines}"
 
 # Setup pipeline directory
 cd "$PIPELINES_DIR"

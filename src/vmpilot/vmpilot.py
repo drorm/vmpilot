@@ -42,6 +42,7 @@ from vmpilot.config import (
     TOOL_OUTPUT_LINES,
     Provider,
     config,
+    parser,
 )
 
 
@@ -87,9 +88,9 @@ class Pipeline:
             )
 
     def __init__(self):
-        self.name = "VMPilot Pipeline"
+        self.name = parser.get("pipeline", "name")
         self.type = "manifold"
-        self.id = "vmpilot"
+        self.id = parser.get("pipeline", "id")
 
         # Initialize valves with environment variables and defaults
         self.valves = self.Valves(
