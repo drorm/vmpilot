@@ -96,6 +96,10 @@ def log_token_usage(message: Any, level: str = "debug") -> None:
     usage_metadata = getattr(message, "usage_metadata", {})
     tool_calls = getattr(message, "tool_calls", [])
 
+    # if there's no usage metadata, return
+    if not usage_metadata:
+        return
+
     log_message(
         "TOKEN_USAGE",
         {
