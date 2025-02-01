@@ -24,7 +24,7 @@ export TEST_DIR
 # Run tests
 echo "Running tests..."
 
-PROVIDER="openai"
+PROVIDER="anthropic"
 while getopts "p:" opt; do
   case $opt in
     p) PROVIDER="$OPTARG" ;;

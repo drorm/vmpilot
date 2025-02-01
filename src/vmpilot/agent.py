@@ -48,6 +48,7 @@ from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.langchain_edit import FileEditTool
+from vmpilot.tools.aider_edit import AiderTool
 from vmpilot.caching.chat_models import ChatAnthropic
 
 # Flag to enable beta features in Anthropic API
@@ -67,12 +68,25 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * You can execute any valid bash command but do not install packages
 * When using commands that are expected to output very large quantities of text, redirect into a tmp file
 * The current date is {datetime.today().strftime('%A, %B %-d, %Y')}
-* When using your bash tool with commands that are expected to output very large quantities of text, redirect into a tmp file and use str_replace_editor or `grep -n -B <lines before> -A <lines after> <query> <filename>` to confirm output.
+* When using your shelltool with commands that are expected to output very large quantities of text, redirect into a tmp file and use str_replace_editor or `grep -n -B <lines before> -A <lines after> <query> <filename>` to confirm output.
 </SYSTEM_CAPABILITY>
+
+<FILE_EDITING>
+When editing files, use diff blocks to show what to search for and replace:
+<<<<<<< SEARCH
+(text to find and replace)
+=======
+(text to replace it with)
+>>>>>>> REPLACE
+
+The SEARCH text must exactly match text in the file. Include enough context for unique matches.
+Include all indentation and formatting in both sections.
+You can use multiple edit blocks if needed.
+</FILE_EDITING>
 
 <IMPORTANT>
 * When using the shell tool, provide both command and language parameters:
-  - command: The shell command to execute (e.g. "ls -l", "cat file.py")
+  - command: The shell command to execute bash command (e.g. "ls -l", "cat file.py")
   - language: Output syntax highlighting (e.g. "bash", "python", "text")
 * Only execute valid bash commands
 * Use bash to view files using commands like cat, head, tail, or less
@@ -82,8 +96,8 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 </IMPORTANT>
 
 <TOOLS>
-* Use the bash tool to execute system commands. Provide commands as a single string.
-* Use the str_replace_editor tool for editing files.
+* Use the shell tool to execute system commands. Provide commands as a single string.
+* Use the AiderTool tool for editing files.
 </TOOLS>"""
 
 
@@ -160,7 +174,8 @@ def setup_tools(llm=None):
             logger.error(f"Error: Error creating SetupShellTool: {e}")
 
     # Add file editing tool (excluding view operations which are handled by shell tool)
-    tools.append(FileEditTool(view_in_shell=True))
+    # tools.append(FileEditTool(view_in_shell=True))
+    tools.append(AiderTool())
 
     # Return all tools
     return tools
