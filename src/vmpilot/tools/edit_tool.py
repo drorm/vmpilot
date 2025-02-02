@@ -28,6 +28,7 @@ class EditTool(BaseTool):
     description: str = """Use this tool to edit files on the system. When given a natural language command like 'change "Hello" to "Goodbye" in file.txt', this tool generates a string that contains:
     - The path to the file(s) to edit on its own line
     - The diff blocks to apply to the file(s)
+    - IMPORTANT: the "SEARCH" portion needs to **exactly** match the original content in the file. 
     Note: this tool **cannot** be used to view files. Use the bash tool with commands like 'cat', 'head', 'tail', or 'less' for that.
     """
 
