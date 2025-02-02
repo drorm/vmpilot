@@ -47,7 +47,6 @@ from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
-from vmpilot.tools.langchain_edit import FileEditTool
 from vmpilot.tools.aider_edit import AiderTool
 from vmpilot.caching.chat_models import ChatAnthropic
 
@@ -175,7 +174,6 @@ def setup_tools(llm=None):
             logger.error(f"Error: Error creating SetupShellTool: {e}")
 
     # Add file editing tool (excluding view operations which are handled by shell tool)
-    # tools.append(FileEditTool(view_in_shell=True))
     tools.append(AiderTool())
 
     # Return all tools

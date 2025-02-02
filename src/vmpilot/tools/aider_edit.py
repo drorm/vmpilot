@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class AiderToolInput(BaseModel):
-    """Input for the AiderTool"""
+    """Using Aider battle-tested diff-based editing, edit files on the system"""
 
     content: str = Field(
         ..., description="LLM response containing path and diff blocks"
