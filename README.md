@@ -21,7 +21,7 @@ It is inspired by [Claude Computer Use](https://docs.anthropic.com/en/docs/build
 - Tool Integration Structured tool output handling
 - Model Support
   - Primarily tested with Claude 3.5 Sonnet
-  - OpenAI API gpt4o support
+  - OpenAI API gpt4-o support
   - Extensible to other API providers
 
 ## Installation
@@ -112,11 +112,11 @@ The main pipeline implementation that:
 - Features automatic code language detection and syntax highlighting
 - Supports both streaming and non-streaming responses
 
-### loop.py
+### agent.py
 
-Core agent loop implementation that:
+Core agent implementation that:
 - Manages interactions between LLMs and computer control tools
-- Supports multiple API providers (Anthropic, etc.)
+- Supports multiple API providers (Anthropic, OpenAI)
 - Handles conversation context and tool execution
 - Implements prompt caching and optimization
 - Provides robust error handling
