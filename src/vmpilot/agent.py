@@ -47,7 +47,7 @@ from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
-from vmpilot.tools.aider_edit import AiderTool
+from vmpilot.tools.edit_tool import EditTool
 from vmpilot.caching.chat_models import ChatAnthropic
 
 # Flag to enable beta features in Anthropic API
@@ -97,7 +97,7 @@ You can use multiple edit blocks if needed.
 
 <TOOLS>
 * Use the shell tool to execute system commands. Provide commands as a single string.
-* Use the AiderTool tool for editing files.
+* Use the EditTool tool for editing files.
 </TOOLS>"""
 
 
@@ -163,18 +163,10 @@ def setup_tools(llm=None):
     if llm is not None:
         try:
             shell_tool = SetupShellTool(llm=llm)
-            shell_tool.description = """Execute bash commands in the system. Input should be a single command string. Example inputs:
-            - ls /path
-            - cat file.txt
-            - head -n 10 file.md
-            - grep pattern file
-            The output will be automatically formatted with appropriate markdown syntax."""
             tools.append(shell_tool)
+            tools.append(EditTool())  # for editing
         except Exception as e:
             logger.error(f"Error: Error creating SetupShellTool: {e}")
-
-    # Add file editing tool (excluding view operations which are handled by shell tool)
-    tools.append(AiderTool())
 
     # Return all tools
     return tools

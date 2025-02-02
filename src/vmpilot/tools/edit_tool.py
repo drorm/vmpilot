@@ -21,7 +21,7 @@ class AiderToolInput(BaseModel):
     )
 
 
-class AiderTool(BaseTool):
+class EditTool(BaseTool):
     """VMPilot tool interface to aider's diff-based editing"""
 
     name: str = "edit_file"
@@ -64,7 +64,8 @@ class AiderTool(BaseTool):
 
         except Exception as e:
             logger.error(f"Error applying edits: {str(e)}")
-            return f"Error: {str(e)}"
+            error_message = f"Error: \n```\n{str(e)}\n```\n"
+            return error_message
 
     async def _arun(self, content: str) -> str:
         """Async implementation of run"""
