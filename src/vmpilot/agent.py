@@ -72,7 +72,8 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 </SYSTEM_CAPABILITY>
 
 <FILE_EDITING>
-When editing files, use diff blocks to show what to search for and replace:
+When editing files, provided the path and use diff blocks to show what to search for and replace:
+/path/to/file
 <<<<<<< SEARCH
 (text to find and replace)
 =======

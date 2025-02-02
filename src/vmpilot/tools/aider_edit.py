@@ -16,28 +16,30 @@ logger = logging.getLogger(__name__)
 class AiderToolInput(BaseModel):
     """Input for the AiderTool"""
 
-    path: str = Field(..., description="File to edit")
-    content: str = Field(..., description="LLM response containing diff blocks")
+    content: str = Field(
+        ..., description="LLM response containing path and diff blocks"
+    )
 
 
 class AiderTool(BaseTool):
     """VMPilot tool interface to aider's diff-based editing"""
 
     name: str = "edit_file"
-    description: str = """Use this tool to edit files on the system. When given a natural language command like 'change "Hello" to "Goodbye" in file.txt', this tool will
-    generate a diff of the changes and apply them to the file.
+    description: str = """Use this tool to edit files on the system. When given a natural language command like 'change "Hello" to "Goodbye" in file.txt', this tool generates a string that contains:
+    - The path to the file(s) to edit on its own line
+    - The diff blocks to apply to the file(s)
     Note: this tool **cannot** be used to view files. Use the bash tool with commands like 'cat', 'head', 'tail', or 'less' for that.
     """
 
     args_schema: Type[BaseModel] = AiderToolInput
 
-    def _run(self, path: str, content: str) -> str:
+    def _run(self, content: str) -> str:
         """
         Edit files using aider's diff format
 
         Args:
-            path: File to edit
-            content: LLM response containing diff blocks in the format:
+            content:
+            /path/to/file
             <<<<<<< SEARCH
             original content
             =======
@@ -46,7 +48,7 @@ class AiderTool(BaseTool):
         """
         try:
 
-            replace = f"{path}\n{content}"
+            replace = f"{content}"
             # Use aider's built-in diff block parser
             edits = list(find_original_update_blocks(replace))
             logger.debug(edits)
@@ -64,7 +66,7 @@ class AiderTool(BaseTool):
             logger.error(f"Error applying edits: {str(e)}")
             return f"Error: {str(e)}"
 
-    async def _arun(self, path: str, content: str) -> str:
+    async def _arun(self, content: str) -> str:
         """Async implementation of run"""
-        logger.debug(f"_arun: path={path}, content={content}")
-        return self._run(path, content)
+        logger.debug(f"_arun: content={content}")
+        return self._run(content)
