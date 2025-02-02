@@ -60,8 +60,10 @@ class EditTool(BaseTool):
             # We're passing the model, but it's not used in the EditBlockCoder. It's just a placeholder.
             editor = EditBlockCoder(main_model=main_model, io=io)
 
-            editor.apply_edits(edits)
-            return ""
+            result = editor.apply_edits(edits)
+            if result:
+                return "Successfully edited file"
+            return "No changes were made to the file"
 
         except Exception as e:
             logger.error(f"Error applying edits: {str(e)}")

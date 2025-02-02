@@ -29,25 +29,36 @@ class CreateFileTool(BaseTool):
     def _write_file(self, path: Path, content: str) -> None:
         """Write content to file, creating parent directories if needed"""
         try:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)
         except Exception as e:
             raise FileError(f"Failed to write file {path}: {str(e)}")
 
+    def _validate_path(self, path: Path) -> None:
+        """Validate the file path"""
+        if not isinstance(path, Path):
+            raise ValueError("Path must be a Path object")
+
+        # Check if path is absolute and within allowed directories
+        if not path.is_absolute():
+            raise ValueError("Path must be absolute")
+
     def _run(self, path: str, content: str) -> str:
         """Create a new file with given content"""
-        file_path = Path(path)
-
-        # Check if file already exists
-        if file_path.exists():
-            return f"Error: File already exists at: {path}"
-
         try:
+            file_path = Path(path)
+            self._validate_path(file_path)
+
+            # Check if file already exists
+            if file_path.exists():
+                raise FileExistsError(f"File already exists at: {path}")
+
             self._write_file(file_path, content)
-            return f"File created successfully at: {path}"
-        except FileError as e:
-            return f"Error: {str(e)}"
+            return f"\nFile created successfully at: {path}\n"
+        except (FileError, FileExistsError, ValueError) as e:
+            raise
         except Exception as e:
-            return f"Error: Failed to create file: {str(e)}"
+            raise ValueError(f"Failed to create file: {str(e)}")
 
     async def _arun(self, path: str, content: str) -> str:
         """Async implementation of file creation"""
