@@ -48,6 +48,7 @@ from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.edit_tool import EditTool
+from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.caching.chat_models import ChatAnthropic
 
 # Flag to enable beta features in Anthropic API
@@ -98,6 +99,7 @@ You can use multiple edit blocks if needed.
 <TOOLS>
 * Use the shell tool to execute system commands. Provide commands as a single string.
 * Use the EditTool tool for editing files.
+* Use the CreateFileTool tool for creating files. Takes path and content as input.
 </TOOLS>"""
 
 
@@ -165,6 +167,7 @@ def setup_tools(llm=None):
             shell_tool = SetupShellTool(llm=llm)
             tools.append(shell_tool)
             tools.append(EditTool())  # for editing
+            tools.append(CreateFileTool())  # for creating files
         except Exception as e:
             logger.error(f"Error: Error creating SetupShellTool: {e}")
 
