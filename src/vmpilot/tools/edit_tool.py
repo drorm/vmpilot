@@ -48,27 +48,39 @@ class EditTool(BaseTool):
             >>>>>>> REPLACE
         """
         try:
+            # Use aider's built-in diff block parser to validate and extract edits
+            edits = list(find_original_update_blocks(content))
+            if not edits:
+                raise ValueError("Invalid diff format")
 
-            replace = f"{content}"
-            # Use aider's built-in diff block parser
-            edits = list(find_original_update_blocks(replace))
-            logger.debug(edits)
+            # Check if all files exist before proceeding
+            for edit in edits:
+                file_path = Path(
+                    edit[0]
+                )  # First element of edit tuple is the file path
+                if not file_path.exists():
+                    raise FileNotFoundError(f"File not found: {file_path}")
 
             # Create EditBlockCoder instance
             io = InputOutput(line_endings="platform")
             main_model = models.Model(models.DEFAULT_MODEL_NAME)
-            # We're passing the model, but it's not used in the EditBlockCoder. It's just a placeholder.
             editor = EditBlockCoder(main_model=main_model, io=io)
 
-            result = editor.apply_edits(edits)
-            if result:
+            try:
+                editor.apply_edits(edits)
                 return "Successfully edited file"
-            return "No changes were made to the file"
+            except ValueError as e:
+                if "SearchReplaceNoExactMatch" in str(e):
+                    return "No matches found"
+                raise
+            except Exception as e:
+                error_message = f"Error: \n```\n{str(e)}\n```\n"
+                return error_message
 
-        except Exception as e:
-            logger.error(f"Error applying edits: {str(e)}")
-            error_message = f"Error: \n```\n{str(e)}\n```\n"
-            return error_message
+        except FileNotFoundError:
+            raise
+        except ValueError:
+            raise
 
     async def _arun(self, content: str) -> str:
         """Async implementation of run"""
