@@ -66,13 +66,15 @@ class TestEditTool:
         # Create two test files
         file1 = tmp_path / "file1.txt"
         file2 = tmp_path / "file2.txt"
-        
+
         file1.write_text("Hello World\nThis is file 1\n")
         file2.write_text("Hello World\nThis is file 2\n")
 
         # Create content with edits for both files
         content = f"{file1}\n"
-        content += "<<<<<<< SEARCH\nHello World\n=======\nGoodbye World\n>>>>>>> REPLACE\n\n"
+        content += (
+            "<<<<<<< SEARCH\nHello World\n=======\nGoodbye World\n>>>>>>> REPLACE\n\n"
+        )
         content += f"{file2}\n"
         content += "<<<<<<< SEARCH\nThis is file 2\n=======\nThis is the second file\n>>>>>>> REPLACE"
 
@@ -88,12 +90,14 @@ class TestEditTool:
         # Create only the first file
         file1 = tmp_path / "file1.txt"
         file2 = tmp_path / "nonexistent.txt"  # This file won't exist
-        
+
         file1.write_text("Hello World\nThis is file 1\n")
 
         # Create content with edits for both files
         content = f"{file1}\n"
-        content += "<<<<<<< SEARCH\nHello World\n=======\nGoodbye World\n>>>>>>> REPLACE\n\n"
+        content += (
+            "<<<<<<< SEARCH\nHello World\n=======\nGoodbye World\n>>>>>>> REPLACE\n\n"
+        )
         content += f"{file2}\n"
         content += "<<<<<<< SEARCH\nThis is file 2\n=======\nThis is the second file\n>>>>>>> REPLACE"
 

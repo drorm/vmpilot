@@ -102,10 +102,11 @@ def log_token_usage(message: Any, level: str = "debug") -> None:
     # Log token usage in single line format
     logging.getLogger(__name__).info(
         "TOKEN_USAGE: {'cache_creation_input_tokens': %d, 'cache_read_input_tokens': %d, 'input_tokens': %d, 'output_tokens': %d}",
-        usage.get('cache_creation_input_tokens', 0),
-        usage.get('cache_read_input_tokens', 0),
-        usage.get('input_tokens', 0),
-        usage.get('output_tokens', 0))
+        usage.get("cache_creation_input_tokens", 0),
+        usage.get("cache_read_input_tokens", 0),
+        usage.get("input_tokens", 0),
+        usage.get("output_tokens", 0),
+    )
 
 
 def log_tool_message(message: Any, level: str = "debug") -> None:
