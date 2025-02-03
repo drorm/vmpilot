@@ -21,6 +21,7 @@ from typing import (
 )
 
 import anthropic
+from langchain_anthropic.output_parsers import extract_tool_calls
 from langchain_core._api import beta, deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -44,36 +45,17 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
-from langchain_core.output_parsers import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-)
+from langchain_core.output_parsers import JsonOutputKeyToolsParser, PydanticToolsParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import (
-    Runnable,
-    RunnableMap,
-    RunnablePassthrough,
-)
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import (
-    from_env,
-    get_pydantic_field_names,
-    secret_from_env,
-)
+from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import NotRequired, TypedDict
-
-from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
     "human": "user",

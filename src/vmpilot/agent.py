@@ -43,13 +43,13 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
 
+from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
-from vmpilot.tools.edit_tool import EditTool
 from vmpilot.tools.create_file import CreateFileTool
-from vmpilot.caching.chat_models import ChatAnthropic
+from vmpilot.tools.edit_tool import EditTool
 
 # Flag to enable beta features in Anthropic API
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
