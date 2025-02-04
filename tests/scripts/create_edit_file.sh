@@ -13,7 +13,7 @@ output_create=$(/home/dror/vmpilot/bin/cli.sh -t 0 "create $test_file, hello wor
 
 echo -e "Create command output:\n$output_create"
 # Verify the creation
-if echo "$output_create" | grep -q "File created"; then
+if [ -f "$test_file" ] && grep -q "Hello, World!" "$test_file"; then
     echo "File created successfully with hello world example."
 else
     echo "Failed to create file with hello world example."
