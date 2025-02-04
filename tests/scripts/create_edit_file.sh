@@ -11,7 +11,8 @@ fi
 # Step 1: Create the file with initial content using cli.sh
 output_create=$(/home/dror/vmpilot/bin/cli.sh -t 0 "create $test_file, hello world example")
 
-echo "Create command output:\n$output_create"\n# Verify the creation
+echo -e "Create command output:\n$output_create"
+# Verify the creation
 if echo "$output_create" | grep -q "File created"; then
     echo "File created successfully with hello world example."
 else
@@ -22,7 +23,8 @@ fi
 # Step 2: Change the content to say goodbye
 output_modify=$(/home/dror/vmpilot/bin/cli.sh -t 0 "change 'Hello' to 'Goodbye' in $test_file")
 
-echo "Modify command output:\n$output_modify"\n# Verify the modification
+echo -e "Modify command output:\n$output_modify"
+# Verify the modification
 if grep -q "print(\"Goodbye, World!\")" "$test_file"; then
     echo "File modified successfully to say goodbye."
     exit 0

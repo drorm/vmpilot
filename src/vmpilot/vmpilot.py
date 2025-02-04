@@ -214,15 +214,21 @@ class Pipeline:
                     "type": "ephemeral"
                 }
 
+            """ Set up the params for the process_messages function and run it in a separate thread. """
+
             def generate_responses():
                 output_queue = queue.Queue()
                 loop_done = threading.Event()
+
+                """ Output callback to handle messages from the LLM """
 
                 def output_callback(content: Dict):
                     logger.debug(f"Received content: {content}")
                     if content["type"] == "text":
                         logger.debug(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
+
+                """ Output callback to handle tool messages: output from commands """
 
                 def tool_callback(result, tool_id):
                     logger.debug(f"Tool callback received result: {result}")
@@ -248,6 +254,8 @@ class Pipeline:
                         if len(output_lines) > TOOL_OUTPUT_LINES:
                             truncated_output += f"\n...\n```\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
                         output_queue.put(truncated_output)
+
+                """ Run the sampling loop in a separate thread while waiting for responses """
 
                 def run_loop():
                     try:
@@ -297,6 +305,14 @@ class Pipeline:
 
                 thread.join()
 
+            """
+            In a typical llm chat streaming means that the output is sent to the user as it is generated.
+            In our case, we don't stream the individual tokens in the output, but we do stream the messages as they come.
+            1. The llm's initial response.
+            2. Tools' output.
+            3. The llm's response to the tools' output.
+            4. Etc.
+            """
             if body.get("stream", False):
                 logger.debug("Streaming mode enabled")
                 return generate_responses()

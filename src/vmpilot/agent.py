@@ -150,8 +150,10 @@ def _modify_state_messages(state: AgentState):
     return messages
 
 
+"""Initialize and configure the tools we use as described in the above prompt."""
+
+
 def setup_tools(llm=None):
-    """Initialize and configure LangChain tools."""
     # Suppress warning about shell tool safeguards
     import warnings
 
@@ -161,7 +163,6 @@ def setup_tools(llm=None):
 
     tools = []
 
-    # Initialize Shell Tool with fencing capability if LLM is provided
     if llm is not None:
         try:
             shell_tool = SetupShellTool(llm=llm)
@@ -176,7 +177,13 @@ def setup_tools(llm=None):
 
 
 """
-Create the langchain agent
+Create the langchain agent. The agent is in charge of the loop:
+1. User request.
+2. LLM response.
+2. LLM invokation of one or more tools.
+3. Sending the tool result to the LLM.
+4. Rinse repeat until the llm decides it's done or we hit a recursion limit.
+5. Detect when the llm is done.
 """
 
 
@@ -200,7 +207,7 @@ async def create_agent(
         betas.append(PROMPT_CACHING_BETA_FLAG)
 
     if provider == APIProvider.ANTHROPIC:
-        # Get beta flags from config
+        """We're jumping through hoops here to get the Anthropic caching to work correctly."""
         provider_config = config.get_provider_config(APIProvider.ANTHROPIC)
         if provider_config.beta_flags:
             betas.extend([flag for flag in provider_config.beta_flags.keys()])
@@ -267,7 +274,7 @@ async def process_messages(
     max_tokens: int = MAX_TOKENS,
     temperature: float = TEMPERATURE,
     disable_logging: bool = False,
-    recursion_limit: int = None,
+    recursion_limit: int = None,  # Maximum number of steps to run in the request
 ) -> List[dict]:
     logger.debug(f"DEBUG: model={model}, provider={provider}")
     """Process messages through the agent and handle outputs."""
@@ -299,7 +306,7 @@ async def process_messages(
     )
     logger.debug("DEBUG: Agent created successfully")
 
-    # Convert messages to LangChain format
+    # Convert messages from openai to LangChain format
     formatted_messages = []
     try:
         for msg in messages:
@@ -362,7 +369,9 @@ async def process_messages(
     thread_id = f"vmpilot-{os.getpid()}"
     logger.debug(f"Starting agent stream with {len(formatted_messages)} messages")
 
-    async def process_stream():
+    """Send the request and process the stream of messages from the agent."""
+
+    async def send_request():
         try:
             async for response in agent.astream(
                 {"messages": formatted_messages},
@@ -375,10 +384,8 @@ async def process_messages(
             ):
                 logger.debug(f"Got response: {response}")
                 try:
-                    logger.debug(
-                        {"type": "text", "text": f"RAW LLM RESPONSE: {response}\n"}
-                    )
 
+                    """Process the messages from the agent."""
                     # Handle different response types
                     if "messages" in response:
                         message = response["messages"][-1]
@@ -396,13 +403,11 @@ async def process_messages(
                         if isinstance(message, ToolMessage):
                             logger.debug(f"isinstance message: {message}")
                             # Handle tool message responses
-                            log_tool_message(message)
-                            log_message_content(message, message.content)
-
                             tool_result = {"output": message.content, "error": None}
                             tool_output_callback(tool_result, message.name)
 
                         elif isinstance(message, AIMessage):
+                            """Handle AI message responses"""
                             content = message.content
                             log_message_content(message, content)
 
@@ -466,5 +471,5 @@ async def process_messages(
             output_callback({"type": "text", "text": f"{message}"})
 
     # Run the stream processor
-    await process_stream()
+    await send_request()
     return messages
