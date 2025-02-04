@@ -2,10 +2,11 @@
 Prompt for the agent 
 """
 
+import pathlib
 import platform
 from datetime import datetime
+
 from vmpilot.config import TOOL_OUTPUT_LINES
-import pathlib
 
 
 # Read plugins README.md

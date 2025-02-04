@@ -3,37 +3,14 @@ LangChain-based implementation for VMPilot's agent functionality.
 Replaces the original loop.py from Claude Computer Use with LangChain tools and agents.
 """
 
-import json
 import logging
 import os
-import sys
+import pathlib
 import traceback
 from contextvars import ContextVar
-from enum import StrEnum
-from typing import Optional
+from typing import Any, Callable, Dict, List, Optional
 
-import httpx
-
-# Configure logging
-from .agent_logging import (
-    log_error,
-    log_message,
-    log_message_content,
-    log_message_processing,
-    log_message_received,
-    log_token_usage,
-    log_tool_message,
-)
-
-logging.basicConfig(level=logging.INFO)
-# Set logging levels for specific loggers
-logger = logging.getLogger(__name__)
-
-
-from typing import Any, Callable, Dict, List
-
-from langchain_community.agent_toolkits import FileManagementToolkit
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
@@ -43,11 +20,23 @@ from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
+from vmpilot.prompt import SYSTEM_PROMPT
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
-from vmpilot.prompt import SYSTEM_PROMPT
-import pathlib
+
+# Configure logging
+from .agent_logging import (
+    log_message_content,
+    log_message_processing,
+    log_message_received,
+    log_token_usage,
+)
+
+logging.basicConfig(level=logging.INFO)
+# Set logging levels for specific loggers
+logger = logging.getLogger(__name__)
+
 
 # Flag to enable beta features in Anthropic API
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
@@ -84,8 +73,7 @@ def _modify_state_messages(state: AgentState):
     N_MESSAGES = 30  # TODO: Change this to a config value
 
     # Handle system prompt with potential cache control
-    suffix = prompt_suffix.get()
-    new_messages = []
+    prompt_suffix.get()
     messages = state["messages"][:N_MESSAGES]
 
     # Get current provider
@@ -182,7 +170,7 @@ async def create_agent(
         if provider_config.beta_flags:
             betas.extend([flag for flag in provider_config.beta_flags.keys()])
 
-        headers = {
+        {
             "anthropic-beta": ",".join(betas),
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
@@ -267,7 +255,6 @@ async def process_messages(
     current_provider.set(provider)
 
     # Handle prompt caching for Anthropic provider
-    enable_prompt_caching = provider == APIProvider.ANTHROPIC
 
     logger.debug("DEBUG: Creating agent")
     # Create agent
@@ -289,7 +276,7 @@ async def process_messages(
                         HumanMessage(content=msg["content"], additional_kwargs={})
                     )
                 elif isinstance(msg["content"], list):
-                    logger.debug(f"Processing list of messages")
+                    logger.debug("Processing list of messages")
                     # Handle structured content
                     for item in msg["content"]:
                         if item["type"] == "text":

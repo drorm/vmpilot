@@ -107,7 +107,7 @@ class Pipeline:
     async def on_valves_updated(self):
         """Handle valve updates by re-syncing configuration"""
         self.valves._sync_with_config()
-        logger.debug(f"Valves updated and synced with config")
+        logger.debug("Valves updated and synced with config")
 
     def pipelines(self) -> List[dict]:
         """Return list of supported models/pipelines"""
