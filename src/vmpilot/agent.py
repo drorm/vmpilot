@@ -14,8 +14,6 @@ from typing import Optional
 
 import httpx
 
-from vmpilot.config import TOOL_OUTPUT_LINES
-
 # Configure logging
 from .agent_logging import (
     log_error,
@@ -32,8 +30,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-import platform
-from datetime import datetime
 from typing import Any, Callable, Dict, List
 
 from langchain_community.agent_toolkits import FileManagementToolkit
@@ -50,6 +46,8 @@ from vmpilot.config import config
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
+from vmpilot.prompt import SYSTEM_PROMPT
+import pathlib
 
 # Flag to enable beta features in Anthropic API
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
@@ -62,45 +60,17 @@ current_provider: ContextVar[Optional[APIProvider]] = ContextVar(
     "current_provider", default=None
 )
 
-# System prompt maintaining compatibility with original VMPilot
-SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
-* You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
-* You can execute any valid bash command but do not install packages
-* When using commands that are expected to output very large quantities of text, redirect into a tmp file
-* The current date is {datetime.today().strftime('%A, %B %-d, %Y')}
-* When using your shelltool with commands that are expected to output very large quantities of text, redirect into a tmp file and use str_replace_editor or `grep -n -B <lines before> -A <lines after> <query> <filename>` to confirm output.
-</SYSTEM_CAPABILITY>
 
-<FILE_EDITING>
-When editing files, provided the path and use diff blocks to show what to search for and replace:
-/path/to/file
-<<<<<<< SEARCH
-(text to find and replace)
-=======
-(text to replace it with)
->>>>>>> REPLACE
-
-The SEARCH text must exactly match text in the file. Include enough context for unique matches.
-Include all indentation and formatting in both sections.
-You can use multiple edit blocks if needed.
-</FILE_EDITING>
-
-<IMPORTANT>
-* When using the shell tool, provide both command and language parameters:
-  - command: The shell command to execute bash command (e.g. "ls -l", "cat file.py")
-  - language: Output syntax highlighting (e.g. "bash", "python", "text")
-* Only execute valid bash commands
-* Use bash to view files using commands like cat, head, tail, or less
-* Each command should be a single string (e.g. "head -n 10 file.txt" not ["head", "-n", "10", "file.txt"])
-* The output of the command is passed fully to you, but truncated to {TOOL_OUTPUT_LINES} lines when shown to the user
-
-</IMPORTANT>
-
-<TOOLS>
-* Use the shell tool to execute system commands. Provide commands as a single string.
-* Use the EditTool tool for editing files.
-* Use the CreateFileTool tool for creating files. Takes path and content as input.
-</TOOLS>"""
+# Read plugins README.md
+def get_plugins_readme():
+    plugins_readme_path = (
+        pathlib.Path(__file__).parent.parent.parent / "plugins" / "README.md"
+    )
+    try:
+        with open(plugins_readme_path, "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return "No plugins available"
 
 
 """
@@ -150,7 +120,7 @@ def _modify_state_messages(state: AgentState):
     return messages
 
 
-"""Initialize and configure the tools we use as described in the above prompt."""
+"""Initialize and configure the tools we use as described in the prompt."""
 
 
 def setup_tools(llm=None):
