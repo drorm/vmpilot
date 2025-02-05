@@ -8,8 +8,6 @@ from datetime import datetime
 
 from vmpilot.config import TOOL_OUTPUT_LINES
 
-print("path is", pathlib.Path(__file__).parent / "plugins" / "README.md")
-
 
 # Read plugins README.md
 def get_plugins_readme():
