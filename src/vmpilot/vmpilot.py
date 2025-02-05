@@ -18,6 +18,18 @@ from typing import Dict, Generator, Iterator, List, Union
 
 from pydantic import BaseModel
 
+# Import tool output truncation setting
+from vmpilot.config import (
+    DEFAULT_PROVIDER,
+    MAX_TOKENS,
+    RECURSION_LIMIT,
+    TEMPERATURE,
+    TOOL_OUTPUT_LINES,
+    Provider,
+    config,
+    parser,
+)
+
 # Set up logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -32,18 +44,6 @@ stream_handler.setFormatter(log_format)
 # Add handlers to the logger
 logger.addHandler(stream_handler)
 logger.propagate = False
-
-# Import tool output truncation setting
-from vmpilot.config import (
-    DEFAULT_PROVIDER,
-    MAX_TOKENS,
-    RECURSION_LIMIT,
-    TEMPERATURE,
-    TOOL_OUTPUT_LINES,
-    Provider,
-    config,
-    parser,
-)
 
 
 class Pipeline:
