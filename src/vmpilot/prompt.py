@@ -1,5 +1,5 @@
 """
-Prompt for the agent 
+Prompt for the agent
 """
 
 import pathlib

@@ -5,9 +5,9 @@ Create a concise Markdown documentation file for each source file in this projec
 For each file, use this format shown in ./template.md.
 
 # Guidelines
-1. **Brevity**: Summaries should not restate the entire source code. Aim to be succinct but informative.  
-2. **Focus**: Highlight the purpose, imports, major classes, functions, and any internal references.  
-3. **Directory Structure**: Preserve the original directory structure within `.vmpilot/codemap`.  
+1. **Brevity**: Summaries should not restate the entire source code. Aim to be succinct but informative.
+2. **Focus**: Highlight the purpose, imports, major classes, functions, and any internal references.
+3. **Directory Structure**: Preserve the original directory structure within `.vmpilot/codemap`.
 4. **Output**: Each documentation file must be a valid Markdown file (suffixed `.md`), containing only one file’s documentation.
 
 # Task
