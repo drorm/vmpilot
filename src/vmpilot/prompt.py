@@ -8,12 +8,12 @@ from datetime import datetime
 
 from vmpilot.config import TOOL_OUTPUT_LINES
 
+print("path is", pathlib.Path(__file__).parent / "plugins" / "README.md")
+
 
 # Read plugins README.md
 def get_plugins_readme():
-    plugins_readme_path = (
-        pathlib.Path(__file__).parent.parent.parent / "plugins" / "README.md"
-    )
+    plugins_readme_path = pathlib.Path(__file__).parent / "plugins" / "README.md"
     try:
         with open(plugins_readme_path, "r") as f:
             return f.read()
@@ -62,14 +62,5 @@ You can use multiple edit blocks if needed.
 </TOOLS>
 
 <PLUGINS>
-You have a number of plugins available to you. When the user brings up a topic related to a plugin, look in the $rootdir/plugins/$plugin_name/README.md for more information.
 {get_plugins_readme()}
-</PLUGINS>
-
-<PLUGINS>
-You have the following plugins available:
-# Available plugins
-
-- codemap: Creates documentation by having the llm scan the code and generate a doc per source file.
-- github_issues: CRUD operations for github issues.
 </PLUGINS>"""
