@@ -19,7 +19,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-pipeline = ["openwebui-pipelines>=0.1.0"]
+pipeline = [
+    "langchain==0.3.14"
+]
 dev = [
     "pytest>=7.0.0",
     "black>=23.0.0",
@@ -29,8 +31,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/vmpilot"
-Issues = "https://github.com/yourusername/vmpilot/issues"
+Homepage = "https://github.com/drorm/vmpilot"
+Issues = "https://github.com/drorm/vmpilot/issues"
 
 [tool.black]
 line-length = 88

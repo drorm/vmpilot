@@ -35,3 +35,6 @@ valves.json
 
 # aider specific
 .aider.tags.cache.v3/
+
+# generated automatically
+requirements.txt
