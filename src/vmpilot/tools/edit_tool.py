@@ -68,7 +68,7 @@ class EditTool(BaseTool):
 
             try:
                 editor.apply_edits(edits)
-                return "Successfully edited file"
+                return ""
             except ValueError as e:
                 if "SearchReplaceNoExactMatch" in str(e):
                     return "No matches found"
