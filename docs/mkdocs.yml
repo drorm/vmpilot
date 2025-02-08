@@ -1,5 +1,5 @@
 site_name: VMPilot Documentation
-docs_dir: mkdocs
+docs_dir: source
 site_description: Documentation for VMPilot - AI-driven system operations assistant
 theme:
   name: material
