@@ -39,6 +39,7 @@ open-webui serve
 You can, of course, follow one of the other methods suggested in the OpenWebUI documentation.
 
 ## 3.1 Create a new user
+In a browser, navigate to the OpenWebUI interface at your domain or localhost
 Create a new user on OpenWebUI which, as the first user, will make you the admin user.
 
 
@@ -84,6 +85,7 @@ The defaults are:
 ### 5.2 Check the configuration
 
 Look at vmpilot/src/vmpilot/config.ini and make sure the configuration is correct for your setup.
+Alternatively you can set the environment variable VMPILOT\_CONFIG to the path of your configuration file.
 
 ### 5.3 Start VMPilot 
 ```bash
@@ -92,7 +94,7 @@ Look at vmpilot/src/vmpilot/config.ini and make sure the configuration is correc
 
 ### 3.2 OpenWebUI Client Configuration
 
-1. Access the OpenWebUI interface at your domain or localhost:3000
+1. Access the OpenWebUI interface at your domain or localhost
 
 2 Open OpenWebUI in your browser
 2.1 Open OpenWebUI in your browser
@@ -111,8 +113,8 @@ Look at vmpilot/src/vmpilot/config.ini and make sure the configuration is correc
    - Click "Save"
 
 Note: Because the VMPilot pipeline is a manifold pipeline, you'll see two models in the pipeline list:
-- VMPilot2 PipelineAnthropic (Claude)
-- VMPilot2 PipelineOpenAI (GPT-4o)
+- VMPilot PipelineAnthropic (Claude)
+- VMPilot PipelineOpenAI (GPT-4o)
 
 Claude is currently the preferred model for VMPilot, since it has been tested more extensively.
 
