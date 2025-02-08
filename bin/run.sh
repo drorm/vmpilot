@@ -2,6 +2,10 @@
 # Fail on any error
 set -e
 
+
+export GOOGLE_API_KEY=`cat $HOME/.google_api_key`
+export GOOGLE_CSE_ID=`cat $HOME/.google_cse_id`
+
 # Get the directory where the script is located and move up one level to root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"

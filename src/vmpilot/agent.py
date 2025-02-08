@@ -24,6 +24,7 @@ from vmpilot.prompt import SYSTEM_PROMPT
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
+from vmpilot.tools.google_search_tool import GoogleSearchTool
 
 # Configure logging
 from .agent_logging import (
@@ -115,6 +116,7 @@ def setup_tools(llm=None):
             tools.append(shell_tool)
             tools.append(EditTool())  # for editing
             tools.append(CreateFileTool())  # for creating files
+            tools.append(GoogleSearchTool())  # for searching
         except Exception as e:
             logger.error(f"Error: Error creating tool: {e}")
             logger.error("".join(traceback.format_tb(e.__traceback__)))

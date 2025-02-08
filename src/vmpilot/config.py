@@ -9,9 +9,30 @@ import sys
 from configparser import ConfigParser
 from enum import StrEnum
 from pathlib import Path
+from pydantic import BaseModel
 from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
+
+# Google Search configuration class
+class GoogleSearchConfig(BaseModel):
+    """Configuration for Google Search API"""
+    enabled: bool = Field(default=False)
+    api_key: str = Field(default="")
+    custom_search_engine_id: str = Field(default="")
+
+    @classmethod
+    def from_config(cls, parser: ConfigParser) -> "GoogleSearchConfig":
+        """Create GoogleSearchConfig from ConfigParser"""
+        if not parser.has_section("GOOGLE_SEARCH"):
+            return cls()
+        
+        section = parser["GOOGLE_SEARCH"]
+        return cls(
+            enabled=section.getboolean("enabled", False),
+            api_key=section.get("api_key", ""),
+            custom_search_engine_id=section.get("custom_search_engine_id", "")
+        )
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -166,6 +187,9 @@ class ModelConfig(BaseModel):
 
 # Global configuration instance
 config = ModelConfig()
+
+# Google Search configuration
+google_search_config = GoogleSearchConfig.from_config(parser)
 
 # General configuration
 DEFAULT_PROVIDER = parser.get("general", "default_provider")
