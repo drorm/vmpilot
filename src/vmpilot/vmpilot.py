@@ -18,6 +18,18 @@ from typing import Dict, Generator, Iterator, List, Union
 
 from pydantic import BaseModel
 
+# Import tool output truncation setting
+from vmpilot.config import (
+    DEFAULT_PROVIDER,
+    MAX_TOKENS,
+    RECURSION_LIMIT,
+    TEMPERATURE,
+    TOOL_OUTPUT_LINES,
+    Provider,
+    config,
+    parser,
+)
+
 # Set up logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -32,17 +44,6 @@ stream_handler.setFormatter(log_format)
 # Add handlers to the logger
 logger.addHandler(stream_handler)
 logger.propagate = False
-
-# Import tool output truncation setting
-from vmpilot.config import (
-    DEFAULT_PROVIDER,
-    MAX_TOKENS,
-    RECURSION_LIMIT,
-    TEMPERATURE,
-    TOOL_OUTPUT_LINES,
-    Provider,
-    config,
-)
 
 
 class Pipeline:
@@ -87,9 +88,9 @@ class Pipeline:
             super().__init__(**data)
 
     def __init__(self):
-        self.name = "VMPilot Pipeline"
+        self.name = parser.get("pipeline", "name")
         self.type = "manifold"
-        self.id = "vmpilot"
+        self.id = parser.get("pipeline", "id")
 
         # Initialize configuration
         self._sync_with_config()
@@ -99,6 +100,11 @@ class Pipeline:
 
     async def on_shutdown(self):
         logger.debug(f"on_shutdown:{__name__}")
+
+    async def on_valves_updated(self):
+        """Handle valve updates by re-syncing configuration"""
+        self.valves._sync_with_config()
+        logger.debug("Valves updated and synced with config")
 
     def pipelines(self) -> List[dict]:
         """Return list of supported models/pipelines"""
@@ -196,24 +202,25 @@ class Pipeline:
                     )
                 else:
                     formatted_messages.append({"role": role, "content": content})
-
-            # Add current user message
-            formatted_messages.append(
-                {
-                    "role": "user",
-                    "content": [{"type": "text", "text": user_message}],
+                formatted_messages[-1]["content"][-1]["cache_control"] = {
+                    "type": "ephemeral"
                 }
-            )
+
+            """ Set up the params for the process_messages function and run it in a separate thread. """
 
             def generate_responses():
                 output_queue = queue.Queue()
                 loop_done = threading.Event()
+
+                """ Output callback to handle messages from the LLM """
 
                 def output_callback(content: Dict):
                     logger.debug(f"Received content: {content}")
                     if content["type"] == "text":
                         logger.debug(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
+
+                """ Output callback to handle tool messages: output from commands """
 
                 def tool_callback(result, tool_id):
                     logger.debug(f"Tool callback received result: {result}")
@@ -237,8 +244,11 @@ class Pipeline:
                         output_lines = str(output).splitlines()
                         truncated_output = "\n".join(output_lines[:TOOL_OUTPUT_LINES])
                         if len(output_lines) > TOOL_OUTPUT_LINES:
-                            truncated_output += f"\n...\n```\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
+                            # we use 4 backticks to escape the 3 backticks that might be in the markdown
+                            truncated_output += f"\n...\n````\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
                         output_queue.put(truncated_output)
+
+                """ Run the sampling loop in a separate thread while waiting for responses """
 
                 def run_loop():
                     try:
@@ -286,6 +296,14 @@ class Pipeline:
 
                 thread.join()
 
+            """
+            In a typical llm chat streaming means that the output is sent to the user as it is generated.
+            In our case, we don't stream the individual tokens in the output, but we do stream the messages as they come.
+            1. The llm's initial response.
+            2. Tools' output.
+            3. The llm's response to the tools' output.
+            4. Etc.
+            """
             if body.get("stream", False):
                 logger.debug("Streaming mode enabled")
                 return generate_responses()

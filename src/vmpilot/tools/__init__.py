@@ -1,8 +1,7 @@
 from .base import CLIResult, ToolResult
-from .computer import ComputerTool
+from .edit_tool import EditTool
 
 __ALL__ = [
     CLIResult,
-    ComputerTool,
-    ToolResult,
+    EditTool,
 ]
