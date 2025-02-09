@@ -3,10 +3,10 @@ name: Documentation
 on:
   push:
     branches:
+      - dev
       - main
     paths:
       - 'docs/**'
-      - 'mkdocs.yml'
       - '.github/workflows/documentation.yml'
 
 permissions:
@@ -33,4 +33,6 @@ jobs:
           pip install mkdocs-git-revision-date-plugin
       
       - name: Deploy documentation
-        run: mkdocs gh-deploy --force
+        run: |
+          cd docs
+          mkdocs gh-deploy --force --config-file mkdocs.yml --docs-dir source
