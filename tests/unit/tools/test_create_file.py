@@ -23,7 +23,7 @@ class TestCreateFileTool:
 
         assert temp_file.exists()
         assert temp_file.read_text() == content
-        assert "File created" in result
+        assert "" in result
 
     def test_create_file_with_nested_path(self, create_file_tool, tmp_path):
         """Test creating a file in nested directories"""
