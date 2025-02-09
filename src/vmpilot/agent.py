@@ -413,6 +413,7 @@ async def process_messages(
             else:
                 logger.error(f"Error in agent stream: {e}")
                 logger.error("".join(traceback.format_tb(e.__traceback__)))
+                logger.error(f"messages: {formatted_messages}")
                 message = f"Error in agent stream: {str(e)}"
             output_callback({"type": "text", "text": f"{message}"})
 
