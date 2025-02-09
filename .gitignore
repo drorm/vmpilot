@@ -1,3 +1,5 @@
+sh
+
 __pycache__/
 *.py[cod]
 *$py.class
@@ -27,3 +29,13 @@ ENV/
 .vscode/
 *.swp
 .DS_Store
+
+#PipeLine specific
+valves.json
+
+# aider specific
+.aider.tags.cache.v3/
+
+# generated automatically
+requirements.txt
+requirements-core.txt
