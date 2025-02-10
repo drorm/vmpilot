@@ -1,6 +1,6 @@
 # Command Line Interface (CLI)
 
-VMPilot provides a powerful command-line interface that allows you to interact with the tool directly from your terminal. 
+VMPilot provides a powerful command-line interface that allows you to interact with the tool directly from your terminal.
 
 ## Basic Usage
 
@@ -17,7 +17,7 @@ cli.sh "Create a new Python script that prints Hello World"
 cli.sh  cli.sh  `cat reqeust.sh`
 ```
 
-Remember to enclose your command in quotes to ensure that it is passed as a single argument to the CLI. 
+Remember to enclose your command in quotes to ensure that it is passed as a single argument to the CLI.
 In the last example, we used backticks to execute a command and pass its output as an argument to the CLI.
 
 ## Command Line Options

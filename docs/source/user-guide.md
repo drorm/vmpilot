@@ -16,7 +16,7 @@ Only give the llm access to files and permissions that you are comfortable with.
 ## Typical operation
 
 1. Start a new conversation in the OpenWebUI interface
-2. Describe the task you want the LLM to perform. 
+2. Describe the task you want the LLM to perform.
 3. The LLM performs the task and provides the output of any commands it runs.
 
 Example:
@@ -24,7 +24,7 @@ Example:
 user: create a hello world example in /tmp
 claude-VMPilot:
 I'll help you create a simple "Hello, World!" program. Since the request is to create a file but doesn't specify the exact filename, I'll create a Python file named hello.py in the /tmp directory.I've created a simple Python "Hello, World!" program in /tmp/hello.py. Let's verify the file was created and check its contents:
-$ cat /tmp/hello.py  
+$ cat /tmp/hello.py
 '''python
 #!/usr/bin/env python3
 
@@ -34,14 +34,14 @@ def main():
 if __name__ == "__main__":
     main()
 ```
- 
+
 Let's make the script executable and run it to make sure it works:
-$ chmod +x /tmp/hello.py && /tmp/hello.py  
+$ chmod +x /tmp/hello.py && /tmp/hello.py
 '''bash
 Hello, World!
 ```
 
-The program has been created successfully and works as expected! The script: 
+The program has been created successfully and works as expected! The script:
 
 1. Is located at /tmp/hello.py
 1. Has proper Python shebang line

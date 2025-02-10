@@ -4,27 +4,18 @@ site_description: Documentation for VMPilot - AI-driven system operations assist
 theme:
   name: material
   features:
-    - navigation.tabs
     - navigation.sections
-    - navigation.top
+    - toc.follow
     - search.highlight
     - search.share
     - content.code.copy
 
 nav:
   - Home: index.md
-  - Getting Started:
-    - Installation: getting-started/installation.md
-    - Quick Start: getting-started/quickstart.md
-  - User Guide:
-    - CLI Interface: user-guide/index.md
-    - Pipeline Mode: user-guide/pipeline.md
-    - Configuration: user-guide/configuration.md
-  - Development:
-    - Architecture: development/architecture.md
-    - Tools System: development/tools.md
-    - Contributing: development/contributing.md
-  - API Reference: api-reference.md
+  - Installation: installation.md
+  - User Guide: user-guide.md
+  - CLI Interface: cli.md
+  - Configuration: configuration.md
 
 markdown_extensions:
   - pymdownx.highlight:

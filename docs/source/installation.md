@@ -15,7 +15,7 @@ VMPilot in its current form is meant for folks familiar with Docker and Linux. S
 ## 1. Set up your virtual machine
 Set up a virtual machine with your standard configuration. You'll be sharing this machine with VMPilot, so set it up in a way that feels comfortable to you.
 
-- (gvisor)[https://gvisor.dev/docs/user_guide/install/] is recommended for Security. Enable your container runtime to use gvisor.
+- [gvisor](https://gvisor.dev/docs/user_guide/install/) is recommended for security. Enable your container runtime to use gvisor.
 - Once you have your virtual machine set up, you can proceed with the installation.
 
 ## 2. Install the apps on your virtual machine.
@@ -38,7 +38,7 @@ open-webui serve
 
 You can, of course, follow one of the other methods suggested in the OpenWebUI documentation.
 
-## 3.1 Create a new user
+## 3.1 Create a new OpenWebUI user
 In a browser, navigate to the OpenWebUI interface at your domain or localhost
 Create a new user on OpenWebUI which, as the first user, will make you the admin user.
 
@@ -87,7 +87,7 @@ The defaults are:
 Look at vmpilot/src/vmpilot/config.ini and make sure the configuration is correct for your setup.
 Alternatively you can set the environment variable VMPILOT\_CONFIG to the path of your configuration file.
 
-### 5.3 Start VMPilot 
+### 5.3 Start VMPilot
 ```bash
 ~/vmpilot/bin/run.sh
 ```
@@ -116,7 +116,10 @@ Note: Because the VMPilot pipeline is a manifold pipeline, you'll see two models
 - VMPilot PipelineAnthropic (Claude)
 - VMPilot PipelineOpenAI (GPT-4o)
 
-Claude is currently the preferred model for VMPilot, since it has been tested more extensively.
+Claude is currently the preferred model for VMPilot, since it:
+- Seems to handle code better.
+- Is relatively affordable and fast when caching is handled correctly. VMPIlot caches the conversation history, so the model doesn't have to relearn everything every time.
+- Has been tested more extensively.
 
 ## 4. Verification
 
