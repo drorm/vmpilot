@@ -11,10 +11,6 @@
       
       
       
-        <link rel="prev" href="../installation/">
-      
-      
-        <link rel="next" href="../cli/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +18,7 @@
     
     
       
-        <title>User Guide - VMPilot Documentation</title>
+        <title>DNS and SSL Configuration Guide - VMPilot Documentation</title>
       
     
     
@@ -66,7 +62,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#user-guide" class="md-skip">
+        <a href="#dns-and-ssl-configuration-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              User Guide
+              DNS and SSL Configuration Guide
             
           </span>
         </div>
@@ -263,19 +259,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../user-guide/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -285,7 +272,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -352,6 +338,68 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-dns-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dynamic DNS Setup
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caddy-server-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Caddy Server Setup
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dns-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      DNS Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -369,88 +417,107 @@
   
 
 
-<h1 id="user-guide">User guide</h1>
-<h1 id="introduction">Introduction</h1>
-<p>VMpilot is a tool that allows you to collaborate with an LLM primarily for software development, but can be used for any tasks that benefits from an LLM operating in a virtual machine.</p>
-<h1 id="basic-usage">Basic usage</h1>
-<p>Out of the box, VMPilot has several tools
-- A shell tool where it can run shell commands
-- A file editing tool where it can edit files
-- A file creation tool where it can create files</p>
-<p>Since it can run a shell command, it can run any command that you can run in a shell. This includes running scripts, installing packages, and running any other command that you can run in a shell.</p>
+<h1 id="dns-and-ssl-configuration-guide">DNS and SSL Configuration Guide</h1>
+<h2 id="overview">Overview</h2>
+<p>This guide covers setting up secure access to your OpenWebUI and VMPilot Pipeline services using DNS and SSL certificates. We'll walk through setting up dynamic DNS and configuring Caddy as a reverse proxy with automatic SSL certificate management.
+This is optional and not only recommended for secure access to your services, it'll make your life easier to not have to deal with browser warnings about insecure connections.</p>
 <blockquote>
 <p>[!CAUTION]
-Only give the llm access to files and permissions that you are comfortable with. The llm can run any command that you can run in a shell as the logged in user, so it can potentially do anything that you can do in a shell.</p>
+While I tried to make this guide somewhat comprehensive, check with Claude or GPT for any additional steps or configurations that might be needed for your specific setup.</p>
 </blockquote>
-<h2 id="typical-operation">Typical operation</h2>
+<h2 id="dynamic-dns-setup">Dynamic DNS Setup</h2>
+<p>If you're running these services from a location without a static IP which is often the case with home servers, you'll need to set up dynamic DNS to ensure your domain/subdomain always points to the correct IP address.</p>
 <ol>
-<li>Start a new conversation in the OpenWebUI interface</li>
-<li>Describe the task you want the LLM to perform.</li>
-<li>The LLM performs the task and provides the output of any commands it runs.</li>
+<li>Choose a Dynamic DNS Provider</li>
+<li>
+<p>Options include No-IP, DuckDNS, or Cloudflare</p>
+</li>
+<li>
+<p>Register for Dynamic DNS</p>
+</li>
+<li>Create an account at your chosen provider</li>
+<li>Register your desired subdomain</li>
+<li>
+<p>Note down your token/credentials</p>
+</li>
+<li>
+<p>Configure Dynamic DNS Client</p>
+</li>
+<li>
+<p>follow the instructions for your chosen provider</p>
+</li>
+<li>
+<p>Start and Enable the Service</p>
+</li>
 </ol>
-<p>Example:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>user: create a hello world example in /tmp
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>claude-VMPilot:
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>I&#39;ll help you create a simple &quot;Hello, World!&quot; program. Since the request is to create a file but doesn&#39;t specify the exact filename, I&#39;ll create a Python file named hello.py in the /tmp directory.I&#39;ve created a simple Python &quot;Hello, World!&quot; program in /tmp/hello.py. Let&#39;s verify the file was created and check its contents:
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>$ cat /tmp/hello.py
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>&#39;&#39;&#39;python
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>#!/usr/bin/env python3
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>def main():
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    print(&quot;Hello, World!&quot;)
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>if __name__ == &quot;__main__&quot;:
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    main()
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>```
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>Let&#39;s make the script executable and run it to make sure it works:
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>$ chmod +x /tmp/hello.py &amp;&amp; /tmp/hello.py
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>&#39;&#39;&#39;bash
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>Hello, World!
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>```
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>The program has been created successfully and works as expected! The script:
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>1. Is located at /tmp/hello.py
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>1. Has proper Python shebang line
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>1. Uses a main() function with the standard name  check
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>1. Successfully prints &quot;Hello, World!&quot; when executed
+<h2 id="caddy-server-setup">Caddy Server Setup</h2>
+<p>Caddy is a lightweight web server that can handle automatic SSL certificate management and reverse proxying. We'll use Caddy to set up secure access to OpenWebUI and VMPilot Pipeline.</p>
+<ol>
+<li>
+<p>Install Caddy
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>debian-keyring<span class="w"> </span>debian-archive-keyring<span class="w"> </span>apt-transport-https
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-1sLf<span class="w"> </span><span class="s1">&#39;https://dl.cloudsmith.io/public/caddy/stable/gpg.key&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>gpg<span class="w"> </span>--dearmor<span class="w"> </span>-o<span class="w"> </span>/usr/share/keyrings/caddy-stable-archive-keyring.gpg
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>curl<span class="w"> </span>-1sLf<span class="w"> </span><span class="s1">&#39;https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/apt/sources.list.d/caddy-stable.list
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>sudo<span class="w"> </span>apt<span class="w"> </span>update
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>caddy
 </code></pre></div></p>
-<h3 id="notes">Notes</h3>
-<ul>
-<li>
-<p>The LLM tends to be a bit verbose and has a bias towards action. It will, as is often the case with LLMs, try its best to answer your question, or perform the task you've asked it to do, rather than ask for clarification. You can change that by asking it to just discuss the task or ask for clarification.</p>
 </li>
 <li>
-<p>It can perform several opeartions to accomplish a task. In our case, it created the script, and ran it to verify that it works.</p>
+<p>Configure Caddy
+   Create a Caddyfile:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span>nano<span class="w"> </span>/etc/caddy/Caddyfile
+</code></pre></div></p>
+</li>
+</ol>
+<p>Basic configuration for OpenWebUI and Pipeline:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>webui.yourdomain.com {
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    reverse_proxy localhost:8080
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>}
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>pipeline.yourdomain.com {
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    reverse_proxy localhost:9099
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>}
+</code></pre></div></p>
+<ol>
+<li>Start and Enable Caddy
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>caddy
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>caddy
+</code></pre></div></li>
+</ol>
+<h2 id="dns-configuration">DNS Configuration</h2>
+<ol>
+<li>Set up A/AAAA Records</li>
+<li>Point your domain/subdomain to your server's IP</li>
+<li>
+<p>If using dynamic DNS, this is handled automatically</p>
 </li>
 <li>
-<p>Outputs are fenced in the appropriate language for easy reading.</p>
+<p>Verify DNS Propagation
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dig<span class="w"> </span>webui.yourdomain.com
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>dig<span class="w"> </span>pipeline.yourdomain.com
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<ol>
+<li>
+<p>Check Caddy Status
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>caddy
+</code></pre></div></p>
 </li>
 <li>
-<p>The LLM will often provide additional information about the task it performed, such as the location of the file it created, the contents of the file, and the output of any commands it ran.</p>
+<p>View Caddy Logs
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>caddy
+</code></pre></div></p>
 </li>
-</ul>
-<h1 id="choosing-the-provider-and-model">Choosing the provider and model</h1>
-<p>We support multiple providers such as OpenAI and Anthropic. You can choose the provider and model you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.</p>
-<h2 id="workspaces">Workspaces</h2>
-<p>Workspaces are very powerful since they allow you to group pipelines and prompt. Examples of workspaces:
-- My software with OpenAI
-- My software with Anthropic
-- Frontend development
-- Backend development
-- Personal</p>
-<p>In your prompt tell the llm
-- The root directory of your project. This is crucial to understand where to find the files you are working on.
-- The stack you're using
-- A description of the project and the hierarchy of the files</p>
-<h3 id="create-a-workspace">Create a workspace</h3>
-<ul>
-<li>Click on "Workspace"</li>
-<li>Click on "+" to create a new workspace</li>
-<li>Name it, enter a prompt and edit any other settings</li>
-<li>Click "Save"</li>
-</ul>
+<li>
+<p>Verify SSL Certificates
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-vI<span class="w"> </span>https://webui.yourdomain.com
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="next-steps">Next Steps</h2>
+<p>Once DNS and SSL are configured, proceed to <a href="../installation/">Installation Guide</a> for setting up OpenWebUI and VMPilot.</p>
 
 
 
