@@ -18,6 +18,7 @@ Only give the llm access to files and permissions that you are comfortable with.
 1. Start a new conversation in the OpenWebUI interface
 2. Describe the task you want the LLM to perform.
 3. The LLM performs the task and provides the output of any commands it runs.
+4. Rinse and repeat.
 
 Example:
 ````
