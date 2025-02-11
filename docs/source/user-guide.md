@@ -62,3 +62,15 @@ The program has been created successfully and works as expected! The script:
 # Choosing the provider and model
 
 We support multiple providers such as OpenAI and Anthropic. You can choose the provider and model you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.
+
+# Additional Features
+
+## Plugins
+VMPilot supports various plugins to extend its functionality. See the [Plugins](plugins.md) documentation for details about available plugins and how to use them.
+
+Some key plugins include:
+- [GitHub Issues](github_issues.md) - Manage GitHub issues directly from VMPilot
+- Code Map - Generate code documentation automatically
+
+## Tips and Best Practices
+For tips on getting the most out of VMPilot, including workspace management, prompt engineering, and general best practices, see our [Tips](tips.md) guide.
