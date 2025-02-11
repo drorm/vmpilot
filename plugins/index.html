@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../user-guide/">
+        <link rel="prev" href="../cli/">
       
       
-        <link rel="next" href="../plugins/">
+        <link rel="next" href="../tips/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>CLI Interface - VMPilot Documentation</title>
+        <title>Plugins - VMPilot Documentation</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#command-line-interface-cli" class="md-skip">
+        <a href="#plugins" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              CLI Interface
+              Plugins
             
           </span>
         </div>
@@ -305,6 +305,27 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CLI Interface
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -321,7 +342,7 @@
           
   
   <span class="md-ellipsis">
-    CLI Interface
+    Plugins
     
   </span>
   
@@ -333,7 +354,7 @@
         
   
   <span class="md-ellipsis">
-    CLI Interface
+    Plugins
     
   </span>
   
@@ -356,69 +377,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+  <a href="#how-plugins-work" class="md-nav__link">
     <span class="md-ellipsis">
-      Basic Usage
+      How Plugins Work
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#command-line-options" class="md-nav__link">
+  <a href="#managing-plugins" class="md-nav__link">
     <span class="md-ellipsis">
-      Command Line Options
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Command Line Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#temperature" class="md-nav__link">
-    <span class="md-ellipsis">
-      Temperature
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#provider-selection" class="md-nav__link">
-    <span class="md-ellipsis">
-      Provider Selection
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Debug Mode
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      Examples
+      Managing Plugins
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
+  <a href="#creating-new-plugins" class="md-nav__link">
     <span class="md-ellipsis">
-      Error Handling
+      Creating New Plugins
     </span>
   </a>
   
@@ -428,27 +407,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plugins/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Plugins
-    
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -501,69 +459,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+  <a href="#how-plugins-work" class="md-nav__link">
     <span class="md-ellipsis">
-      Basic Usage
+      How Plugins Work
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#command-line-options" class="md-nav__link">
+  <a href="#managing-plugins" class="md-nav__link">
     <span class="md-ellipsis">
-      Command Line Options
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Command Line Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#temperature" class="md-nav__link">
-    <span class="md-ellipsis">
-      Temperature
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#provider-selection" class="md-nav__link">
-    <span class="md-ellipsis">
-      Provider Selection
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Debug Mode
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      Examples
+      Managing Plugins
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
+  <a href="#creating-new-plugins" class="md-nav__link">
     <span class="md-ellipsis">
-      Error Handling
+      Creating New Plugins
     </span>
   </a>
   
@@ -588,81 +504,31 @@
   
 
 
-<h1 id="command-line-interface-cli">Command Line Interface (CLI)</h1>
-<p>VMPilot provides a powerful command-line interface that allows you to interact with the tool directly from your terminal.</p>
-<h2 id="basic-usage">Basic Usage</h2>
-<p>The basic syntax for using the CLI is:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;your command here&quot;</span>
-</code></pre></div>
-<p>For example:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Show me the contents of /etc/hosts&quot;</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Create a new Python script that prints Hello World&quot;</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>cli.sh<span class="w">  </span>cli.sh<span class="w">  </span><span class="sb">`</span>cat<span class="w"> </span>reqeust.sh<span class="sb">`</span>
+<h1 id="plugins">Plugins</h1>
+<p>VMPilot plugins provide a unique approach to extending LLM functionality through text-based configuration, rather than traditional code-based plugins.</p>
+<h2 id="how-plugins-work">How Plugins Work</h2>
+<p>The system injects each plugin's README.md content into the LLM's prompt. Currently, the plugin system looks like this:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gh"># Available plugins</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gh"># Codemap</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>directory: codemap
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>Creates documentation by scanning the code and generating a doc per source file.
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gh"># Github</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>directory: github\_issues
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="k">-</span><span class="w"> </span>To view or list issues, use &quot;cd $rootDir &amp;&amp; gh issue view $number&quot; or &quot;gh issue list&quot;. Always include the &quot;gh&quot; command.
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="k">-</span><span class="w"> </span>To create an issue view the README.md file for instructions.
 </code></pre></div></p>
-<p>Remember to enclose your command in quotes to ensure that it is passed as a single argument to the CLI.
-In the last example, we used backticks to execute a command and pass its output as an argument to the CLI.</p>
-<h2 id="command-line-options">Command Line Options</h2>
-<p>The CLI supports several command line options to customize its behavior:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>usage: cli.sh [-h] [-t TEMPERATURE] [-p {anthropic,openai}] [-d] request
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>positional arguments:
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  request               request to the llm
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>options:
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  -h, --help           Show this help message and exit
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  -t TEMPERATURE,      Temperature for response generation (default: 0.7)
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  --temperature
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  -p {anthropic,openai},
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  --provider          API provider to use (default: anthropic)
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  -d, --debug         Enable debug mode
-</code></pre></div>
-<h3 id="temperature">Temperature</h3>
-<p>The temperature parameter controls the randomness in the response generation. Higher values (e.g., 0.8) make the output more creative but potentially less focused, while lower values (e.g., 0.2) make it more deterministic and focused. As a rule you should not provide a temperature value, since these are set by the API provider. For testing we use a value of 0 so that the output is deterministic.</p>
-<p>Example:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>cli.sh<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span><span class="s2">&quot;Write a Python function to calculate factorial&quot;</span>
-</code></pre></div></p>
-<h3 id="provider-selection">Provider Selection</h3>
-<p>You can choose between different LLM providers:
-- anthropic (default)
-- openai</p>
-<p>Example:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>cli.sh<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span><span class="s2">&quot;Explain how to use the ls command&quot;</span>
-</code></pre></div></p>
-<h3 id="debug-mode">Debug Mode</h3>
-<p>Enable debug mode to see detailed logging information, which can be helpful for troubleshooting:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cli.sh<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;Show system information&quot;</span>
-</code></pre></div>
-<h2 id="examples">Examples</h2>
-<p>Here are some common usage examples:</p>
-<ol>
-<li>
-<p>Basic system operations:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Show me all Python files in the current directory&quot;</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Create a new directory called &#39;test&#39; and add a README file&quot;</span>
-</code></pre></div></p>
-</li>
-<li>
-<p>File editing:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Change the word &#39;error&#39; to &#39;warning&#39; in log.txt&quot;</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Add a new function to myscript.py&quot;</span>
-</code></pre></div></p>
-</li>
-<li>
-<p>Using different providers with custom temperature:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>cli.sh<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="s2">&quot;Optimize this Python script for performance&quot;</span>
-</code></pre></div></p>
-</li>
-</ol>
-<h2 id="error-handling">Error Handling</h2>
-<p>The CLI will display error messages when:
-- The command execution fails
-- There are permission issues
-- The LLM provider is not properly configured
-- Invalid arguments are provided</p>
-<p>If you encounter errors, try:
-1. Using debug mode (-d) to get more information
-2. Checking your API provider configuration
-3. Verifying you have the necessary permissions for the requested operation</p>
+<h2 id="managing-plugins">Managing Plugins</h2>
+<p>Enabling or disabling plugins is straightforward - simply add or remove their entries from the README.md file.</p>
+<h2 id="creating-new-plugins">Creating New Plugins</h2>
+<p>To create a new plugin:
+1. Create a directory in the plugins directory
+2. Create a README.md file using template.md from the plugins directory as a guide
+3. Add your plugin's entry to the main README.md file in the plugins directory
+4. Test the plugin functionality with various prompts</p>
+<p>For examples of existing plugins, see the <code>codemap</code> and <code>github_issues</code> implementations in the plugins directory.</p>
 
 
 

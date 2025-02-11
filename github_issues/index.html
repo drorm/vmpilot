@@ -11,10 +11,6 @@
       
       
       
-        <link rel="prev" href="../user-guide/">
-      
-      
-        <link rel="next" href="../plugins/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +18,7 @@
     
     
       
-        <title>CLI Interface - VMPilot Documentation</title>
+        <title>GitHub Issues Plugin - VMPilot Documentation</title>
       
     
     
@@ -66,7 +62,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#command-line-interface-cli" class="md-skip">
+        <a href="#github-issues-plugin" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              CLI Interface
+              GitHub Issues Plugin
             
           </span>
         </div>
@@ -305,31 +301,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    CLI Interface
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -339,95 +314,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic Usage
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#command-line-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Command Line Options
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Command Line Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#temperature" class="md-nav__link">
-    <span class="md-ellipsis">
-      Temperature
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#provider-selection" class="md-nav__link">
-    <span class="md-ellipsis">
-      Provider Selection
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#debug-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Debug Mode
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      Examples
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
-    <span class="md-ellipsis">
-      Error Handling
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -501,46 +387,46 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      Basic Usage
+      Prerequisites
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#command-line-options" class="md-nav__link">
+  <a href="#features" class="md-nav__link">
     <span class="md-ellipsis">
-      Command Line Options
+      Features
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Command Line Options">
+    <nav class="md-nav" aria-label="Features">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#temperature" class="md-nav__link">
+  <a href="#viewing-issues" class="md-nav__link">
     <span class="md-ellipsis">
-      Temperature
+      Viewing Issues
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#provider-selection" class="md-nav__link">
+  <a href="#creating-issues" class="md-nav__link">
     <span class="md-ellipsis">
-      Provider Selection
+      Creating Issues
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#debug-mode" class="md-nav__link">
+  <a href="#common-operations" class="md-nav__link">
     <span class="md-ellipsis">
-      Debug Mode
+      Common Operations
     </span>
   </a>
   
@@ -552,18 +438,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
+  <a href="#best-practices" class="md-nav__link">
     <span class="md-ellipsis">
-      Examples
+      Best Practices
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
+  <a href="#technical-details" class="md-nav__link">
     <span class="md-ellipsis">
-      Error Handling
+      Technical Details
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Usage
     </span>
   </a>
   
@@ -588,81 +483,72 @@
   
 
 
-<h1 id="command-line-interface-cli">Command Line Interface (CLI)</h1>
-<p>VMPilot provides a powerful command-line interface that allows you to interact with the tool directly from your terminal.</p>
-<h2 id="basic-usage">Basic Usage</h2>
-<p>The basic syntax for using the CLI is:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;your command here&quot;</span>
+<h1 id="github-issues-plugin">GitHub Issues Plugin</h1>
+<p>The GitHub Issues plugin enables VMPilot to interact with GitHub issues directly through the GitHub CLI (<code>gh</code>). This plugin provides a seamless way to view, create, and manage GitHub issues without leaving your VMPilot environment.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before using the GitHub Issues plugin, ensure you have:
+- GitHub CLI (<code>gh</code>) installed on your system
+- Authenticated GitHub CLI access (<code>gh auth login</code>)</p>
+<h2 id="features">Features</h2>
+<h3 id="viewing-issues">Viewing Issues</h3>
+<p>You can view issues using simple commands like:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>show me issue 3
 </code></pre></div>
-<p>For example:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Show me the contents of /etc/hosts&quot;</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Create a new Python script that prints Hello World&quot;</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>cli.sh<span class="w">  </span>cli.sh<span class="w">  </span><span class="sb">`</span>cat<span class="w"> </span>reqeust.sh<span class="sb">`</span>
+or
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>what&#39;s the status of issue #5
 </code></pre></div></p>
-<p>Remember to enclose your command in quotes to ensure that it is passed as a single argument to the CLI.
-In the last example, we used backticks to execute a command and pass its output as an argument to the CLI.</p>
-<h2 id="command-line-options">Command Line Options</h2>
-<p>The CLI supports several command line options to customize its behavior:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>usage: cli.sh [-h] [-t TEMPERATURE] [-p {anthropic,openai}] [-d] request
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>positional arguments:
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  request               request to the llm
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>options:
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  -h, --help           Show this help message and exit
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  -t TEMPERATURE,      Temperature for response generation (default: 0.7)
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  --temperature
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  -p {anthropic,openai},
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  --provider          API provider to use (default: anthropic)
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  -d, --debug         Enable debug mode
-</code></pre></div>
-<h3 id="temperature">Temperature</h3>
-<p>The temperature parameter controls the randomness in the response generation. Higher values (e.g., 0.8) make the output more creative but potentially less focused, while lower values (e.g., 0.2) make it more deterministic and focused. As a rule you should not provide a temperature value, since these are set by the API provider. For testing we use a value of 0 so that the output is deterministic.</p>
-<p>Example:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>cli.sh<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span><span class="s2">&quot;Write a Python function to calculate factorial&quot;</span>
+<p>The plugin will automatically:
+1. Navigate to the project root directory
+2. Fetch and display the issue information</p>
+<h3 id="creating-issues">Creating Issues</h3>
+<p>To create a new issue, you can use natural language requests like:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>create a github issue titled &quot;Add logging feature&quot; with label &quot;enhancement&quot;
 </code></pre></div></p>
-<h3 id="provider-selection">Provider Selection</h3>
-<p>You can choose between different LLM providers:
-- anthropic (default)
-- openai</p>
-<p>Example:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>cli.sh<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span><span class="s2">&quot;Explain how to use the ls command&quot;</span>
-</code></pre></div></p>
-<h3 id="debug-mode">Debug Mode</h3>
-<p>Enable debug mode to see detailed logging information, which can be helpful for troubleshooting:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cli.sh<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;Show system information&quot;</span>
-</code></pre></div>
-<h2 id="examples">Examples</h2>
-<p>Here are some common usage examples:</p>
+<p>The plugin will:
+1. Review the appropriate issue template
+2. Gather any required information through conversation
+3. Create the issue using the GitHub CLI</p>
+<h3 id="common-operations">Common Operations</h3>
+<p>The plugin supports all basic GitHub issue operations:
+- Listing all issues
+- Creating new issues
+- Viewing specific issues
+- Closing issues
+- Reopening issues</p>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Be Specific</strong>: When creating issues, provide clear titles and descriptions</li>
+<li><strong>Use Labels</strong>: Include relevant labels to categorize issues properly</li>
+<li><strong>Template Compliance</strong>: Follow any issue templates configured in the repository</li>
+<li><strong>Confirmation</strong>: The plugin will seek confirmation before creating or modifying issues</li>
+</ol>
+<h2 id="technical-details">Technical Details</h2>
+<p>The plugin operates by:
+1. Using the project's root directory as the base for all operations
+2. Leveraging the GitHub CLI for all interactions
+3. Following repository-specific templates and guidelines</p>
+<h2 id="example-usage">Example Usage</h2>
+<p>Here are some example interactions:</p>
 <ol>
 <li>
-<p>Basic system operations:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Show me all Python files in the current directory&quot;</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Create a new directory called &#39;test&#39; and add a README file&quot;</span>
+<p>Viewing an issue:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>show me issue #3
 </code></pre></div></p>
 </li>
 <li>
-<p>File editing:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Change the word &#39;error&#39; to &#39;warning&#39; in log.txt&quot;</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Add a new function to myscript.py&quot;</span>
+<p>Creating an issue:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>create an issue for a new feature request:
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>title: Add dark mode support
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>label: enhancement
 </code></pre></div></p>
 </li>
 <li>
-<p>Using different providers with custom temperature:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>cli.sh<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="s2">&quot;Optimize this Python script for performance&quot;</span>
+<p>Listing recent issues:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>show me the open issues
 </code></pre></div></p>
 </li>
 </ol>
-<h2 id="error-handling">Error Handling</h2>
-<p>The CLI will display error messages when:
-- The command execution fails
-- There are permission issues
-- The LLM provider is not properly configured
-- Invalid arguments are provided</p>
-<p>If you encounter errors, try:
-1. Using debug mode (-d) to get more information
-2. Checking your API provider configuration
-3. Verifying you have the necessary permissions for the requested operation</p>
+<p>The plugin will handle all the necessary GitHub CLI commands and provide appropriate feedback for each operation.</p>
 
 
 

@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../installation/">
+        <link rel="prev" href="../configuration/">
       
       
         <link rel="next" href="../cli/">
@@ -263,6 +263,27 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -318,11 +339,32 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+      <a href="../plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Configuration
+    Plugins
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tips/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tips
     
   </span>
   
@@ -387,6 +429,7 @@ Only give the llm access to files and permissions that you are comfortable with.
 <li>Start a new conversation in the OpenWebUI interface</li>
 <li>Describe the task you want the LLM to perform.</li>
 <li>The LLM performs the task and provides the output of any commands it runs.</li>
+<li>Rinse and repeat.</li>
 </ol>
 <p>Example:
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>user: create a hello world example in /tmp
@@ -422,7 +465,7 @@ Only give the llm access to files and permissions that you are comfortable with.
 <p>The LLM tends to be a bit verbose and has a bias towards action. It will, as is often the case with LLMs, try its best to answer your question, or perform the task you've asked it to do, rather than ask for clarification. You can change that by asking it to just discuss the task or ask for clarification.</p>
 </li>
 <li>
-<p>It can perform several opeartions to accomplish a task. In our case, it created the script, and ran it to verify that it works.</p>
+<p>It can perform several operation to accomplish a task. In our case, it created the script, and ran it to verify that it works.</p>
 </li>
 <li>
 <p>Outputs are fenced in the appropriate language for easy reading.</p>
@@ -433,24 +476,14 @@ Only give the llm access to files and permissions that you are comfortable with.
 </ul>
 <h1 id="choosing-the-provider-and-model">Choosing the provider and model</h1>
 <p>We support multiple providers such as OpenAI and Anthropic. You can choose the provider and model you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.</p>
-<h2 id="workspaces">Workspaces</h2>
-<p>Workspaces are very powerful since they allow you to group pipelines and prompt. Examples of workspaces:
-- My software with OpenAI
-- My software with Anthropic
-- Frontend development
-- Backend development
-- Personal</p>
-<p>In your prompt tell the llm
-- The root directory of your project. This is crucial to understand where to find the files you are working on.
-- The stack you're using
-- A description of the project and the hierarchy of the files</p>
-<h3 id="create-a-workspace">Create a workspace</h3>
-<ul>
-<li>Click on "Workspace"</li>
-<li>Click on "+" to create a new workspace</li>
-<li>Name it, enter a prompt and edit any other settings</li>
-<li>Click "Save"</li>
-</ul>
+<h1 id="additional-features">Additional Features</h1>
+<h2 id="plugins">Plugins</h2>
+<p>VMPilot supports various plugins to extend its functionality. See the <a href="../plugins/">Plugins</a> documentation for details about available plugins and how to use them.</p>
+<p>Some key plugins include:
+- <a href="../github_issues/">GitHub Issues</a> - Manage GitHub issues directly from VMPilot
+- Code Map - Generate code documentation automatically</p>
+<h2 id="tips-and-best-practices">Tips and Best Practices</h2>
+<p>For tips on getting the most out of VMPilot, including workspace management, prompt engineering, and general best practices, see our <a href="../tips/">Tips</a> guide.</p>
 
 
 
