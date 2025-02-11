@@ -15,13 +15,15 @@ nav:
   - Installation: installation.md
   - Configuration: configuration.md
   - User Guide: user-guide.md
-  - CLI Interface: cli.md
   - Plugins: plugins.md
+  - VMPilot Prompting: prompting.md
   - Tips: tips.md
+  - CLI Interface: cli.md
 
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
+  - pymdownx.superfences
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
