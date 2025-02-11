@@ -52,7 +52,7 @@ The program has been created successfully and works as expected! The script:
 ### Notes
 - The LLM tends to be a bit verbose and has a bias towards action. It will, as is often the case with LLMs, try its best to answer your question, or perform the task you've asked it to do, rather than ask for clarification. You can change that by asking it to just discuss the task or ask for clarification.
 
-- It can perform several opeartions to accomplish a task. In our case, it created the script, and ran it to verify that it works.
+- It can perform several operation to accomplish a task. In our case, it created the script, and ran it to verify that it works.
 
 - Outputs are fenced in the appropriate language for easy reading.
 
@@ -61,24 +61,3 @@ The program has been created successfully and works as expected! The script:
 # Choosing the provider and model
 
 We support multiple providers such as OpenAI and Anthropic. You can choose the provider and model you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.
-
-## Workspaces
-
-Workspaces are very powerful since they allow you to group pipelines and prompt. Examples of workspaces:
-- My software with OpenAI
-- My software with Anthropic
-- Frontend development
-- Backend development
-- Personal
-
-In your prompt tell the llm
-- The root directory of your project. This is crucial to understand where to find the files you are working on.
-- The stack you're using
-- A description of the project and the hierarchy of the files
-
-### Create a workspace
-- Click on "Workspace"
-- Click on "+" to create a new workspace
-- Name it, enter a prompt and edit any other settings
-- Click "Save"
-
