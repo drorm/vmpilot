@@ -23,6 +23,9 @@ nav:
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
+      use_pygments: true
+      linenums: true
+      auto_title: true
   - pymdownx.superfences
   - pymdownx.inlinehilite
   - pymdownx.snippets
