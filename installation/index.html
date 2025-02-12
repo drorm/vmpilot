@@ -767,35 +767,38 @@
 <h2 id="3-installing-openwebui">3. Installing OpenWebUI</h2>
 <p>OpenWebUI serves as the frontend interface for VMPilot.</p>
 <p>Follow the instructions on the <a href="https://github.com/open-webui/open-webui/">OpenWebUI GitHub repository</a></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>open-webui
-</code></pre></div>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>open-webui
+</code></pre></div></td></tr></table></div>
 <p>and then run the following command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>open-webui<span class="w"> </span>serve
-</code></pre></div>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>open-webui<span class="w"> </span>serve
+</code></pre></div></td></tr></table></div>
 <p>You can, of course, follow one of the other methods suggested in the OpenWebUI documentation.</p>
 <h2 id="31-create-a-new-openwebui-user">3.1 Create a new OpenWebUI user</h2>
 <p>In a browser, navigate to the OpenWebUI interface at your domain or localhost
 Create a new user on OpenWebUI which, as the first user, will make you the admin user.</p>
 <h2 id="4-install-openwebui-pipelines">4. Install OpenWebUI Pipelines</h2>
 <p><a href="https://github.com/open-webui/pipelines">OpenWebUI Pipelines</a> is required for VMPilot integration.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>~
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/open-webui/pipelines
-</code></pre></div>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span>
+<span class="normal"><a href="#__codelineno-2-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>~
+<a id="__codelineno-2-2" name="__codelineno-2-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/open-webui/pipelines
+</code></pre></div></td></tr></table></div>
 <p>This will clone the repository to your home directory. This is the default location for VMPilot to look for the pipelines.</p>
 <h2 id="41-install-dependencies">4.1 Install dependencies:</h2>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</code></pre></div>
+<p><div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div></td></tr></table></div>
 You don't need to run the pipelines server, as VMPIlot will run it.</p>
 <h2 id="5-installing-vmpilot">5. Installing VMPilot</h2>
 <h3 id="51-server-installation">5.1 Server Installation</h3>
 <p>Clone the VMPilot repository:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span><span class="w"> </span>~
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/yourusername/vmpilot.git
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nb">cd</span><span class="w"> </span>vmpilot
-</code></pre></div></p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
+<span class="normal"><a href="#__codelineno-4-2">2</a></span>
+<span class="normal"><a href="#__codelineno-4-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="nb">cd</span><span class="w"> </span>~
+<a id="__codelineno-4-2" name="__codelineno-4-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/yourusername/vmpilot.git
+<a id="__codelineno-4-3" name="__codelineno-4-3"></a><span class="nb">cd</span><span class="w"> </span>vmpilot
+</code></pre></div></td></tr></table></div></p>
 <p>Install dependencies:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</code></pre></div></p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div></td></tr></table></div></p>
 <p>Set up your credentials.
 The defaults are:
 - Anthropic: ~/.anthropic/api_key
@@ -804,8 +807,8 @@ The defaults are:
 <p>Look at vmpilot/src/vmpilot/config.ini and make sure the configuration is correct for your setup.
 Alternatively you can set the environment variable VMPILOT_CONFIG to the path of your configuration file.</p>
 <h3 id="53-start-vmpilot">5.3 Start VMPilot</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>~/vmpilot/bin/run.sh
-</code></pre></div>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-6-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a>~/vmpilot/bin/run.sh
+</code></pre></div></td></tr></table></div>
 <h3 id="32-openwebui-client-configuration">3.2 OpenWebUI Client Configuration</h3>
 <ol>
 <li>Access the OpenWebUI interface at your domain or localhost</li>

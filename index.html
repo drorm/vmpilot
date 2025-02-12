@@ -450,33 +450,58 @@ Only give the llm access to files and permissions that you are comfortable with.
 <li>The LLM performs the task and provides the output of any commands it runs.</li>
 </ol>
 <p>Example:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>user: create a hello world example in /tmp
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>claude-VMPilot:
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>I&#39;ll help you create a simple &quot;Hello, World!&quot; program. Since the request is to create a file but doesn&#39;t specify the exact filename, I&#39;ll create a Python file named hello.py in the /tmp directory.I&#39;ve created a simple Python &quot;Hello, World!&quot; program in /tmp/hello.py. Let&#39;s verify the file was created and check its contents:
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>$ cat /tmp/hello.py
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>&#39;&#39;&#39;python
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>#!/usr/bin/env python3
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>def main():
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    print(&quot;Hello, World!&quot;)
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>if __name__ == &quot;__main__&quot;:
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    main()
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>```
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>Let&#39;s make the script executable and run it to make sure it works:
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>$ chmod +x /tmp/hello.py &amp;&amp; /tmp/hello.py
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>&#39;&#39;&#39;bash
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>Hello, World!
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>```
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>The program has been created successfully and works as expected! The script:
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>1. Is located at /tmp/hello.py
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>1. Has proper Python shebang line
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>1. Uses a main() function with the standard name  check
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>1. Successfully prints &quot;Hello, World!&quot; when executed
-</code></pre></div></p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-0-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-0-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-0-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-0-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-0-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-0-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-0-10">10</a></span>
+<span class="normal"><a href="#__codelineno-0-11">11</a></span>
+<span class="normal"><a href="#__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#__codelineno-0-14">14</a></span>
+<span class="normal"><a href="#__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#__codelineno-0-23">23</a></span>
+<span class="normal"><a href="#__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#__codelineno-0-26">26</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>user: create a hello world example in /tmp
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>claude-VMPilot:
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>I&#39;ll help you create a simple &quot;Hello, World!&quot; program. Since the request is to create a file but doesn&#39;t specify the exact filename, I&#39;ll create a Python file named hello.py in the /tmp directory.I&#39;ve created a simple Python &quot;Hello, World!&quot; program in /tmp/hello.py. Let&#39;s verify the file was created and check its contents:
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>$ cat /tmp/hello.py
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>&#39;&#39;&#39;python
+<a id="__codelineno-0-6" name="__codelineno-0-6"></a>#!/usr/bin/env python3
+<a id="__codelineno-0-7" name="__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>def main():
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    print(&quot;Hello, World!&quot;)
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>if __name__ == &quot;__main__&quot;:
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>    main()
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a>```
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>Let&#39;s make the script executable and run it to make sure it works:
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>$ chmod +x /tmp/hello.py &amp;&amp; /tmp/hello.py
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>&#39;&#39;&#39;bash
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>Hello, World!
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>```
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a>The program has been created successfully and works as expected! The script:
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>1. Is located at /tmp/hello.py
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>1. Has proper Python shebang line
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>1. Uses a main() function with the standard name  check
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>1. Successfully prints &quot;Hello, World!&quot; when executed
+</code></pre></div></td></tr></table></div></p>
 <h3 id="notes">Notes</h3>
 <ul>
 <li>
