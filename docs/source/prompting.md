@@ -1,38 +1,58 @@
-# Prompting
+# VMPilot Prompting System
 
 ## Overview
-Whenever you start a conversation with the LLM it has no context, no memory of previous interactions. You need to give it context and direction. 
-In VMPilot, we use a multi-level prompting system to provide context and direction to the LLM.
+Whenever you start a conversation with an LLM, it has no context or memory of previous interactions. You need to provide context and direction. 
+VMPilot uses a multi-level prompting system to ensure the LLM has the necessary context to assist effectively.
 
-1. Using OpenWebUI workspaces we provide a project prompt that includes the root directory of the project and a brief overview of the project.
-2. We specify the github issue we are working on, and using the plugin, the llm has context about the job.
+## Core Concepts
 
+### 1. Project Context
+Using OpenWebUI workspaces, we provide:
 
-## Prompts and OpenWebUI workspaces
+- Project root directory location
+- Project structure and overview
+- Technology stack information
+- Development guidelines
 
-## Using Workspaces
+### 2. Task Context
+Through Github issues integration:
 
-Workspaces are a powerful organizational tool that allow you to group related pipelines and prompts. Here are some example workspace categories we use in VMPilot:
+- Current task details and requirements
+- Related discussions and context
+- Project milestones and labels
 
-- OpenAI VMPilot
-- Claude VMPilot
-- Frontend development
-- Backend development
-- Personal
+## Working with OpenWebUI Workspaces
 
+Workspaces in VMPilot help organize different aspects of your development:
+
+- Project-specific workspaces (e.g., OpenAI VMPilot, Claude VMPilot)
+- Development focus areas (Frontend, Backend)
+- Personal workspaces
+
+### Essential Workspace Components
 When setting up a workspace prompt, include:
+- Project root directory (crucial for file operations)
+- Technology stack details
+- Project description and structure
+- Development guidelines
 
-- The root directory of your project. This is crucial for file operations so that the llm doesn't hunt for files in the wrong place.
-- Your technology stack
-- A brief project description and file structure overview
-
-### Creating a Workspace
+### Setting Up a Workspace
 1. Click on "Workspace"
 2. Click the "+" button to create a new workspace
-3. Enter a name and configure the prompt and settings
-4. Click "Save"
+3. Enter a name and configure settings
+4. Add your project prompt
+5. Click "Save"
 
-# Project prompt
+## Using Github Issues for Context
+The Github issues plugin provides task-specific context to the LLM. Simply ask to view an issue:
+```bash
+Look at github issue <number>
+```
+
+## Examples
+
+### Sample Project Prompt
+The following is the actual VMPilot project prompt:
 
 ## Sample prompt
 

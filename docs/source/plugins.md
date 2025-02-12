@@ -1,6 +1,9 @@
 # Plugins
 
 VMPilot plugins provide a unique approach to extending LLM functionality through text-based configuration, rather than traditional code-based plugins.
+This means that it is quite easy to add or remove plugins from the system, and the plugins themselves are simple to create and maintain.
+
+We use, for instance, the `github issues` plugin to manage issues in the VMPilot project. It should be relatively easy to replace it with a different plugin, such as a Jira plugin, if needed.
 
 ## How Plugins Work
 
