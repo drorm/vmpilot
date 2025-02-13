@@ -71,15 +71,18 @@ class EditTool(BaseTool):
                 return ""
             except ValueError as e:
                 if "SearchReplaceNoExactMatch" in str(e):
+                    logger.info(f"No matches found in {content}")
                     return "No matches found"
                 raise
             except Exception as e:
                 error_message = f"Error: \n```\n{str(e)}\n```\n"
+                logger.info(f"Error in edit {content}")
                 return error_message
 
         except FileNotFoundError:
             raise
         except ValueError:
+            logger.info(f"Error value in edit {content}")
             raise
 
     async def _arun(self, content: str) -> str:
