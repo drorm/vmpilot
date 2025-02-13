@@ -2,12 +2,12 @@
 
 > [!CAUTION]
 Only run this if you have enough knowledge about the security implications of running arbitrary commands in your virtual machine.
-**Never run this on your local machine**. You are letting the AI/LLM pilot run commands in your machine and it can be dangerous. Additionally, there is a risk that the AI might interact with the external world, and be taken over by an attacker.
+**Never run this on your personal machine**. You are letting the AI/LLM pilot run commands in your machine and it can be dangerous. Additionally, there is a risk that the AI might interact with the external world, and be taken over by an attacker.
 
 ## Overview
 
 VMPilot provides a way to interact with an AI agent to perform tasks in a virtual machine. It is focused on pair programming, where the AI can help you with coding tasks, but it can also be used for other tasks as well.
-While the UI is similar to the chat interface of OpenAI and other AI models (thanks to OpenWebUI), it provides advanced capabilities by executing multiple commands in the virtual machine to accomplish the requested task.
+While the UI is similar to the chat interface of OpenAI and other AI models, thanks to OpenWebUI, it provides advanced capabilities by executing multiple commands in the virtual machine to accomplish the requested task.
 It is is available as an Open WebUI Pipeline, or a cli.
 
 It is inspired by [Claude Computer Use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use) and uses [OpenWebUI Pipelines](https://docs.anthropic.com/en/docs/build-with-claude/openwebui-pipelines).
