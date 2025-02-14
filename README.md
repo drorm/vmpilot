@@ -3,7 +3,7 @@
 ## Overview
 
 VMPilot is:
-- your pair programming partner.
+- your pair programming partner
 - virtual machine based: it reads, writes, and performs various actions on files and run commands in the virtual machine.
 - an agent. It runs multiple commands to perform a task. It’ll for instance run a unit test, see an error, fix it, and keep making changes until there are no errors.
 - web based with a very advanced and powerful UI curtsy of OpenWebUI.
@@ -28,7 +28,7 @@ Using natural language, you can ask VMPilot to:
 
 ### Core Features
 - The rich and advanced features of [OpenWebUI](https://github.com/open-webui/open-webui/)
-- Code Output Processing Automatic programming language detection,smart code fence wrapping 
+- Code Output Processing Automatic programming language detection,smart code fence wrapping
 - Streaming Support. Support for both streaming and single-response modes
 - Model Support
   - Primarily tested with Claude 3.5 Sonnet
@@ -36,12 +36,17 @@ Using natural language, you can ask VMPilot to:
 
 ## Documentation
 
-For detailed information about VMPilot's features and capabilities, check out:
+### Getting Started
+- [Installation Guide](docs/source/installation.md) - Complete setup instructions
+- [Configuration Guide](docs/source/configuration.md) - Customize your environment
+- [User Guide](docs/source/user-guide.md) - Learn the basics
 
-- [Installation Guide](docs/installation.md) - Complete setup instructions
-- [Configuration Guide](docs/configuration.md) - Configure VMPilot for your needs
-- [User Guide](docs/user-guide.md) - Learn how to use VMPilot effectively
-- [Security Guide](docs/security.md) - Understanding and managing security implications
-- [Plugin Development](docs/plugins.md) - Extend VMPilot's capabilities
+### Core Features
+- [Command Line Interface](docs/source/cli.md) - Using the CLI effectively
+- [Prompting System](docs/source/prompting.md) - Understanding context management
+- [Tips and Best Practices](docs/source/tips.md) - Optimize your workflow
 
-
+### Advanced Topics
+- [DNS and SSL Setup](docs/source/dns_ssl_setup.md) - Secure access configuration
+- [Plugins System](docs/source/plugins.md) - Extend functionality
+- [GitHub Issues Integration](docs/source/github_issues.md) - Issue management
