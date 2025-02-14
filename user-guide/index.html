@@ -296,6 +296,18 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    User Guide
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -306,6 +318,82 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#security-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security Note
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#typical-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Typical operation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Typical operation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -415,6 +503,71 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#security-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security Note
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#typical-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Typical operation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Typical operation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -432,18 +585,22 @@
   
 
 
-<h1 id="user-guide">User guide</h1>
-<h1 id="introduction">Introduction</h1>
-<p>VMpilot is a tool that allows you to collaborate with an LLM primarily for software development, but can be used for any tasks that benefits from an LLM operating in a virtual machine.</p>
-<h1 id="basic-usage">Basic usage</h1>
-<p>Out of the box, VMPilot has several tools
-- A shell tool where it can run shell commands
-- A file editing tool where it can edit files
-- A file creation tool where it can create files</p>
-<p>Since it can run a shell command, it can run any command that you can run in a shell. This includes running scripts, installing packages, and running any other command that you can run in a shell.</p>
+<h1 id="user-guide">User Guide</h1>
+<h2 id="introduction">Introduction</h2>
+<p>VMpilot is a powerful tool that enables collaboration with Large Language Models (LLMs) in a virtual machine environment. While primarily designed for software development tasks, it can be utilized for any operation that benefits from LLM assistance in a VM context.</p>
+<h2 id="basic-usage">Basic Usage</h2>
+<p>VMPilot comes with three core tools out of the box:
+1. <strong>Shell Tool</strong>: Executes shell commands and scripts
+2. <strong>File Editing Tool</strong>: Modifies existing files
+3. <strong>File Creation Tool</strong>: Creates new files with specified content</p>
+<h3 id="security-note">Security Note</h3>
 <blockquote>
 <p>[!CAUTION]
-Only give the llm access to files and permissions that you are comfortable with. The llm can run any command that you can run in a shell as the logged in user, so it can potentially do anything that you can do in a shell.</p>
+VMPilot operates with your user permissions. The LLM can execute any command available to your user account, including:
+- Reading and writing files
+- Installing packages
+- Running system commands</p>
+<p>Always ensure you only grant access to directories and permissions you trust the LLM to handle.</p>
 </blockquote>
 <h2 id="typical-operation">Typical operation</h2>
 <ol>
@@ -520,14 +677,16 @@ Only give the llm access to files and permissions that you are comfortable with.
 <p>The LLM will often provide additional information about the task it performed, such as the location of the file it created, the contents of the file, and the output of any commands it ran.</p>
 </li>
 </ul>
-<h1 id="choosing-the-provider-and-model">Choosing the provider and model</h1>
-<p>We support multiple providers such as OpenAI and Anthropic. You can choose the provider and model you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.</p>
+<h1 id="choosing-the-provider">Choosing the provider</h1>
+<p>We support multiple providers such as OpenAI and Anthropic. You can choose the provider you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.</p>
 <h1 id="additional-features">Additional Features</h1>
 <h2 id="plugins">Plugins</h2>
 <p>VMPilot supports various plugins to extend its functionality. See the <a href="../plugins/">Plugins</a> documentation for details about available plugins and how to use them.</p>
-<p>Some key plugins include:
-- <a href="../github_issues/">GitHub Issues</a> - Manage GitHub issues directly from VMPilot
-- Code Map - Generate code documentation automatically</p>
+<p>Some key plugins include:</p>
+<ul>
+<li><a href="../github_issues/">GitHub Issues</a> - Manage GitHub issues directly from VMPilot</li>
+<li>Code Map - Generate code documentation automatically. This is a work in progress.</li>
+</ul>
 <h2 id="tips-and-best-practices">Tips and Best Practices</h2>
 <p>For tips on getting the most out of VMPilot, including workspace management, prompt engineering, and general best practices, see our <a href="../tips/">Tips</a> guide.</p>
 

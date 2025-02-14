@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#configuration-guide" class="md-skip">
+        <a href="#vmpilot-configuration-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -323,55 +323,55 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-file-locations" class="md-nav__link">
+  <a href="#configuration-file-priority" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration File Locations
+      Configuration File Priority
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-file-structure" class="md-nav__link">
+  <a href="#configuration-sections" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration File Structure
+      Configuration Sections
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Configuration File Structure">
+    <nav class="md-nav" aria-label="Configuration Sections">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#general" class="md-nav__link">
+  <a href="#general-settings-general" class="md-nav__link">
     <span class="md-ellipsis">
-      [general]
+      General Settings [general]
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#model" class="md-nav__link">
+  <a href="#model-settings-model" class="md-nav__link">
     <span class="md-ellipsis">
-      [model]
+      Model Settings [model]
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#inference" class="md-nav__link">
+  <a href="#inference-settings-inference" class="md-nav__link">
     <span class="md-ellipsis">
-      [inference]
+      Inference Settings [inference]
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#anthropic-openai" class="md-nav__link">
+  <a href="#provider-settings-anthropic-openai" class="md-nav__link">
     <span class="md-ellipsis">
-      [anthropic] / [openai]
+      Provider Settings [anthropic] / [openai]
     </span>
   </a>
   
@@ -549,55 +549,55 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-file-locations" class="md-nav__link">
+  <a href="#configuration-file-priority" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration File Locations
+      Configuration File Priority
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-file-structure" class="md-nav__link">
+  <a href="#configuration-sections" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration File Structure
+      Configuration Sections
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Configuration File Structure">
+    <nav class="md-nav" aria-label="Configuration Sections">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#general" class="md-nav__link">
+  <a href="#general-settings-general" class="md-nav__link">
     <span class="md-ellipsis">
-      [general]
+      General Settings [general]
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#model" class="md-nav__link">
+  <a href="#model-settings-model" class="md-nav__link">
     <span class="md-ellipsis">
-      [model]
+      Model Settings [model]
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#inference" class="md-nav__link">
+  <a href="#inference-settings-inference" class="md-nav__link">
     <span class="md-ellipsis">
-      [inference]
+      Inference Settings [inference]
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#anthropic-openai" class="md-nav__link">
+  <a href="#provider-settings-anthropic-openai" class="md-nav__link">
     <span class="md-ellipsis">
-      [anthropic] / [openai]
+      Provider Settings [anthropic] / [openai]
     </span>
   </a>
   
@@ -645,37 +645,113 @@
   
 
 
-<h1 id="configuration-guide">Configuration Guide</h1>
+<h1 id="vmpilot-configuration-guide">VMPilot Configuration Guide</h1>
 <h2 id="overview">Overview</h2>
-<p>VMPilot uses a flexible configuration system that supports multiple locations for config files and various settings for LLM providers and model parameters.</p>
-<h2 id="configuration-file-locations">Configuration File Locations</h2>
-<p>VMPilot looks for configuration in the following locations (in order):
-1. Path specified in VMPILOT_CONFIG environment variable
-2. ./config.ini in the project directory
-3. config.ini in the current working directory
-4. ~/.config/vmpilot/config.ini</p>
-<h2 id="configuration-file-structure">Configuration File Structure</h2>
-<p>The configuration file (config.ini) should contain the following sections:</p>
-<h3 id="general">[general]</h3>
-<ul>
-<li>default_provider: The default LLM provider to use (anthropic or openai)</li>
-<li>tool_output_lines: Number of lines to show in tool output</li>
-</ul>
-<h3 id="model">[model]</h3>
-<ul>
-<li>recursion_limit: Maximum number of recursive steps the model can take</li>
-</ul>
-<h3 id="inference">[inference]</h3>
-<ul>
-<li>temperature: Model temperature setting</li>
-<li>max_tokens: Maximum tokens for model responses</li>
-</ul>
-<h3 id="anthropic-openai">[anthropic] / [openai]</h3>
-<p>Provider-specific settings:
-- default_model: Default model to use for this provider
-- api_key_path: Path to API key file
-- api_key_env: Environment variable name for API key
-- beta_flags: Optional comma-separated key:value pairs for beta features</p>
+<p>VMPilot features a flexible configuration system that allows you to customize your environment, LLM providers, and model parameters. This guide explains all available configuration options and how to set them up.</p>
+<h2 id="configuration-file-priority">Configuration File Priority</h2>
+<p>VMPilot searches for configuration files in the following order:</p>
+<ol>
+<li>Custom path specified in <code>VMPILOT_CONFIG</code> environment variable</li>
+<li><code>./config.ini</code> in the project directory</li>
+<li><code>config.ini</code> in the current working directory</li>
+<li><code>~/.config/vmpilot/config.ini</code></li>
+</ol>
+<p>The first configuration file found will be used.</p>
+<h2 id="configuration-sections">Configuration Sections</h2>
+<p>The <code>config.ini</code> file is organized into the following sections:</p>
+<h3 id="general-settings-general">General Settings [general]</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>default_provider</td>
+<td>Primary LLM provider (anthropic/openai)</td>
+<td>anthropic</td>
+</tr>
+<tr>
+<td>tool_output_lines</td>
+<td>Number of lines shown in tool output</td>
+<td>15</td>
+</tr>
+</tbody>
+</table>
+<h3 id="model-settings-model">Model Settings [model]</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>recursion_limit</td>
+<td>Maximum recursive steps allowed</td>
+<td>25</td>
+</tr>
+</tbody>
+</table>
+<h3 id="inference-settings-inference">Inference Settings [inference]</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>temperature</td>
+<td>Model creativity (0.0-1.0)</td>
+<td>0.7</td>
+</tr>
+<tr>
+<td>max_tokens</td>
+<td>Maximum response length</td>
+<td>2000</td>
+</tr>
+</tbody>
+</table>
+<h3 id="provider-settings-anthropic-openai">Provider Settings [anthropic] / [openai]</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>default_model</td>
+<td>Default model name</td>
+<td>claude-3.5 Sonnet</td>
+</tr>
+<tr>
+<td>api_key_path</td>
+<td>Path to API key file</td>
+<td>~/.anthropic_key</td>
+</tr>
+<tr>
+<td>api_key_env</td>
+<td>API key environment variable</td>
+<td>ANTHROPIC_API_KEY</td>
+</tr>
+<tr>
+<td>beta_flags</td>
+<td>Optional beta features (key:value pairs)</td>
+<td>feature1:on,feature2:off</td>
+</tr>
+</tbody>
+</table>
 <h2 id="example-configuration">Example Configuration</h2>
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">INI</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
 <span class="normal"><a href="#__codelineno-0-2"> 2</a></span>

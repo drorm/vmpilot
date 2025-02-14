@@ -302,29 +302,35 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#1-set-up-your-virtual-machine" class="md-nav__link">
+  <a href="#installation-steps" class="md-nav__link">
     <span class="md-ellipsis">
-      1. Set up your virtual machine
+      Installation Steps
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-virtual-machine-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Virtual Machine Setup
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#2-install-the-apps-on-your-virtual-machine" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#2-openwebui-installation" class="md-nav__link">
     <span class="md-ellipsis">
-      2. Install the apps on your virtual machine.
+      2. OpenWebUI Installation
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#3-installing-openwebui" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Installing OpenWebUI
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -600,29 +606,35 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#1-set-up-your-virtual-machine" class="md-nav__link">
+  <a href="#installation-steps" class="md-nav__link">
     <span class="md-ellipsis">
-      1. Set up your virtual machine
+      Installation Steps
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-virtual-machine-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Virtual Machine Setup
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#2-install-the-apps-on-your-virtual-machine" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#2-openwebui-installation" class="md-nav__link">
     <span class="md-ellipsis">
-      2. Install the apps on your virtual machine.
+      2. OpenWebUI Installation
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#3-installing-openwebui" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Installing OpenWebUI
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -748,23 +760,20 @@
 
 
 <h1 id="vmpilot-installation-guide">VMPilot Installation Guide</h1>
-<p>This guide provides comprehensive instructions for setting up VMPilot in your environment.</p>
+<p>This guide provides step-by-step instructions for setting up VMPilot in your environment.</p>
 <h2 id="prerequisites">Prerequisites</h2>
+<p>Before you begin, ensure you have:
+- Docker container running Ubuntu 22.04 or later
+- Python 3.11 or later
+- Basic familiarity with Docker and Linux</p>
+<p>For secure access setup, we recommend you complete the <a href="../dns_ssl_setup/">DNS and SSL Setup</a> before proceeding.</p>
+<h2 id="installation-steps">Installation Steps</h2>
+<h3 id="1-virtual-machine-setup">1. Virtual Machine Setup</h3>
 <ul>
-<li>Docker container with:</li>
-<li>ubuntu 22.04 or later</li>
-<li>python 3.11 or later</li>
+<li>Set up your virtual machine according to your requirements</li>
+<li>For enhanced security, install <a href="https://gvisor.dev/docs/user_guide/install/">gvisor</a> and configure your container runtime to use it</li>
 </ul>
-<p>Before proceeding with this installation guide, it is recommended that you complete the <a href="../dns_ssl_setup/">DNS and SSL Setup</a> to configure secure access to your services.</p>
-<p>VMPilot in its current form is meant for folks familiar with Docker and Linux. So rather than provide a docker container, we provide the instructions.</p>
-<h2 id="1-set-up-your-virtual-machine">1. Set up your virtual machine</h2>
-<p>Set up a virtual machine with your standard configuration. You'll be sharing this machine with VMPilot, so set it up in a way that feels comfortable to you.</p>
-<ul>
-<li><a href="https://gvisor.dev/docs/user_guide/install/">gvisor</a> is recommended for security. Enable your container runtime to use gvisor.</li>
-<li>Once you have your virtual machine set up, you can proceed with the installation.</li>
-</ul>
-<h2 id="2-install-the-apps-on-your-virtual-machine">2. Install the apps on your virtual machine.</h2>
-<h2 id="3-installing-openwebui">3. Installing OpenWebUI</h2>
+<h3 id="2-openwebui-installation">2. OpenWebUI Installation</h3>
 <p>OpenWebUI serves as the frontend interface for VMPilot.</p>
 <p>Follow the instructions on the <a href="https://github.com/open-webui/open-webui/">OpenWebUI GitHub repository</a></p>
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>open-webui

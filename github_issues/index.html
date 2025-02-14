@@ -445,9 +445,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#common-operations" class="md-nav__link">
+  <a href="#supported-operations" class="md-nav__link">
     <span class="md-ellipsis">
-      Common Operations
+      Supported Operations
     </span>
   </a>
   
@@ -468,18 +468,51 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#technical-details" class="md-nav__link">
+  <a href="#examples" class="md-nav__link">
     <span class="md-ellipsis">
-      Technical Details
+      Examples
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#view-an-issue" class="md-nav__link">
+    <span class="md-ellipsis">
+      View an Issue
     </span>
   </a>
   
 </li>
+        
+          <li class="md-nav__item">
+  <a href="#create-a-feature-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create a Feature Request
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      List Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
-  <a href="#example-usage" class="md-nav__link">
+  <a href="#technical-implementation" class="md-nav__link">
     <span class="md-ellipsis">
-      Example Usage
+      Technical Implementation
     </span>
   </a>
   
@@ -505,73 +538,90 @@
 
 
 <h1 id="github-issues-plugin">GitHub Issues Plugin</h1>
-<p>The GitHub Issues plugin enables VMPilot to interact with GitHub issues directly through the GitHub CLI (<code>gh</code>). This plugin provides a seamless way to view, create, and manage GitHub issues without leaving your VMPilot environment.</p>
+<p>The GitHub Issues plugin seamlessly integrates GitHub issue management into VMPilot through the GitHub CLI (<code>gh</code>). This integration allows you to manage GitHub issues using natural language commands without leaving your VMPilot environment.
+The most valuable use of this plugin is to be able to reference the issues when collaborating with the LLM.</p>
 <h2 id="prerequisites">Prerequisites</h2>
-<p>Before using the GitHub Issues plugin, ensure you have:
-- GitHub CLI (<code>gh</code>) installed on your system
-- Authenticated GitHub CLI access (<code>gh auth login</code>)</p>
+<p>Before using this plugin, ensure:
+- GitHub CLI (<code>gh</code>) is installed in the virutal machine
+- You have completed GitHub CLI authentication (<code>gh auth login</code>)
+  - Optional, but recommended, create a separate GitHub identity for VMPilot</p>
 <h2 id="features">Features</h2>
 <h3 id="viewing-issues">Viewing Issues</h3>
-<p>You can view issues using simple commands like:
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>show me issue 3
-</code></pre></div></td></tr></table></div>
-or
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>what&#39;s the status of issue #5
+<p>View issues using natural language commands:
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
+<span class="normal"><a href="#__codelineno-0-2">2</a></span>
+<span class="normal"><a href="#__codelineno-0-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>show me issue 3
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>show the status of issue #5
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>list all open issues
 </code></pre></div></td></tr></table></div></p>
-<p>The plugin will automatically:
-1. Navigate to the project root directory
-2. Fetch and display the issue information</p>
+<p>The plugin handles all necessary steps:
+1. Navigates to the project root directory
+2. Executes the appropriate GitHub CLI commands
+3. Displays formatted issue information</p>
 <h3 id="creating-issues">Creating Issues</h3>
-<p>To create a new issue, you can use natural language requests like:
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>create a github issue titled &quot;Add logging feature&quot; with label &quot;enhancement&quot;
+<p>Create new issues using conversational requests:
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>create a github issue titled &quot;Add logging feature&quot; with label &quot;enhancement&quot;
 </code></pre></div></td></tr></table></div></p>
-<p>The plugin will:
-1. Review the appropriate issue template
-2. Gather any required information through conversation
-3. Create the issue using the GitHub CLI</p>
-<h3 id="common-operations">Common Operations</h3>
-<p>The plugin supports all basic GitHub issue operations:
-- Listing all issues
+<p>The plugin streamlines the creation process:
+1. Follows repository issue templates
+2. Collects required information through interactive prompts
+3. Creates the issue via GitHub CLI</p>
+<h3 id="supported-operations">Supported Operations</h3>
+<p>The plugin handles essential GitHub issue management:
+- Viewing issue details
 - Creating new issues
-- Viewing specific issues
-- Closing issues
-- Reopening issues</p>
+- Listing all issues (open/closed)
+- Updating issue status
+- Managing labels and assignments</p>
 <h2 id="best-practices">Best Practices</h2>
 <ol>
-<li><strong>Be Specific</strong>: When creating issues, provide clear titles and descriptions</li>
-<li><strong>Use Labels</strong>: Include relevant labels to categorize issues properly</li>
-<li><strong>Template Compliance</strong>: Follow any issue templates configured in the repository</li>
-<li><strong>Confirmation</strong>: The plugin will seek confirmation before creating or modifying issues</li>
-</ol>
-<h2 id="technical-details">Technical Details</h2>
-<p>The plugin operates by:
-1. Using the project's root directory as the base for all operations
-2. Leveraging the GitHub CLI for all interactions
-3. Following repository-specific templates and guidelines</p>
-<h2 id="example-usage">Example Usage</h2>
-<p>Here are some example interactions:</p>
-<ol>
+<li><strong>Clear Communication</strong></li>
+<li>Use specific, descriptive issue titles</li>
+<li>Provide detailed descriptions</li>
 <li>
-<p>Viewing an issue:
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>show me issue #3
-</code></pre></div></td></tr></table></div></p>
+<p>Reference relevant code or documentation</p>
 </li>
 <li>
-<p>Creating an issue:
+<p><strong>Proper Organization</strong></p>
+</li>
+<li>Apply appropriate labels</li>
+<li>Follow repository issue templates</li>
+<li>
+<p>Include necessary context</p>
+</li>
+<li>
+<p><strong>Workflow Guidelines</strong></p>
+</li>
+<li>Verify issue details before creation</li>
+<li>Use consistent formatting</li>
+<li>Follow repository conventions</li>
+</ol>
+<h2 id="examples">Examples</h2>
+<h3 id="view-an-issue">View an Issue</h3>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>show me issue #3
+</code></pre></div></td></tr></table></div>
+<h3 id="create-a-feature-request">Create a Feature Request</h3>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span>
+<span class="normal"><a href="#__codelineno-3-2">2</a></span>
+<span class="normal"><a href="#__codelineno-3-3">3</a></span>
+<span class="normal"><a href="#__codelineno-3-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>create an issue:
+<a id="__codelineno-3-2" name="__codelineno-3-2"></a>title: Add dark mode support
+<a id="__codelineno-3-3" name="__codelineno-3-3"></a>label: enhancement
+<a id="__codelineno-3-4" name="__codelineno-3-4"></a>description: Implement dark mode theme for better visibility in low-light conditions
+</code></pre></div></td></tr></table></div>
+<h3 id="list-issues">List Issues</h3>
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
-<span class="normal"><a href="#__codelineno-4-2">2</a></span>
-<span class="normal"><a href="#__codelineno-4-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>create an issue for a new feature request:
-<a id="__codelineno-4-2" name="__codelineno-4-2"></a>title: Add dark mode support
-<a id="__codelineno-4-3" name="__codelineno-4-3"></a>label: enhancement
-</code></pre></div></td></tr></table></div></p>
-</li>
-<li>
-<p>Listing recent issues:
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a>show me the open issues
-</code></pre></div></td></tr></table></div></p>
-</li>
-</ol>
-<p>The plugin will handle all the necessary GitHub CLI commands and provide appropriate feedback for each operation.</p>
+<span class="normal"><a href="#__codelineno-4-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>show open issues with label &quot;bug&quot;
+<a id="__codelineno-4-2" name="__codelineno-4-2"></a>list all issues assigned to me
+</code></pre></div></td></tr></table></div>
+<p>The plugin automatically handles the GitHub CLI commands and provides formatted responses for all operations.</p>
+<h2 id="technical-implementation">Technical Implementation</h2>
+<p>The plugin:
+- Uses the project root as the working directory
+- Interfaces with GitHub through the CLI
+- Follows repository-specific templates
+- Provides interactive feedback
+- Validates operations before execution</p>
 
 
 

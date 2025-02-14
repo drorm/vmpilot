@@ -365,6 +365,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#current-plugin-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      Current Plugin System
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#managing-plugins" class="md-nav__link">
     <span class="md-ellipsis">
       Managing Plugins
@@ -489,6 +498,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#current-plugin-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      Current Plugin System
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#managing-plugins" class="md-nav__link">
     <span class="md-ellipsis">
       Managing Plugins
@@ -526,11 +544,12 @@
 
 
 <h1 id="plugins">Plugins</h1>
-<p>VMPilot plugins provide a unique approach to extending LLM functionality through text-based configuration, rather than traditional code-based plugins.
-This means that it is quite easy to add or remove plugins from the system, and the plugins themselves are simple to create and maintain.</p>
-<p>We use, for instance, the <code>github issues</code> plugin to manage issues in the VMPilot project. It should be relatively easy to replace it with a different plugin, such as a Jira plugin, if needed.</p>
+<p>VMPilot uses a unique text-based plugin system that extends LLM functionality without requiring traditional code-based implementations. This approach makes plugins easy to add, remove, and maintain.</p>
 <h2 id="how-plugins-work">How Plugins Work</h2>
-<p>The system injects each plugin's README.md content into the LLM's prompt. Currently, the plugin system looks like this:
+<p>Instead of using code-based integrations, VMPilot plugins work by injecting the plutin's directory README.md that lists the plugins into the main prompt. When the llm needs to access a plugin, it reads the README.md for that plugin and knows what actions are available.</p>
+<p>For example, the <code>github_issues</code> plugin enables GitHub issue management through simple text commands. This plugin could be easily replaced with alternatives (like a Jira plugin) by swapping the plugin configuration.</p>
+<h2 id="current-plugin-system">Current Plugin System</h2>
+<p>The system currently looks like this:
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Markdown</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
 <span class="normal"><a href="#__codelineno-0-2"> 2</a></span>
 <span class="normal"><a href="#__codelineno-0-3"> 3</a></span>
@@ -554,7 +573,7 @@ This means that it is quite easy to add or remove plugins from the system, and t
 <a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="k">-</span><span class="w"> </span>To create an issue view the README.md file for instructions.
 </code></pre></div></td></tr></table></div></p>
 <h2 id="managing-plugins">Managing Plugins</h2>
-<p>Enabling or disabling plugins is straightforward - simply add or remove their entries from the README.md file.</p>
+<p>Enabling or disabling plugins is straightforward - simply add or remove their entries from the main README.md file.</p>
 <h2 id="creating-new-plugins">Creating New Plugins</h2>
 <p>To create a new plugin:
 1. Create a directory in the plugins directory
