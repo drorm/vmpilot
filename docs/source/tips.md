@@ -47,6 +47,22 @@ When setting up a workspace prompt, include:
 3. Enter a name and configure the prompt and settings
 4. Click "Save"
 
+## LLM Error Handling
+
+The LLM may run into issues when using tools. You'll see errors like:
+- "Field required [type=missing, input_value={}, input_type=dict]"
+- "messages.1.content.1.tool_use.name: String should match pattern '^[a-zA-Z0-9_-]{1,64}$'"}"
+- "messages.5.content.1.tool_use.name: String should have at most 64 characters'}}"
+
+This mostly happens when the LLM tries to edit a file with a large amount of content. To resolve this try:
+- Ask the llm to create a new file instead of editing a new
+- Start a new shorter conversation
+- Break down the task into smaller steps
+
+This is an ongoing issue with LLMs and hopefully will get better with time. We're also working on improving the error handling and recovery mechanisms.
+
+### Why This Happens
+
 ## Edit your prompt
 
 When you're working on a prompt, it's often helpful to edit the original or latest prompt to refine your request. This can help you get more accurate and relevant responses from the LLM.
