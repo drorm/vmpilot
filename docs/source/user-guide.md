@@ -1,17 +1,22 @@
-# User guide
+# User Guide
 
-# Introduction
-VMpilot is a tool that allows you to collaborate with an LLM primarily for software development, but can be used for any tasks that benefits from an LLM operating in a virtual machine.
+## Introduction
+VMpilot is a powerful tool that enables collaboration with Large Language Models (LLMs) in a virtual machine environment. While primarily designed for software development tasks, it can be utilized for any operation that benefits from LLM assistance in a VM context.
 
-# Basic usage
-Out of the box, VMPilot has several tools
-- A shell tool where it can run shell commands
-- A file editing tool where it can edit files
-- A file creation tool where it can create files
+## Basic Usage
+VMPilot comes with three core tools out of the box:
+1. **Shell Tool**: Executes shell commands and scripts
+2. **File Editing Tool**: Modifies existing files
+3. **File Creation Tool**: Creates new files with specified content
 
-Since it can run a shell command, it can run any command that you can run in a shell. This includes running scripts, installing packages, and running any other command that you can run in a shell.
+### Security Note
 > [!CAUTION]
-Only give the llm access to files and permissions that you are comfortable with. The llm can run any command that you can run in a shell as the logged in user, so it can potentially do anything that you can do in a shell.
+> VMPilot operates with your user permissions. The LLM can execute any command available to your user account, including:
+> - Reading and writing files
+> - Installing packages
+> - Running system commands
+>
+> Always ensure you only grant access to directories and permissions you trust the LLM to handle.
 
 ## Typical operation
 
@@ -59,9 +64,9 @@ The program has been created successfully and works as expected! The script:
 
 - The LLM will often provide additional information about the task it performed, such as the location of the file it created, the contents of the file, and the output of any commands it ran.
 
-# Choosing the provider and model
+# Choosing the provider
 
-We support multiple providers such as OpenAI and Anthropic. You can choose the provider and model you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.
+We support multiple providers such as OpenAI and Anthropic. You can choose the provider you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.
 
 # Additional Features
 
@@ -69,8 +74,9 @@ We support multiple providers such as OpenAI and Anthropic. You can choose the p
 VMPilot supports various plugins to extend its functionality. See the [Plugins](plugins.md) documentation for details about available plugins and how to use them.
 
 Some key plugins include:
+
 - [GitHub Issues](github_issues.md) - Manage GitHub issues directly from VMPilot
-- Code Map - Generate code documentation automatically
+- Code Map - Generate code documentation automatically. This is a work in progress.
 
 ## Tips and Best Practices
 For tips on getting the most out of VMPilot, including workspace management, prompt engineering, and general best practices, see our [Tips](tips.md) guide.

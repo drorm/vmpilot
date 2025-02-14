@@ -1,62 +1,90 @@
-# VMPilot Prompting System
+# VMPilot Context Management System
 
-## Overview
-Whenever you start a conversation with an LLM, it has no context or memory of previous interactions. You need to provide context and direction. 
+## Understanding VMPilot's Approach
+Whenever you start a conversation with an LLM, it has no context or memory of previous interactions. You need to provide context and direction.
 VMPilot uses a multi-level prompting system to ensure the LLM has the necessary context to assist effectively.
 
-## Core Concepts
+## Context Layers
 
-### 1. Project Context
-Using OpenWebUI workspaces, we provide:
-
-- Project root directory location
-- Project structure and overview
-- Technology stack information
-- Development guidelines
-
-### 2. Task Context
-Through Github issues integration:
-
-- Current task details and requirements
-- Related discussions and context
-- Project milestones and labels
-
-## Working with OpenWebUI Workspaces
-
-Workspaces in VMPilot help organize different aspects of your development:
-
-- Project-specific workspaces (e.g., OpenAI VMPilot, Claude VMPilot)
-- Development focus areas (Frontend, Backend)
-- Personal workspaces
-
-### Essential Workspace Components
-When setting up a workspace prompt, include:
-- Project root directory (crucial for file operations)
-- Technology stack details
-- Project description and structure
-- Development guidelines
-
-### Setting Up a Workspace
-1. Click on "Workspace"
-2. Click the "+" button to create a new workspace
-3. Enter a name and configure settings
-4. Add your project prompt
-5. Click "Save"
-
-## Using Github Issues for Context
-The Github issues plugin provides task-specific context to the LLM. Simply ask to view an issue:
-```bash
-Look at github issue <number>
+### 1. Project Context (Workspace Level)
+Managed through OpenWebUI workspaces provide a high-level overview:
+```yaml
+Essential Components:
+- Project Root Directory: /path/to/project in the vm.
+- Technology Stack: [languages, frameworks, tools]
+- Project Structure: Directory layout and key files
+- Development Guidelines: Coding standards, workflows
 ```
 
-## Examples
+### 2. Task Context (GitHub Integration)
+Leveraged through the GitHub Issues plugin:
+```yaml
+Available Information:
+- Issue Details: Requirements, objectives
+- Discussion History: Comments, feedback
+- Project Metadata: Labels, milestones
+- Related Issues: Dependencies, blockers
+```
 
-### Sample Project Prompt
-The following is the actual VMPilot project prompt:
+## Workspace Management
 
-## Sample prompt
+### Types of Workspaces
+Organize your development environment with purpose-specific workspaces:
 
-This is the VMPilot prompt used to develop the VMPilot project. 
+1. **Provider-Specific**
+   ```yaml
+   Examples:
+   - OpenAI Development
+   - Claude Integration
+   - Local Model Testing
+   ```
+
+2. **Domain-Focused**
+   ```yaml
+   Examples:
+   - Frontend Development
+   - Backend Services
+   - Infrastructure Management
+   ```
+
+### Workspace Setup Guide
+
+1. **Initial Configuration**
+   ```yaml
+   Steps:
+   1. Navigate to Workspace Settings
+   2. Create New (+) or Edit Existing
+   3. Configure Base Settings:
+      - Name: [descriptive identifier]
+      - Model: [preferred LLM]
+      - Temperature: [0.0-1.0]
+   ```
+
+2. **Context Setup**
+   ```yaml
+   Required Information:
+   - Project Directory: Absolute path
+   - Stack Definition: Technologies used
+   - Access Permissions: Required paths
+   - Development Rules: Team guidelines
+   ```
+
+### Using GitHub Integration
+
+Access issue context with simple commands to the llm:
+```markdown
+# View specific issue
+Look at github issue 42
+
+# List recent issues
+Show open issues
+
+# Reference in discussion
+Regarding issue 42, can we...
+```
+
+### Example: VMPilot Development Prompt
+Below is the actual prompt used in VMPilot's development:
 
 ````markdown
 
@@ -158,41 +186,41 @@ Test suite and testing utilities:
 ## Common Usage Patterns
 ### CLI Mode
 - cli.sh "Show me /home"
-- cli "create a hello world example in /tmp/hello.py" 
+- cli "create a hello world example in /tmp/hello.py"
 ````
 
 ## Github issues as prompts
 
-To provide context about the current task, we use the `github issues` plugin.  Just ask the llm to view the issue, and it will provide the context. 
+To provide context about the current task, we use the `github issues` plugin.  Just ask the llm to view the issue, and it will provide the context.
 
 ## Example
 When working on the VMPilot docs, I ask:
 
 ```markdown
-Look at github issue 3, documentation.   
+Look at github issue 3, documentation.
 
-    I added a new section “Prompting”. I’m concerned, however that experienced users will skip it because they know how to prompt. However, this page has some important info about prompting in vmpilot   
+    I added a new section “Prompting”. I’m concerned, however that experienced users will skip it because they know how to prompt. However, this page has some important info about prompting in vmpilot
 ```
 And the llm responds:
 ````markdown
 I'll help analyze these points. Let me first look at issue 3 and the documentation.
 ```
-$ cd /home/dror/vmpilot && gh issue view 3 
+$ cd /home/dror/vmpilot && gh issue view 3
 title:  Documentation System Setup with MkDocs and GitHub Pages
 state:  OPEN
 author: dror-llm
 labels: documentation, enhancement
 comments:   2
 assignees:  drorm
-projects:   
+projects:
 milestone:  0.1
 number: 3
 --
 # Documentation System Setup with MkDocs and GitHub Pages
 ...
 (and 64 more lines)
-Let me address each of your points: 
+Let me address each of your points:
 
-    Regarding the "Prompting" section concern: 
+    Regarding the "Prompting" section concern:
             You're right that this is a valid concern. Since VMPilot has specific prompting requirements/features, I suggest renaming it to something more specific like "VMPilot-Specific Prompting" or "VMPilot Prompt System" to differentiate it from general LLM prompting. This makes it clear that even experienced prompt engineers should read it.
 ````

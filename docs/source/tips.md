@@ -1,26 +1,29 @@
-# Tips and Best Practices
+# VMPilot Best Practices Guide
 
-## Create a Separate API Key for VMPilot
+## Getting Started
 
-When you first start using VMPilot, it's recommended to create a dedicated API key to manage costs effectively. This allows you to:
-- Set a specific budget for VMPilot usage
-- Monitor VMPilot-specific API consumption
-- Keep your other API usage separate
+### API Key Management
+For optimal cost control and usage tracking:
+1. Create a dedicated API key for VMPilot
+2. Set specific budget limits
+3. Monitor usage separately from other API applications
+4. Regularly review consumption patterns
 
-## Managing Chat Length
+### Effective Communication
 
-As conversations grow longer, the LLM's responses may become less focused and effective. When this happens:
-- Start a new chat session
-- Reuse or update your original prompt
-- Copy relevant context from the previous conversation if needed
+#### Managing Conversations
+Long conversations can reduce effectiveness. To maintain quality:
+1. Keep conversations focused on specific tasks
+2. Start new sessions for new topics
+3. Include relevant context when starting fresh
+4. Save important snippets for future reference
 
-## Working with LLMs Effectively
+#### Task Management
+Break down complex tasks:
+- Divide large tasks into smaller, manageable steps
+- Verify each step before proceeding
+- Combine manual work with LLM assistance when needed
 
-LLMs can be remarkably capable but also occasionally unpredictable. To get the best results:
-
-- Read about prompt engineering. It's a skill that takes time to develop but it's worth it.
-- Don't ask the llm to do too much at once. Break down the task into smaller tasks.
-- Sometimes, you just need to do the task yourself, at least part of it. 
 
 # Using OpenWebUI
 

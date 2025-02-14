@@ -1,84 +1,97 @@
 # GitHub Issues Plugin
 
-The GitHub Issues plugin enables VMPilot to interact with GitHub issues directly through the GitHub CLI (`gh`). This plugin provides a seamless way to view, create, and manage GitHub issues without leaving your VMPilot environment.
+The GitHub Issues plugin seamlessly integrates GitHub issue management into VMPilot through the GitHub CLI (`gh`). This integration allows you to manage GitHub issues using natural language commands without leaving your VMPilot environment.
+The most valuable use of this plugin is to be able to reference the issues when collaborating with the LLM.
 
 ## Prerequisites
 
-Before using the GitHub Issues plugin, ensure you have:
-- GitHub CLI (`gh`) installed on your system
-- Authenticated GitHub CLI access (`gh auth login`)
+Before using this plugin, ensure:
+- GitHub CLI (`gh`) is installed in the virutal machine
+- You have completed GitHub CLI authentication (`gh auth login`)
+  - Optional, but recommended, create a separate GitHub identity for VMPilot
 
 ## Features
 
 ### Viewing Issues
 
-You can view issues using simple commands like:
+View issues using natural language commands:
 ```
 show me issue 3
-```
-or
-```
-what's the status of issue #5
+show the status of issue #5
+list all open issues
 ```
 
-The plugin will automatically:
-1. Navigate to the project root directory
-2. Fetch and display the issue information
+The plugin handles all necessary steps:
+1. Navigates to the project root directory
+2. Executes the appropriate GitHub CLI commands
+3. Displays formatted issue information
 
 ### Creating Issues
 
-To create a new issue, you can use natural language requests like:
+Create new issues using conversational requests:
 ```
 create a github issue titled "Add logging feature" with label "enhancement"
 ```
 
-The plugin will:
-1. Review the appropriate issue template
-2. Gather any required information through conversation
-3. Create the issue using the GitHub CLI
+The plugin streamlines the creation process:
+1. Follows repository issue templates
+2. Collects required information through interactive prompts
+3. Creates the issue via GitHub CLI
 
-### Common Operations
+### Supported Operations
 
-The plugin supports all basic GitHub issue operations:
-- Listing all issues
+The plugin handles essential GitHub issue management:
+- Viewing issue details
 - Creating new issues
-- Viewing specific issues
-- Closing issues
-- Reopening issues
+- Listing all issues (open/closed)
+- Updating issue status
+- Managing labels and assignments
 
 ## Best Practices
 
-1. **Be Specific**: When creating issues, provide clear titles and descriptions
-2. **Use Labels**: Include relevant labels to categorize issues properly
-3. **Template Compliance**: Follow any issue templates configured in the repository
-4. **Confirmation**: The plugin will seek confirmation before creating or modifying issues
+1. **Clear Communication**
+   - Use specific, descriptive issue titles
+   - Provide detailed descriptions
+   - Reference relevant code or documentation
 
-## Technical Details
+2. **Proper Organization**
+   - Apply appropriate labels
+   - Follow repository issue templates
+   - Include necessary context
 
-The plugin operates by:
-1. Using the project's root directory as the base for all operations
-2. Leveraging the GitHub CLI for all interactions
-3. Following repository-specific templates and guidelines
+3. **Workflow Guidelines**
+   - Verify issue details before creation
+   - Use consistent formatting
+   - Follow repository conventions
 
-## Example Usage
+## Examples
 
-Here are some example interactions:
-
-1. Viewing an issue:
+### View an Issue
 ```
 show me issue #3
 ```
 
-2. Creating an issue:
+### Create a Feature Request
 ```
-create an issue for a new feature request:
+create an issue:
 title: Add dark mode support
 label: enhancement
+description: Implement dark mode theme for better visibility in low-light conditions
 ```
 
-3. Listing recent issues:
+### List Issues
 ```
-show me the open issues
+show open issues with label "bug"
+list all issues assigned to me
 ```
 
-The plugin will handle all the necessary GitHub CLI commands and provide appropriate feedback for each operation.
+The plugin automatically handles the GitHub CLI commands and provides formatted responses for all operations.
+
+## Technical Implementation
+
+The plugin:
+- Uses the project root as the working directory
+- Interfaces with GitHub through the CLI
+- Follows repository-specific templates
+- Provides interactive feedback
+- Validates operations before execution

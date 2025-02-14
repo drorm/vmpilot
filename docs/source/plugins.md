@@ -1,13 +1,16 @@
 # Plugins
 
-VMPilot plugins provide a unique approach to extending LLM functionality through text-based configuration, rather than traditional code-based plugins.
-This means that it is quite easy to add or remove plugins from the system, and the plugins themselves are simple to create and maintain.
-
-We use, for instance, the `github issues` plugin to manage issues in the VMPilot project. It should be relatively easy to replace it with a different plugin, such as a Jira plugin, if needed.
+VMPilot uses a unique text-based plugin system that extends LLM functionality without requiring traditional code-based implementations. This approach makes plugins easy to add, remove, and maintain.
 
 ## How Plugins Work
 
-The system injects each plugin's README.md content into the LLM's prompt. Currently, the plugin system looks like this:
+Instead of using code-based integrations, VMPilot plugins work by injecting the plutin's directory README.md that lists the plugins into the main prompt. When the llm needs to access a plugin, it reads the README.md for that plugin and knows what actions are available.
+
+For example, the `github_issues` plugin enables GitHub issue management through simple text commands. This plugin could be easily replaced with alternatives (like a Jira plugin) by swapping the plugin configuration.
+
+## Current Plugin System
+
+The system currently looks like this:
 ```markdown
 
 # Available plugins
@@ -25,7 +28,7 @@ directory: github\_issues
 
 ## Managing Plugins
 
-Enabling or disabling plugins is straightforward - simply add or remove their entries from the README.md file.
+Enabling or disabling plugins is straightforward - simply add or remove their entries from the main README.md file.
 
 ## Creating New Plugins
 

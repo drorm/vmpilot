@@ -1,26 +1,23 @@
 # VMPilot Installation Guide
 
-This guide provides comprehensive instructions for setting up VMPilot in your environment.
+This guide provides step-by-step instructions for setting up VMPilot in your environment.
 
 ## Prerequisites
 
-- Docker container with:
-  - ubuntu 22.04 or later
-  - python 3.11 or later
+Before you begin, ensure you have:
+- Docker container running Ubuntu 22.04 or later
+- Python 3.11 or later
+- Basic familiarity with Docker and Linux
 
-Before proceeding with this installation guide, it is recommended that you complete the [DNS and SSL Setup](dns_ssl_setup.md) to configure secure access to your services.
+For secure access setup, we recommend you complete the [DNS and SSL Setup](dns_ssl_setup.md) before proceeding.
 
-VMPilot in its current form is meant for folks familiar with Docker and Linux. So rather than provide a docker container, we provide the instructions.
+## Installation Steps
 
-## 1. Set up your virtual machine
-Set up a virtual machine with your standard configuration. You'll be sharing this machine with VMPilot, so set it up in a way that feels comfortable to you.
+### 1. Virtual Machine Setup
+- Set up your virtual machine according to your requirements
+- For enhanced security, install [gvisor](https://gvisor.dev/docs/user_guide/install/) and configure your container runtime to use it
 
-- [gvisor](https://gvisor.dev/docs/user_guide/install/) is recommended for security. Enable your container runtime to use gvisor.
-- Once you have your virtual machine set up, you can proceed with the installation.
-
-## 2. Install the apps on your virtual machine.
-
-## 3. Installing OpenWebUI
+### 2. OpenWebUI Installation
 
 OpenWebUI serves as the frontend interface for VMPilot.
 

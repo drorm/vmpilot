@@ -1,35 +1,45 @@
-# Configuration Guide
+# VMPilot Configuration Guide
 
 ## Overview
-VMPilot uses a flexible configuration system that supports multiple locations for config files and various settings for LLM providers and model parameters.
+VMPilot features a flexible configuration system that allows you to customize your environment, LLM providers, and model parameters. This guide explains all available configuration options and how to set them up.
 
-## Configuration File Locations
-VMPilot looks for configuration in the following locations (in order):
-1. Path specified in VMPILOT_CONFIG environment variable
-2. ./config.ini in the project directory
-3. config.ini in the current working directory
-4. ~/.config/vmpilot/config.ini
+## Configuration File Priority
+VMPilot searches for configuration files in the following order:
 
-## Configuration File Structure
-The configuration file (config.ini) should contain the following sections:
+1. Custom path specified in `VMPILOT_CONFIG` environment variable
+2. `./config.ini` in the project directory
+3. `config.ini` in the current working directory
+4. `~/.config/vmpilot/config.ini`
 
-### [general]
-- default_provider: The default LLM provider to use (anthropic or openai)
-- tool_output_lines: Number of lines to show in tool output
+The first configuration file found will be used.
 
-### [model]
-- recursion_limit: Maximum number of recursive steps the model can take
+## Configuration Sections
+The `config.ini` file is organized into the following sections:
 
-### [inference]
-- temperature: Model temperature setting
-- max_tokens: Maximum tokens for model responses
+### General Settings [general]
+| Setting | Description | Default |
+|---------|-------------|---------|
+| default_provider | Primary LLM provider (anthropic/openai) | anthropic |
+| tool_output_lines | Number of lines shown in tool output | 15 |
 
-### [anthropic] / [openai]
-Provider-specific settings:
-- default_model: Default model to use for this provider
-- api_key_path: Path to API key file
-- api_key_env: Environment variable name for API key
-- beta_flags: Optional comma-separated key:value pairs for beta features
+### Model Settings [model]
+| Setting | Description | Default |
+|---------|-------------|---------|
+| recursion_limit | Maximum recursive steps allowed | 25 |
+
+### Inference Settings [inference]
+| Setting | Description | Default |
+|---------|-------------|---------|
+| temperature | Model creativity (0.0-1.0) | 0.7 |
+| max_tokens | Maximum response length | 2000 |
+
+### Provider Settings [anthropic] / [openai]
+| Setting | Description | Example |
+|---------|-------------|---------|
+| default_model | Default model name | claude-3.5 Sonnet |
+| api_key_path | Path to API key file | ~/.anthropic_key |
+| api_key_env | API key environment variable | ANTHROPIC_API_KEY |
+| beta_flags | Optional beta features (key:value pairs) | feature1:on,feature2:off |
 
 ## Example Configuration
 ```ini
