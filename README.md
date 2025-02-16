@@ -6,9 +6,7 @@ Only run this if you have enough knowledge about the security implications of ru
 
 ## Overview
 
-VMPilot provides a way to interact with an AI agent to perform tasks in a virtual machine. It is focused on pair programming, where the AI can help you with coding tasks, but it can also be used for other tasks as well.
-While the UI is similar to the chat interface of OpenAI and other AI models (thanks to OpenWebUI), it provides advanced capabilities by executing multiple commands in the virtual machine to accomplish the requested task.
-It is is available as an Open WebUI Pipeline, or a cli.
+Overview: VMPilot is an AI-driven assistant designed to perform tasks within a virtual machine by interacting with an intelligent agent. Originally developed to support pair programming, it not only aids with coding but also handles various other operations. Its user interface resembles popular chat interfaces, yet it extends functionality by executing multiple commands to fulfill your requests. VMPilot is available both as an Open WebUI Pipeline and as a command-line interface.
 
 It is inspired by [Claude Computer Use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use) and uses [OpenWebUI Pipelines](https://docs.anthropic.com/en/docs/build-with-claude/openwebui-pipelines).
 
