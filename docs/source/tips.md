@@ -24,6 +24,9 @@ Break down complex tasks:
 - Verify each step before proceeding
 - Combine manual work with LLM assistance when needed
 
+# Track LLM changes with git
+
+To track changes made by the LLM, if possible, use a clean git branch. That way, you can simply do a `git diff` to see the changes made by the LLM. 
 
 # Using OpenWebUI
 
@@ -70,5 +73,4 @@ When you're working on a prompt, it's often helpful to edit the original or late
 ## Stop the LLM
 
 Sometimes the LLM may get stuck or go in the wrong direction. Hit the "Stop" button to reset the LLM and start fresh.
-
 
