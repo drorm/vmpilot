@@ -252,7 +252,8 @@ class Pipeline:
                         output_lines = str(output).splitlines()
                         truncated_output = "\n".join(output_lines[:TOOL_OUTPUT_LINES])
                         if len(output_lines) > TOOL_OUTPUT_LINES:
-                            truncated_output += f"\n...\n```\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
+                            # we use 4 backticks to escape the 3 backticks that might be in the markdown
+                            truncated_output += f"\n...\n````\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
                         output_queue.put(truncated_output)
 
                 """ Run the sampling loop in a separate thread while waiting for responses """

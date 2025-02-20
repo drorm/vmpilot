@@ -186,9 +186,11 @@ async def create_agent(
             },
         )
     elif provider == APIProvider.OPENAI:
+        # Only set temperature=1 for o3-mini model
+        model_temperature = 1 if model == "o3-mini" else temperature
         llm = ChatOpenAI(
             model=model,
-            temperature=temperature,
+            temperature=model_temperature,
             max_tokens=MAX_TOKENS,
             openai_api_key=api_key,
             timeout=30,
@@ -251,6 +253,20 @@ async def process_messages(
     agent = await create_agent(
         model, api_key, provider, system_prompt_suffix, temperature, max_tokens
     )
+
+    if provider == APIProvider.OPENAI:
+        # Prepend system prompt to messages for OpenAI
+        system_prompt = SYSTEM_PROMPT + (
+            "\n\n" + system_prompt_suffix if system_prompt_suffix else ""
+        )
+        messages.insert(
+            0,
+            {
+                "role": "assistant",
+                "content": system_prompt,
+            },
+        )
+
     logger.debug("DEBUG: Agent created successfully")
 
     # Convert messages from openai to LangChain format
