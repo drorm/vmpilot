@@ -25,12 +25,50 @@ class EditTool(BaseTool):
     """VMPilot tool interface to aider's diff-based editing"""
 
     name: str = "edit_file"
-    description: str = """Use this tool to edit files on the system. When given a natural language command like 'change "Hello" to "Goodbye" in file.txt', this tool generates a string that contains:
-    - The path to the file(s) to edit on its own line
-    - The diff blocks to apply to the file(s)
-    - IMPORTANT: the "SEARCH" portion needs to **exactly** match the original content in the file. 
-    Note: this tool **cannot** be used to view files. Use the bash tool with commands like 'cat', 'head', 'tail', or 'less' for that.
-    """
+    description: str = """
+Use this tool when you need to replace specific text in a file on the system. The user’s instructions will generally look like:
+“Change ‘old text’ to ‘new text’ in `/path/to/file.ext`.”
+or
+“Replace <original snippet> with <new snippet> in `/path/to/anotherFile.py`.”
+
+**Output Format**
+The tool expects a *single structured response* with exactly six segments, in this order:
+1. **Line 1:** The absolute path to the file to edit.
+2. **Line 2:** The literal string `<<<<<<< SEARCH`
+3. **Lines 3..(n-2):** The exact original content to search for in the file. This can span *one or more lines* (e.g., multiple lines of code).
+4. **Next Line (n-1):** The literal string `=======`
+5. **Lines (n..m-1):** The replacement content—i.e., the text we want to use instead. This can also be *one or more lines* as needed.
+6. **Last line (m):** The literal string `>>>>>> REPLACE`
+
+**Important Details**
+1. **File Path:** - Always use the file path specified by the user. Do not assume or switch to a default path unless explicitly provided.
+2. **Exact Match on ‘SEARCH’ Block:** - The content between `<<<<<<< SEARCH` and `=======` must match *exactly* the original text in the file (including whitespace, punctuation, and line breaks).
+3. **Replacement Content:** - Under `=======`, include *all* lines of the updated text.
+4. **No Extra Lines or Characters:** - Do not prepend or append lines, white space, or extra text in the generated output—only what’s strictly in the original snippet plus the requested replacement.
+
+**Example**
+If the request is _“Replace the two lines
+```
+console.log("Hello, world!");
+console.log("Another line!");
+```
+with
+```
+console.log("New line 1");
+console.log("New line 2");
+```
+in `/tmp/index.js`,”_ your output should look like:
+
+```
+/tmp/index.js
+<<<<<<< SEARCH
+console.log("Hello, world!");
+console.log("Another line!");
+=======
+console.log("New line 1");
+console.log("New line 2");
+>>>>>> REPLACE
+"""
 
     args_schema: Type[BaseModel] = AiderToolInput
 
