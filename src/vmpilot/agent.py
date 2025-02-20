@@ -116,7 +116,8 @@ def setup_tools(llm=None):
             tools.append(EditTool())  # for editing
             tools.append(CreateFileTool())  # for creating files
         except Exception as e:
-            logger.error(f"Error: Error creating SetupShellTool: {e}")
+            logger.error(f"Error: Error creating tool: {e}")
+            logger.error("".join(traceback.format_tb(e.__traceback__)))
 
     # Return all tools
     return tools
@@ -413,6 +414,7 @@ async def process_messages(
             else:
                 logger.error(f"Error in agent stream: {e}")
                 logger.error("".join(traceback.format_tb(e.__traceback__)))
+                logger.error(f"messages: {formatted_messages}")
                 message = f"Error in agent stream: {str(e)}"
             output_callback({"type": "text", "text": f"{message}"})
 
