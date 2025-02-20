@@ -18,6 +18,7 @@ nav:
   - Plugins: plugins.md
   - VMPilot Prompting: prompting.md
   - Tips: tips.md
+  - GitHub: github_issues.md
   - CLI Interface: cli.md
 
 markdown_extensions:
