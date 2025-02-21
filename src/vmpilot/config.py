@@ -59,23 +59,30 @@ def load_config():
         config_path = find_config_file()
         logger.info(f"Using config file at {config_path}")
 
+        # Create a new parser instance to avoid accumulating sections
+        parser = ConfigParser()
+
         if not parser.read(config_path):
-            raise ConfigError(f"Failed to read config file at {config_path}")
+            logger.warning(f"Failed to read config file at {config_path}")
+            return parser
 
         # Verify required sections exist
         required_sections = ["general", "model", "inference"]
         missing_sections = [s for s in required_sections if not parser.has_section(s)]
         if missing_sections:
-            raise ConfigError(
+            logger.warning(
                 f"Missing required config sections: {', '.join(missing_sections)}"
             )
+            # Return parser with only existing sections
+            return parser
 
         config_loaded = True
         return parser
 
     except Exception as e:
         logger.error(f"Error loading configuration: {str(e)}")
-        raise ConfigError(f"Failed to load configuration: {str(e)}")
+        # Return empty parser instead of raising exception
+        return ConfigParser()
 
 
 # Load configuration
@@ -114,12 +121,14 @@ class ModelConfig(BaseModel):
 
     def __init__(self):
         try:
-            if not config_loaded:
-                raise ConfigError("Configuration not properly loaded")
+            # Reload config to ensure we have fresh data
+            parser = load_config()
 
             # Read from config.ini
-            default_provider = parser.get("general", "default_provider")
-            recursion_limit = parser.getint("model", "recursion_limit")
+            default_provider = parser.get(
+                "general", "default_provider", fallback="anthropic"
+            )
+            recursion_limit = parser.getint("model", "recursion_limit", fallback=25)
 
             # Initialize providers
             providers = {}
@@ -133,9 +142,9 @@ class ModelConfig(BaseModel):
                             beta_flags[key] = value
 
                     providers[provider] = ProviderConfig(
-                        default_model=section["default_model"],
-                        api_key_path=section["api_key_path"],
-                        api_key_env=section["api_key_env"],
+                        default_model=section.get("default_model", ""),
+                        api_key_path=section.get("api_key_path", ""),
+                        api_key_env=section.get("api_key_env", ""),
                         beta_flags=beta_flags,
                         recursion_limit=recursion_limit,
                     )

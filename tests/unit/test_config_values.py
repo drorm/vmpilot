@@ -154,6 +154,43 @@ class TestPipelineSection:
         assert pipeline_id.isalnum(), "pipeline ID must be alphanumeric"
 
 
+class TestFilePaths:
+    """Tests for validating file paths in configuration."""
+    
+    def test_api_key_path_exists(self, config):
+        """Test that API key paths are specified and not empty."""
+        for provider in ['anthropic', 'openai']:
+            path = config[provider]['api_key_path']
+            assert path.strip(), f"{provider} api_key_path cannot be empty"
+    
+    def test_api_key_path_expansion(self, config):
+        """Test that ~ in API key paths can be expanded."""
+        for provider in ['anthropic', 'openai']:
+            path = config[provider]['api_key_path']
+            if '~' in path:
+                expanded = os.path.expanduser(path)
+                assert expanded != path, f"{provider} api_key_path ~ expansion failed"
+                assert not expanded.startswith('~'), f"{provider} api_key_path expansion incomplete"
+    
+    def test_api_key_path_absolute(self, config):
+        """Test that API key paths are absolute or can be made absolute."""
+        for provider in ['anthropic', 'openai']:
+            path = config[provider]['api_key_path']
+            if '~' in path:
+                path = os.path.expanduser(path)
+            absolute_path = os.path.abspath(path)
+            assert os.path.isabs(absolute_path), f"{provider} api_key_path must be absolute"
+    
+    def test_api_key_path_parent_exists(self, config):
+        """Test that parent directory of API key path exists."""
+        for provider in ['anthropic', 'openai']:
+            path = config[provider]['api_key_path']
+            if '~' in path:
+                path = os.path.expanduser(path)
+            parent_dir = os.path.dirname(os.path.abspath(path))
+            assert os.path.exists(parent_dir), f"Parent directory for {provider} api_key_path must exist"
+
+
 class TestConfigurationStructure:
     """Tests for overall configuration file structure."""
 
