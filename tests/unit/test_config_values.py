@@ -127,3 +127,70 @@ class TestProviderConfigurations:
             assert config[provider][
                 "api_key_path"
             ].strip(), f"{provider} api_key_path cannot be empty"
+
+
+class TestPipelineSection:
+    """Tests for the [pipeline] section of the config file."""
+
+    def test_pipeline_section_exists(self, config):
+        """Test that pipeline section exists"""
+        assert "pipeline" in config, "pipeline section must exist in config"
+
+    def test_pipeline_name_exists(self, config):
+        """Test that pipeline name is defined"""
+        assert "name" in config["pipeline"], "pipeline name must be defined"
+
+    def test_pipeline_name_not_empty(self, config):
+        """Test that pipeline name is not empty"""
+        assert config["pipeline"]["name"].strip(), "pipeline name cannot be empty"
+
+    def test_pipeline_id_exists(self, config):
+        """Test that pipeline ID is defined"""
+        assert "id" in config["pipeline"], "pipeline ID must be defined"
+
+    def test_pipeline_id_alphanumeric(self, config):
+        """Test that pipeline ID contains only alphanumeric characters"""
+        pipeline_id = config["pipeline"]["id"]
+        assert pipeline_id.isalnum(), "pipeline ID must be alphanumeric"
+
+
+class TestConfigurationStructure:
+    """Tests for overall configuration file structure."""
+
+    def test_required_sections_present(self, config):
+        """Test that all required sections are present"""
+        required_sections = [
+            "general",
+            "model",
+            "inference",
+            "anthropic",
+            "openai",
+            "pipeline",
+        ]
+        for section in required_sections:
+            assert (
+                section in config.sections()
+            ), f"Required section '{section}' is missing"
+
+    def test_no_extra_sections(self, config):
+        """Test that there are no unexpected sections"""
+        allowed_sections = {
+            "general",
+            "model",
+            "inference",
+            "anthropic",
+            "openai",
+            "pipeline",
+        }
+        for section in config.sections():
+            assert section in allowed_sections, f"Unexpected section '{section}' found"
+
+    def test_section_not_empty(self, config):
+        """Test that no section is empty"""
+        for section in config.sections():
+            assert len(config[section]) > 0, f"Section '{section}' cannot be empty"
+
+    def test_no_duplicate_sections(self, config):
+        """Test that there are no duplicate sections"""
+        sections = config.sections()
+        assert len(sections) == len(set(sections)), "Duplicate sections found in config"
