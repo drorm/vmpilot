@@ -50,7 +50,15 @@ When setting up a workspace prompt, include:
 3. Enter a name and configure the prompt and settings
 4. Click "Save"
 
-## LLM Error Handling
+## Steps limit exceeded
+
+Sometimes you'll see the message: "Sorry, need more steps to process this request. I've done 25 steps in a row. Let me know if you'd like me to continue."
+The agent has a built in limit on the number of steps that it can take in a row to prevent it from getting stuck in a loop. The number is defined in the config file as recursion_limit. 
+When you see this message, you can either:
+- Just type "continue" to let the agent continue
+- Break down the task into smaller steps
+
+## LLM Issues and Error Handling
 
 The LLM may run into issues when using tools. You'll see errors like:
 - "Field required [type=missing, input_value={}, input_type=dict]"
