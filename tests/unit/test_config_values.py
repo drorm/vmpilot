@@ -1,10 +1,9 @@
-"""Tests for validating config.ini values and their constraints.
+"""Tests for validating config.ini values and their constraints."""
 
-This module focuses on testing the actual values and constraints of the
-configuration file, complementing the config file loading tests in test_config.py.
-"""
-
+import os
 import pytest
+from pathlib import Path
+from configparser import ConfigParser
 from vmpilot.config import load_config, ConfigError
 
 
@@ -19,20 +18,22 @@ class TestGeneralSection:
 
     def test_default_provider_valid_values(self, config):
         """Test that default_provider is one of the allowed values."""
-        allowed_providers = {'anthropic', 'openai'}
-        assert config['general']['default_provider'] in allowed_providers, \
-            f"default_provider must be one of {allowed_providers}"
+        allowed_providers = {"anthropic", "openai"}
+        assert (
+            config["general"]["default_provider"] in allowed_providers
+        ), f"default_provider must be one of {allowed_providers}"
 
     def test_tool_output_lines_valid(self, config):
         """Test that tool_output_lines accepts valid positive integers."""
-        tool_lines = int(config['general']['tool_output_lines'])
+        tool_lines = int(config["general"]["tool_output_lines"])
         assert tool_lines > 0, "tool_output_lines must be positive"
         assert isinstance(tool_lines, int), "tool_output_lines must be an integer"
 
     def test_tool_output_lines_exists(self, config):
         """Test that tool_output_lines exists in config."""
-        assert 'tool_output_lines' in config['general'], \
-            "tool_output_lines must be defined in config"
+        assert (
+            "tool_output_lines" in config["general"]
+        ), "tool_output_lines must be defined in config"
 
 
 class TestModelSection:
@@ -40,19 +41,89 @@ class TestModelSection:
 
     def test_recursion_limit_exists(self, config):
         """Test that recursion_limit is present in config."""
-        assert 'recursion_limit' in config['model'], \
-            "recursion_limit must be defined in config"
+        assert (
+            "recursion_limit" in config["model"]
+        ), "recursion_limit must be defined in config"
 
     def test_recursion_limit_positive(self, config):
         """Test that recursion_limit is a positive integer."""
-        limit = int(config['model']['recursion_limit'])
-        assert isinstance(limit, int), \
-            "recursion_limit must be an integer"
-        assert limit > 0, \
-            "recursion_limit must be positive"
+        limit = int(config["model"]["recursion_limit"])
+        assert isinstance(limit, int), "recursion_limit must be an integer"
+        assert limit > 0, "recursion_limit must be positive"
 
     def test_recursion_limit_range(self, config):
         """Test that recursion_limit is within reasonable range."""
-        limit = int(config['model']['recursion_limit'])
-        assert 0 < limit <= 100, \
-            "recursion_limit must be between 1 and 100"
+        limit = int(config["model"]["recursion_limit"])
+        assert 0 < limit <= 100, "recursion_limit must be between 1 and 100"
+
+
+class TestInferenceSection:
+    """Tests for the [inference] section of the config file."""
+
+    def test_temperature_exists(self, config):
+        """Test that temperature setting exists."""
+        assert (
+            "temperature" in config["inference"]
+        ), "temperature must be defined in config"
+
+    def test_temperature_range(self, config):
+        """Test that temperature is a float between 0.0 and 1.0"""
+        temp = float(config["inference"]["temperature"])
+        assert 0.0 <= temp <= 1.0, "temperature must be between 0.0 and 1.0"
+
+    def test_max_tokens_exists(self, config):
+        """Test that max_tokens setting exists."""
+        assert (
+            "max_tokens" in config["inference"]
+        ), "max_tokens must be defined in config"
+
+    def test_max_tokens_positive(self, config):
+        """Test that max_tokens is a positive integer"""
+        tokens = int(config["inference"]["max_tokens"])
+        assert tokens > 0, "max_tokens must be positive"
+        assert isinstance(tokens, int), "max_tokens must be an integer"
+
+
+class TestProviderConfigurations:
+    """Tests for provider-specific configurations."""
+
+    def test_api_key_env_exists(self, config):
+        """Test that API key environment variables are defined."""
+        for provider in ["anthropic", "openai"]:
+            assert (
+                "api_key_env" in config[provider]
+            ), f"{provider} api_key_env must be defined"
+
+    def test_api_key_env_uppercase(self, config):
+        """Test that API key environment variables are uppercase"""
+        for provider in ["anthropic", "openai"]:
+            env_var = config[provider]["api_key_env"]
+            assert env_var.isupper(), f"{provider} api_key_env must be uppercase"
+
+    def test_default_model_exists(self, config):
+        """Test that default models are defined."""
+        for provider in ["anthropic", "openai"]:
+            assert (
+                "default_model" in config[provider]
+            ), f"{provider} default_model must be defined"
+
+    def test_default_model_not_empty(self, config):
+        """Test that default models are specified"""
+        for provider in ["anthropic", "openai"]:
+            assert config[provider][
+                "default_model"
+            ].strip(), f"{provider} default_model cannot be empty"
+
+    def test_api_key_path_exists(self, config):
+        """Test that API key paths are defined"""
+        for provider in ["anthropic", "openai"]:
+            assert (
+                "api_key_path" in config[provider]
+            ), f"{provider} api_key_path must be defined"
+
+    def test_api_key_path_not_empty(self, config):
+        """Test that API key paths are specified"""
+        for provider in ["anthropic", "openai"]:
+            assert config[provider][
+                "api_key_path"
+            ].strip(), f"{provider} api_key_path cannot be empty"
