@@ -272,7 +272,7 @@ class Pipeline:
                                 output_callback=output_callback,
                                 tool_output_callback=tool_callback,
                                 api_key=self.api_key,
-                                max_tokens=1024,
+                                max_tokens=MAX_TOKENS,
                                 temperature=body.get(
                                     "temperature", self.valves.temperature
                                 ),
