@@ -47,7 +47,9 @@ logger.propagate = False
 
 
 class Pipeline:
-    api_key: str = ""  # Set based on active provider
+    # Provider management at Pipeline level
+    _provider: Provider = Provider(DEFAULT_PROVIDER)
+    _api_key: str = ""  # Set based on active provider
 
     class Valves(BaseModel):
         # Runtime parameters
@@ -55,13 +57,7 @@ class Pipeline:
         openai_api_key: str = ""
 
         # Model configuration (inherited from config)
-        provider: Provider = Provider(DEFAULT_PROVIDER)
         model: str = ""  # Set based on provider's default
-        recursion_limit: int = RECURSION_LIMIT
-
-        # Inference parameters from config
-        temperature: float = TEMPERATURE
-        max_tokens: int = MAX_TOKENS
 
         def __init__(self, **data):
             super().__init__(**data)
@@ -69,21 +65,18 @@ class Pipeline:
 
         def _sync_with_config(self):
             """Synchronize valve state with config defaults"""
-            # Always get default model when provider changes
-            self.model = config.get_default_model(self.provider)
-
-            provider_config = config.get_provider_config(self.provider)
-            if self.recursion_limit is None:
-                self.recursion_limit = provider_config.recursion_limit
+            # Get default model if not set
+            if not self.model:
+                self.model = config.get_default_model(Pipeline._provider)
 
             # Update API key based on provider
             self._update_api_key()
 
         def _update_api_key(self):
-            """Update api_key based on current provider"""
-            Pipeline.api_key = (
+            """Update a_pi_key based on current provider"""
+            Pipeline._api_key = (
                 self.anthropic_api_key
-                if self.provider == Provider.ANTHROPIC
+                if Pipeline._provider == Provider.ANTHROPIC
                 else self.openai_api_key
             )
 
@@ -125,7 +118,7 @@ class Pipeline:
         ]
 
         # Only show models with valid API keys
-        return [model for model in models if len(self.api_key) >= 32]
+        return [model for model in models if len(self._api_key) >= 32]
 
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
@@ -139,7 +132,7 @@ class Pipeline:
             logger.disabled = True
 
         # Validate API key
-        if not self.api_key or len(self.api_key) < 32:
+        if not self._api_key or len(self._api_key) < 32:
             error_msg = (
                 f"Error: Invalid or missing {self.valves.provider.value} API key"
             )
@@ -158,20 +151,17 @@ class Pipeline:
         if body.get("title", False):
             return "VMPilot Pipeline"
 
-        # Update provider and related configuration based on model ID
+        # Handle provider selection and model validation
         try:
-            # Handle provider change if model_id matches a provider name
+            # Check if model_id matches a provider name
             try:
-                if model_id.lower() in [p.value for p in Provider]:
-                    new_provider = Provider(model_id.lower())
-                    self.valves.provider = new_provider
-                    self.valves.model = (
-                        ""  # Reset model to force using provider default
-                    )
+                if model_id and model_id.lower() in [p.value for p in Provider]:
+                    Pipeline._provider = Provider(model_id.lower())
+                    self.valves.model = ""  # Reset model to use provider default
                     self.valves._sync_with_config()
-                else:
-                    # Treat as actual model name
-                    if not config.validate_model(model_id, self.valves.provider):
+                elif model_id:
+                    # Validate model against current provider
+                    if not config.validate_model(model_id, Pipeline._provider):
                         error_msg = f"Unsupported model: {model_id}"
                         logger.error(error_msg)
                         return error_msg
@@ -266,20 +256,16 @@ class Pipeline:
                         loop.run_until_complete(
                             process_messages(
                                 model=self.valves.model,
-                                provider=APIProvider(self.valves.provider.value),
+                                provider=APIProvider(Pipeline._provider.value),
                                 system_prompt_suffix=system_prompt_suffix,
                                 messages=formatted_messages,
                                 output_callback=output_callback,
                                 tool_output_callback=tool_callback,
-                                api_key=self.api_key,
+                                api_key=self._api_key,
                                 max_tokens=MAX_TOKENS,
-                                temperature=body.get(
-                                    "temperature", self.valves.temperature
-                                ),
+                                temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
-                                recursion_limit=body.get(
-                                    "recursion_limit", self.valves.recursion_limit
-                                ),
+                                recursion_limit=RECURSION_LIMIT,
                             )
                         )
                     except Exception as e:
