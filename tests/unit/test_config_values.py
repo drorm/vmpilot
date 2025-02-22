@@ -1,10 +1,12 @@
 """Tests for validating config.ini values and their constraints."""
 
 import os
-import pytest
-from pathlib import Path
 from configparser import ConfigParser
-from vmpilot.config import load_config, ConfigError
+from pathlib import Path
+
+import pytest
+
+from vmpilot.config import ConfigError, load_config
 
 
 @pytest.fixture

@@ -1,14 +1,15 @@
 import os
-import pytest
-from pathlib import Path
 from configparser import ConfigParser
+from pathlib import Path
+
+import pytest
 
 from vmpilot.config import (
+    ConfigError,
+    ModelConfig,
+    Provider,
     find_config_file,
     load_config,
-    ConfigError,
-    Provider,
-    ModelConfig,
 )
 
 
