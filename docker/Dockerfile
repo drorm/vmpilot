@@ -42,19 +42,15 @@ RUN cd /app/vmpilot && pip install --no-cache-dir -e .
 # Runtime stage
 FROM ubuntu:24.04
 
-# Copy virtual environment
-RUN apt-get update && apt-get install -y \
-    python3.12 \
-    git \
-    gh \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY --from=builder /opt/venv /opt/venv
 
 # Install runtime dependencies and supervisor
 RUN apt-get update && apt-get install -y \
     python3.12 \
+    python3-venv \
+    python3-pip \
+    git \
+    gh \
     supervisor \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /var/log \
