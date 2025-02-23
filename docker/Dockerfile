@@ -8,22 +8,25 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHON_VERSION=3.12 \
     PATH="/opt/venv/bin:$PATH"
 
+# Install supervisor first
+RUN apt-get update && apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    python${PYTHON_VERSION} \
+    python3.12 \
     python3-pip \
     python3-venv \
     git \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /var/log \
+    && chmod 777 /var/log
 
-# Create virtual environment
+# Create and activate virtual environment
 RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # 2. USER SETUP
-ENV HOME=/home/vmpilot \
-    GIT_CONFIG_GLOBAL=/home/vmpilot/.gitconfig
-
-RUN useradd -m -u 1000 vmpilot && \
+RUN useradd -m vmpilot && \
     mkdir -p /app /home/vmpilot/.config && \
     chown -R vmpilot:vmpilot /opt/venv /app /home/vmpilot
 
@@ -43,7 +46,7 @@ RUN pip install --no-cache-dir -e . && \
 # Runtime stage
 FROM ubuntu:24.04
 
-# 1. ROOT OPERATIONS
+# Copy virtual environment
 RUN apt-get update && apt-get install -y \
     python${PYTHON_VERSION} \
     git \
@@ -52,25 +55,37 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+
+# Install runtime dependencies and supervisor
+RUN apt-get update && apt-get install -y \
+    python3.12 \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /var/log \
+    && chmod 777 /var/log
 
 # 2. USER SETUP
 ENV HOME=/home/vmpilot \
     GIT_CONFIG_GLOBAL=/home/vmpilot/.gitconfig
 
-RUN useradd -m -u 1000 vmpilot && \
+RUN useradd -m vmpilot && \
     mkdir -p /app /home/vmpilot/.config && \
     chown -R vmpilot:vmpilot /opt/venv /app /home/vmpilot
 
-# 3. USER-LEVEL OPERATIONS
-USER vmpilot
+# Copy application files
+COPY . /app
+
+# Copy supervisor configuration
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Set working directory
 WORKDIR /app
 
-COPY --from=builder --chown=vmpilot:vmpilot /app .
-
-EXPOSE 8080 9099
+# Expose port for pipeline mode
+EXPOSE 9099
 
 COPY --chown=vmpilot:vmpilot docker/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-CMD ["/app/start.sh"]
+# Start supervisor (which will start vmpilot)
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
