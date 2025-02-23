@@ -8,8 +8,8 @@ services:
     ports:
       - "9099:9099"
     volumes:
-      - ../config:/app/config:ro
-      - vmpilot_data:/app/data
+      - ../config:/app/vmpilot/config:ro
+      - vmpilot_data:/app/vmpilot/data
     environment:
       - LOG_LEVEL=INFO
       - PYTHONUNBUFFERED=1

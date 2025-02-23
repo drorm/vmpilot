@@ -35,12 +35,9 @@ USER vmpilot
 WORKDIR /app
 
 # Now as vmpilot user
-COPY --chown=vmpilot:vmpilot . .
+COPY --chown=vmpilot:vmpilot . /app/vmpilot
 
-RUN pip install --no-cache-dir -e . && \
-    git clone https://github.com/open-webui/pipelines.git && \
-    cd pipelines && \
-    pip install -r requirements-minimum.txt
+RUN cd /app/vmpilot && pip install --no-cache-dir -e .
 
 # Runtime stage
 FROM ubuntu:24.04
@@ -71,20 +68,23 @@ RUN useradd -m vmpilot && \
     mkdir -p /app /home/vmpilot/.config && \
     chown -R vmpilot:vmpilot /opt/venv /app /home/vmpilot
 
-# Copy application files
-COPY . /app
-
 # Copy supervisor configuration
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Set working directory
-WORKDIR /app
+# Set working directory and permissions
+WORKDIR /app/vmpilot
+RUN chown -R vmpilot:vmpilot /app/vmpilot
+
+# Switch to vmpilot user and clone pipelines
+USER vmpilot
+RUN git clone https://github.com/open-webui/pipelines.git && \
+    cd pipelines && \
+    pip install -r requirements-minimum.txt
+
+USER root
 
 # Expose port for pipeline mode
 EXPOSE 9099
-
-COPY --chown=vmpilot:vmpilot docker/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
 
 # Start supervisor (which will start vmpilot)
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
