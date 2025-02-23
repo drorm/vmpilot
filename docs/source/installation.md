@@ -89,19 +89,16 @@ Alternatively you can set the environment variable VMPILOT\_CONFIG to the path o
 ~/vmpilot/bin/run.sh
 ```
 
-### 3.2 OpenWebUI Client Configuration
+### 5.3 OpenWebUI Client Configuration
 
 1. Access the OpenWebUI interface at your domain or localhost
-
-2 Open OpenWebUI in your browser
-2.1 Open OpenWebUI in your browser
-2.2 Click on your user name in the bottom left corner
-3.3 Click on Admin Panel
-3.4 Click on connections
-
-3. Add VMPilot Connection:
-   - URL: http://localhost:9099 and the password
-   - Click "Save"
+1. Open OpenWebUI in your browser
+1. Click on your user name in the bottom left corner
+1. Click on Admin Panel
+1. Click on connections
+1. Add VMPilot Connection:
+  - URL: http://localhost:9099 and the password
+  - Click "Save"
 
 4. Enable the pipeline:
    - Go to Pipelines tab
@@ -110,6 +107,7 @@ Alternatively you can set the environment variable VMPILOT\_CONFIG to the path o
    - Click "Save"
 
 Note: Because the VMPilot pipeline is a manifold pipeline, you'll see two models in the pipeline list:
+
 - VMPilot PipelineAnthropic (Claude)
 - VMPilot PipelineOpenAI (GPT-4o)
 
@@ -142,5 +140,5 @@ Common issues and solutions:
 3. Model not found:
   - Go to the connection settings as described above, and save the connection again.
   - Go to the pipeline settings and save the pipeline again.
-  - Edit the workplace and make sure the pipeline is selected.
+  - When using a workspace, edit the workspace and make sure the pipeline is selected.
 
