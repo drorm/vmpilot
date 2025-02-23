@@ -38,17 +38,16 @@ WORKDIR /app
 COPY --chown=vmpilot:vmpilot . .
 
 RUN pip install --no-cache-dir -e . && \
-    pip install --no-cache-dir open-webui && \
     git clone https://github.com/open-webui/pipelines.git && \
     cd pipelines && \
-    pip install -r requirements.txt
+    pip install -r requirements-minimum.txt
 
 # Runtime stage
 FROM ubuntu:24.04
 
 # Copy virtual environment
 RUN apt-get update && apt-get install -y \
-    python${PYTHON_VERSION} \
+    python3.12 \
     git \
     gh \
     python3-venv \
