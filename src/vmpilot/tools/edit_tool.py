@@ -10,7 +10,7 @@ from typing import Optional, Type
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from .editblock_coder import find_original_update_blocks, do_replace
+from .edit_diff import do_replace, find_original_update_blocks
 
 logger = logging.getLogger(__name__)
 

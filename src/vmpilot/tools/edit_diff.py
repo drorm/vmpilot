@@ -12,7 +12,6 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import List, Tuple
 
-
 """ From utils.py """
 
 
