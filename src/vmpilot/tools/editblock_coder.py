@@ -1,3 +1,9 @@
+# Copyright (c) Aider-AI/aider Authors
+# Licensed under the Apache License, Version 2.0
+# Source: https://github.com/Aider-AI/aider
+#
+# This file contains code derived from the Aider project's edit functionality.
+
 import difflib
 import math
 import re

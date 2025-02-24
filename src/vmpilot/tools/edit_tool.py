@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#
+# This file uses concepts from the Aider project (https://github.com/Aider-AI/aider)
+# which is licensed under the Apache License, Version 2.0
 
 import logging
 from pathlib import Path
