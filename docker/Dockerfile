@@ -73,9 +73,10 @@ RUN chown -R vmpilot:vmpilot /app/vmpilot
 
 # Switch to vmpilot user and clone pipelines
 USER vmpilot
+ENV PATH="/opt/venv/bin:$PATH"
 RUN git clone https://github.com/open-webui/pipelines.git && \
     cd pipelines && \
-    pip install -r requirements-minimum.txt
+    /opt/venv/bin/pip install -r requirements.txt
 
 USER root
 
