@@ -1,14 +1,16 @@
 #!/usr/bin/env python
+#
+# This file uses concepts from the Aider project (https://github.com/Aider-AI/aider)
+# which is licensed under the Apache License, Version 2.0
 
 import logging
 from pathlib import Path
 from typing import Optional, Type
 
-from aider import models
-from aider.coders.editblock_coder import EditBlockCoder, find_original_update_blocks
-from aider.io import InputOutput
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
+
+from .edit_diff import do_replace, find_original_update_blocks
 
 logger = logging.getLogger(__name__)
 
@@ -61,23 +63,17 @@ class EditTool(BaseTool):
                 if not file_path.exists():
                     raise FileNotFoundError(f"File not found: {file_path}")
 
-            # Create EditBlockCoder instance
-            io = InputOutput(line_endings="platform")
-            main_model = models.Model(models.DEFAULT_MODEL_NAME)
-            editor = EditBlockCoder(main_model=main_model, io=io)
-
-            try:
-                editor.apply_edits(edits)
-                return ""
-            except ValueError as e:
-                if "SearchReplaceNoExactMatch" in str(e):
-                    logger.info(f"No matches found in {content}")
+            # Apply the edits directly to the files
+            for file_path, original, replacement in edits:
+                with open(file_path, "r") as f:
+                    content = f.read()
+                new_content = do_replace(file_path, content, original, replacement)
+                if new_content is not None:
+                    with open(file_path, "w") as f:
+                        f.write(new_content)
+                else:
                     return "No matches found"
-                raise
-            except Exception as e:
-                error_message = f"Error: \n```\n{str(e)}\n```\n"
-                logger.info(f"Error in edit {content}")
-                return error_message
+            return "Successfully edited files"
 
         except FileNotFoundError:
             raise
