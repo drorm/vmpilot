@@ -60,6 +60,9 @@ RUN useradd -m -s /bin/bash vmpilot \
     && mkdir -p /app/data/logs \
     && chown -R vmpilot:vmpilot /app /app/data /app/data/logs
 
+# Append to vmpilot's bashrc
+RUN echo 'export PATH="/opt/venv/bin:$PATH"' >> /home/vmpilot/.bashrc
+
 # Copy virtual environment from builder
 COPY --from=builder --chown=vmpilot:vmpilot /opt/venv /opt/venv
 
