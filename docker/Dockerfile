@@ -57,8 +57,8 @@ RUN apt-get update && apt-get install -y \
 
 # 2. USER SETUP
 RUN useradd -m -s /bin/bash vmpilot \
-    && mkdir -p /app/data/logs \
-    && chown -R vmpilot:vmpilot /app /app/data /app/data/logs
+    && mkdir -p /app/vmpilot /app/data/logs \
+    && chown -R vmpilot:vmpilot /app /app/vmpilot /app/data /app/data/logs
 
 # Append to vmpilot's bashrc
 RUN echo 'export PATH="/opt/venv/bin:$PATH"' >> /home/vmpilot/.bashrc
@@ -67,7 +67,7 @@ RUN echo 'export PATH="/opt/venv/bin:$PATH"' >> /home/vmpilot/.bashrc
 COPY --from=builder --chown=vmpilot:vmpilot /opt/venv /opt/venv
 
 # Copy application code
-COPY --chown=vmpilot:vmpilot . /app/
+COPY --chown=vmpilot:vmpilot . /app/vmpilot
 
 # Copy supervisor configuration
 COPY --chown=vmpilot:vmpilot docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -79,7 +79,7 @@ USER vmpilot
 ENV PATH="/opt/venv/bin:$PATH"
 RUN git clone https://github.com/open-webui/pipelines.git && \
     cd pipelines && \
-    /opt/venv/bin/pip install -r requirements.txt
+    /opt/venv/bin/pip install -r requirements-minimum.txt
 
 USER root
 
