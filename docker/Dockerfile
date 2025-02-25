@@ -8,21 +8,18 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHON_VERSION=3.12 \
     PATH="/opt/venv/bin:$PATH"
 
-# Install supervisor first
-RUN apt-get update && apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     python3.12 \
     python3-pip \
     python3-venv \
     git \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /var/log \
-    && chmod 777 /var/log
+    gh \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create and activate virtual environment
-RUN python3 -m venv /opt/venv
+RUN python3.12 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # 2. USER SETUP
@@ -36,13 +33,17 @@ WORKDIR /app
 
 # Now as vmpilot user
 COPY --chown=vmpilot:vmpilot . /app/vmpilot
-
-RUN cd /app/vmpilot && pip install --no-cache-dir -e .
+COPY --chown=vmpilot:vmpilot requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Runtime stage
 FROM ubuntu:24.04
 
 COPY --from=builder /opt/venv /opt/venv
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    PATH="/opt/venv/bin:$PATH"
 
 # Install runtime dependencies and supervisor
 RUN apt-get update && apt-get install -y \
@@ -52,26 +53,25 @@ RUN apt-get update && apt-get install -y \
     git \
     gh \
     supervisor \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /var/log \
-    && chmod 777 /var/log
+    && rm -rf /var/lib/apt/lists/*
 
 # 2. USER SETUP
-ENV HOME=/home/vmpilot \
-    GIT_CONFIG_GLOBAL=/home/vmpilot/.gitconfig
+RUN useradd -m -s /bin/bash vmpilot \
+    && mkdir -p /app/data/logs \
+    && chown -R vmpilot:vmpilot /app /app/data /app/data/logs
 
-RUN useradd -m vmpilot && \
-    mkdir -p /app /home/vmpilot/.config && \
-    chown -R vmpilot:vmpilot /opt/venv /app /home/vmpilot
+# Copy virtual environment from builder
+COPY --from=builder --chown=vmpilot:vmpilot /opt/venv /opt/venv
+
+# Copy application code
+COPY --chown=vmpilot:vmpilot . /app/
 
 # Copy supervisor configuration
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY --chown=vmpilot:vmpilot docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Set working directory and permissions
-WORKDIR /app/vmpilot
-RUN chown -R vmpilot:vmpilot /app/vmpilot
+WORKDIR /app
 
-# Switch to vmpilot user and clone pipelines
+# Switch to vmpilot user for running the application
 USER vmpilot
 ENV PATH="/opt/venv/bin:$PATH"
 RUN git clone https://github.com/open-webui/pipelines.git && \
