@@ -8,14 +8,11 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHON_VERSION=3.12 \
     PATH="/opt/venv/bin:$PATH"
 
-# Install system dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     python3.12 \
     python3-pip \
     python3-venv \
-    git \
-    gh \
-    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Create and activate virtual environment
@@ -45,7 +42,7 @@ ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     PATH="/opt/venv/bin:$PATH"
 
-# Install runtime dependencies and supervisor
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     python3.12 \
     python3-venv \
@@ -68,6 +65,11 @@ COPY --from=builder --chown=vmpilot:vmpilot /opt/venv /opt/venv
 
 # Copy application code
 COPY --chown=vmpilot:vmpilot . /app/vmpilot
+
+# Set up config directory and copy default config
+RUN mkdir -p /app/config && \
+    cp /app/src/vmpilot/config.ini /app/config/config.ini && \
+    chown -R vmpilot:vmpilot /app/config
 
 # Copy supervisor configuration
 COPY --chown=vmpilot:vmpilot docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

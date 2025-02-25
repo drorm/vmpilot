@@ -7,12 +7,15 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "9099:9099"
+    environment:
+      - VMPILOT_CONFIG=/app/config/config.ini
     volumes:
-      - ../config:/app/vmpilot/config:ro
+      - /app/config:/app/config
       - vmpilot_data:/app/vmpilot/data
     environment:
       - LOG_LEVEL=INFO
       - PYTHONUNBUFFERED=1
+      - VMPILOT_CONFIG=/app/config/vmpilot.yml
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
