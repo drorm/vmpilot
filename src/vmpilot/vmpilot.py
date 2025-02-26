@@ -87,8 +87,12 @@ class Pipeline:
 
         # Initialize valves with environment variables and defaults
         self.valves = self.Valves(
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
-            openai_api_key=os.getenv("OPENAI_API_KEY", ""),
+            anthropic_api_key=os.getenv(
+                "ANTHROPIC_API_KEY", "To use Anthropic, enter your API key here"
+            ),
+            openai_api_key=os.getenv(
+                "OPENAI_API_KEY", "To use OpenAI, enter your API key here"
+            ),
         )
 
     async def on_startup(self):
