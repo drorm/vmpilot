@@ -4,7 +4,8 @@
 docker run -d \
   --name vmpilot \
   -p 9099:9099 \
-  -v "$(pwd)/config:/app/vmpilot/config:ro" \
-  -e VMPILOT_CONFIG=/app/vmpilot/config/vmpilot.yml \
+  -v "config:/app/config:ro" \
+  -v "data:/app/data" \
+  -e VMPILOT_CONFIG=/app/config/config.ini \
   --restart unless-stopped \
-  vmpilot
+  docker_vmpilot
