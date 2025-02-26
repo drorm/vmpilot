@@ -68,7 +68,7 @@ COPY --chown=vmpilot:vmpilot . /app/vmpilot
 
 # Set up config directory and copy default config
 RUN mkdir -p /app/config && \
-    cp /app/src/vmpilot/config.ini /app/config/config.ini && \
+    cp /app/vmpilot/src/vmpilot/config.ini /app/config/config.ini && \
     chown -R vmpilot:vmpilot /app/config
 
 # Copy supervisor configuration
