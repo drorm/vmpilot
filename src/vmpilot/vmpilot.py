@@ -58,6 +58,7 @@ class Pipeline:
 
         # Model configuration (inherited from config)
         model: str = ""  # Set based on provider's default
+        provider: Provider = Provider(DEFAULT_PROVIDER)
 
         def __init__(self, **data):
             super().__init__(**data)
@@ -67,16 +68,17 @@ class Pipeline:
             """Synchronize valve state with config defaults"""
             # Get default model if not set
             if not self.model:
-                self.model = config.get_default_model(Pipeline._provider)
+                self.model = config.get_default_model(self.provider)
 
             # Update API key based on provider
             self._update_api_key()
 
         def _update_api_key(self):
-            """Update a_pi_key based on current provider"""
+            """Update API key based on current provider"""
+            Pipeline._provider = self.provider
             Pipeline._api_key = (
                 self.anthropic_api_key
-                if Pipeline._provider == Provider.ANTHROPIC
+                if self.provider == Provider.ANTHROPIC
                 else self.openai_api_key
             )
 
@@ -105,6 +107,22 @@ class Pipeline:
         """Handle valve updates by re-syncing configuration"""
         self.valves._sync_with_config()
         logger.debug("Valves updated and synced with config")
+
+    def set_provider(self, provider: str):
+        """Set the provider and update configuration"""
+        try:
+            self.valves.provider = Provider(provider.lower())
+            self.valves.model = ""  # Reset model to use provider default
+            self.valves._sync_with_config()
+        except ValueError as e:
+            raise ValueError(f"Invalid provider: {provider}")
+
+    def set_model(self, model: str):
+        """Set the model and validate against current provider"""
+        if config.validate_model(model, self.valves.provider):
+            self.valves.model = model
+        else:
+            raise ValueError(f"Unsupported model: {model}")
 
     def pipelines(self) -> List[dict]:
         """Return list of supported models/pipelines"""
@@ -157,21 +175,14 @@ class Pipeline:
 
         # Handle provider selection and model validation
         try:
-            # Check if model_id matches a provider name
+            # Set provider or model based on model_id
             try:
                 if model_id and model_id.lower() in [p.value for p in Provider]:
-                    Pipeline._provider = Provider(model_id.lower())
-                    self.valves.model = ""  # Reset model to use provider default
-                    self.valves._sync_with_config()
+                    self.set_provider(model_id)
                 elif model_id:
-                    # Validate model against current provider
-                    if not config.validate_model(model_id, Pipeline._provider):
-                        error_msg = f"Unsupported model: {model_id}"
-                        logger.error(error_msg)
-                        return error_msg
-                    self.valves.model = model_id
-            except ValueError:
-                error_msg = f"Unsupported model: {model_id}"
+                    self.set_model(model_id)
+            except ValueError as e:
+                error_msg = str(e)
                 logger.error(error_msg)
                 return error_msg
 
@@ -260,7 +271,7 @@ class Pipeline:
                         loop.run_until_complete(
                             process_messages(
                                 model=self.valves.model,
-                                provider=APIProvider(Pipeline._provider.value),
+                                provider=APIProvider(self.valves.provider.value),
                                 system_prompt_suffix=system_prompt_suffix,
                                 messages=formatted_messages,
                                 output_callback=output_callback,

@@ -24,11 +24,14 @@ except ImportError:
 
 def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
     """Create a mock body for pipeline calls"""
+    from vmpilot.config import TOOL_OUTPUT_LINES, MAX_TOKENS
+
     return {
         "temperature": temperature,
         "stream": True,
         "debug": False,  # Can be enabled via -d flag
-        "max_tokens": 8192,  # For LangChain compatibility
+        "max_tokens": MAX_TOKENS,  # Use from config
+        "tool_output_lines": TOOL_OUTPUT_LINES,  # Use from config
     }
 
 
@@ -50,18 +53,22 @@ def create_mock_messages(command: str) -> List[Dict]:
 
 async def main(command: str, temperature: float, provider: str, debug: bool):
     """Main CLI execution flow"""
+    # Create pipeline with configuration
     pipeline = Pipeline()
-    # Convert provider string to enum
-    provider_enum = next(p for p in Provider if p.value == provider)
-    pipeline.valves.provider = provider_enum
 
-    # Create mock pipeline call parameters
+    # Create pipeline call parameters
     body = create_mock_body(temperature, debug)
     messages = create_mock_messages(command)
 
-    # Execute pipeline
+    # Set provider before executing pipeline
+    pipeline.set_provider(provider)
+
+    # Execute pipeline with configuration
     result = pipeline.pipe(
-        user_message=command, model_id=args.provider, messages=messages, body=body
+        user_message=command,
+        model_id="",  # Use default model for provider
+        messages=messages,
+        body=body,
     )
 
     # Print each message in the stream
@@ -107,12 +114,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="VMPilot CLI using LangChain")
     parser.add_argument("command", help="Command to execute")
+    from vmpilot.config import TEMPERATURE
+
     parser.add_argument(
         "-t",
         "--temperature",
         type=float,
-        default=0.7,
-        help="Temperature for response generation (default: 0.7)",
+        default=TEMPERATURE,
+        help=f"Temperature for response generation (default: {TEMPERATURE})",
     )
     parser.add_argument(
         "-p",
