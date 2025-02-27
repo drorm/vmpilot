@@ -77,6 +77,11 @@ jobs:
         python-version: "3.11"
         cache: 'pip'
     
+    - name: Install system dependencies
+       run: |
+         sudo apt-get update
+         sudo apt-get install -y graphviz
+    
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -86,8 +91,9 @@ jobs:
     - name: Generate dependency graph
       run: |
         python -m pip install pipdeptree
-        pipdeptree --graph-output png > dependency-graph.png
-    
+        python -m pipdeptree --graph-output png > dependencies.txt
+        python -m pipdeptree --graph-output png -o dependency-graph.png || echo "Failed to generate graph, but continuing..."
+
     - name: Upload dependency graph
       uses: actions/upload-artifact@v4
       with:
