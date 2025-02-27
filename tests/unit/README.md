@@ -22,8 +22,6 @@ python3 -m pytest ~/vmpilot/tests/unit/tools/test_shell.py::TestShellTool::test_
 # Run with verbose output
 python3 -m pytest -v ~/vmpilot/tests/unit/
 
-# Run with coverage report
-python3 -m pytest --cov=vmpilot ~/vmpilot/tests/unit/
 ```
 
 ## Directory Structure
