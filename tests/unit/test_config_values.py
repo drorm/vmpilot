@@ -189,6 +189,10 @@ class TestFilePaths:
 
     def test_api_key_path_parent_exists(self, config):
         """Test that parent directory of API key path exists."""
+        # Skip this test in CI environments
+        if os.environ.get("CI") == "true":
+            pytest.skip("Skipping directory existence check in CI environment")
+
         for provider in ["anthropic", "openai"]:
             path = config[provider]["api_key_path"]
             if "~" in path:

@@ -46,6 +46,11 @@ jobs:
       run: |
         bash sh/freeze_deps.sh
     
+    - name: Create required directories for tests
+      run: |
+        mkdir -p ~/.anthropic
+        mkdir -p ~/.openai
+
     - name: Run tests
       run: |
         python -m pytest tests/unit -v
