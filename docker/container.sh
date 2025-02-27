@@ -11,4 +11,4 @@ docker run -d \
   -e PYTHONUNBUFFERED=1 \
   -e LOG_LEVEL=INFO \
   --restart unless-stopped \
-  docker_vmpilot
+  ghcr.io/dror/vmpilot:latest
