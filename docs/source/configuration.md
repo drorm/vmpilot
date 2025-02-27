@@ -3,7 +3,18 @@
 ## Overview
 VMPilot features a flexible configuration system that allows you to customize your environment, LLM providers, and model parameters. This guide explains all available configuration options and how to set them up.
 
-## Configuration File Priority
+## Applying Configuration Changes
+After modifying the `config.ini` file, you must restart the VMPilot server for the changes to take effect.
+## Docker Install: Configuration File Location
+For Docker installations, assuming you are using the default volume setup, the configuration file is located at `/var/lib/docker/volumes/vmpilot_config/_data/config.ini`
+
+To apply changes, restart the VMPilot container:
+```bash
+docker exec vmpilot supervisorctl restart vmpilot
+```
+
+
+## Manual Install: Configuration File Priority
 VMPilot searches for configuration files in the following order:
 
 1. Custom path specified in `VMPILOT_CONFIG` environment variable
@@ -12,6 +23,11 @@ VMPilot searches for configuration files in the following order:
 4. `~/.config/vmpilot/config.ini`
 
 The first configuration file found will be used.
+
+To apply changes, restart the VMPilot server:
+```bash
+$MVPILOT_HOME/bin/run.sh
+```
 
 ## Configuration Sections
 The `config.ini` file is organized into the following sections:

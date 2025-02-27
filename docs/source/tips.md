@@ -66,6 +66,7 @@ The LLM may run into issues when using tools. You'll see errors like:
 - "messages.5.content.1.tool_use.name: String should have at most 64 characters'}}"
 
 This mostly happens when the LLM tries to edit a file with a large amount of content. To resolve this try:
+- Just type "continue". Often the LLM can recover from the error and just keep going
 - Ask the llm to create a new file instead of editing a new
 - Start a new shorter conversation
 - Break down the task into smaller steps
