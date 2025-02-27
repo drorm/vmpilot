@@ -62,3 +62,19 @@ Check out the documentation, including setup guides, architecture details, and u
 ## Development Status
 
 VMPilot is under active development. While it's stable for general use, we're continuously adding features and improvements. Check our [GitHub Issues](https://github.com/drorm/vmpilot/issues) for current development status and planned features.
+
+## Development Process
+
+### Branching Strategy
+
+VMPilot follows a simplified Git Flow branching strategy:
+
+- `main` - Production-ready code, deployed to users
+- `dev` - Integration branch for development work
+- Feature branches - Individual features branched from `dev`
+
+All development work happens in feature branches, which are merged into `dev` via pull requests.
+
+### Release Process
+
+For detailed information about the release process, see [Release Process](docs/release-process.md).
