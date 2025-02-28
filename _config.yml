@@ -1,0 +1,6 @@
+remote_theme: just-the-docs/just-the-docs
+
+# Exclude MkDocs files from Jekyll processing
+exclude:
+  - docs/mkdocs.yml
+  - docs/source/
