@@ -38,4 +38,4 @@ jobs:
 
       - name: Deploy documentation
         run: |
-          mkdocs gh-deploy --force --config-file docs/mkdocs.yml
+          mkdocs gh-deploy --force --config-file mkdocs.yml
