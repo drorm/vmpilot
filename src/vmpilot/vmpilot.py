@@ -52,7 +52,7 @@ class Pipeline:
     _api_key: str = ""  # Set based on active provider
 
     class Valves(BaseModel):
-        # Runtime parameters
+        # Private storage for properties
         anthropic_api_key: str = ""
         openai_api_key: str = ""
 
@@ -62,6 +62,11 @@ class Pipeline:
 
         def __init__(self, **data):
             super().__init__(**data)
+            # Handle direct setting of API keys from initialization
+            if "anthropic_api_key" in data:
+                self.anthropic_api_key = data["anthropic_api_key"]
+            if "openai_api_key" in data:
+                self.openai_api_key = data["openai_api_key"]
             self._sync_with_config()
 
         def _sync_with_config(self):
@@ -75,7 +80,6 @@ class Pipeline:
 
         def _update_api_key(self):
             """Update API key based on current provider"""
-            Pipeline._provider = self.provider
             Pipeline._api_key = (
                 self.anthropic_api_key
                 if self.provider == Provider.ANTHROPIC
@@ -95,6 +99,7 @@ class Pipeline:
             openai_api_key=os.getenv(
                 "OPENAI_API_KEY", "To use OpenAI, enter your API key here"
             ),
+            provider=Provider(DEFAULT_PROVIDER),
         )
 
     async def on_startup(self):
@@ -105,6 +110,8 @@ class Pipeline:
 
     async def on_valves_updated(self):
         """Handle valve updates by re-syncing configuration"""
+        # This will be called when the web UI updates valves
+        # Make sure we re-sync configuration to ensure _api_key is updated
         self.valves._sync_with_config()
         logger.debug("Valves updated and synced with config")
 
