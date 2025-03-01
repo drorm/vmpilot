@@ -17,7 +17,8 @@ For secure access setup, we recommend you complete the [DNS and SSL Setup](dns_s
 
 ## 1.1 Docker Installation
 
-VMPilot is available as a Docker container from GitHub Container Registry (ghcr.io). Follow these steps to install and run it:
+VMPilot is available as a Docker container from GitHub Container Registry (ghcr.io). Note that this is an Ubuntu based container. If you'd like to use a different distribution, you need to install VMPilot manually.
+Follow these steps to install and run VMPilot in a Docker container:
 
 1. Pull the latest VMPilot image:
 ```bash
