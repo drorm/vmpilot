@@ -55,10 +55,42 @@ class Pipeline:
         # Private storage for properties
         anthropic_api_key: str = ""
         openai_api_key: str = ""
+        _provider: Provider = Provider(DEFAULT_PROVIDER)
 
         # Model configuration (inherited from config)
         model: str = ""  # Set based on provider's default
-        provider: Provider = Provider(DEFAULT_PROVIDER)
+
+        # Property for provider with setter that updates state
+        @property
+        def provider(self) -> Provider:
+            return self._provider
+
+        @provider.setter
+        def provider(self, value: Provider):
+            self._provider = value
+            self._sync_with_config()
+
+        # Property for anthropic_api_key with setter that updates state
+        @property
+        def anthropic_api_key(self) -> str:
+            return self.anthropic_api_key
+
+        @anthropic_api_key.setter
+        def anthropic_api_key(self, value: str):
+            self.anthropic_api_key = value
+            if self.provider == Provider.ANTHROPIC:
+                self._update_api_key()
+
+        # Property for openai_api_key with setter that updates state
+        @property
+        def openai_api_key(self) -> str:
+            return self.openai_api_key
+
+        @openai_api_key.setter
+        def openai_api_key(self, value: str):
+            self.openai_api_key = value
+            if self.provider == Provider.OPENAI:
+                self._update_api_key()
 
         def __init__(self, **data):
             super().__init__(**data)
@@ -67,6 +99,8 @@ class Pipeline:
                 self.anthropic_api_key = data["anthropic_api_key"]
             if "openai_api_key" in data:
                 self.openai_api_key = data["openai_api_key"]
+            if "provider" in data:
+                self._provider = data["provider"]
             self._sync_with_config()
 
         def _sync_with_config(self):
@@ -80,6 +114,7 @@ class Pipeline:
 
         def _update_api_key(self):
             """Update API key based on current provider"""
+            Pipeline._provider = self.provider
             Pipeline._api_key = (
                 self.anthropic_api_key
                 if self.provider == Provider.ANTHROPIC
