@@ -73,7 +73,7 @@ class EditTool(BaseTool):
                         f.write(new_content)
                 else:
                     return "No matches found"
-            return f" Edited {file_path}. "
+            return f"\n\n**Edited {file_path}.**\n\n"
 
         except FileNotFoundError:
             raise
