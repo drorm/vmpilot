@@ -13,7 +13,7 @@ echo "Starting API integration tests..."
 # Test 1: Check API key validation
 echo "Test 1: API key validation"
 response=$(ANTHROPIC_API_KEY="invalid_key" $CLI_PATH -t 0 "echo test" 2>&1)
-if echo "$response" | grep -q "Error: Invalid or missing Anthropic API key"; then
+if echo "$response" | grep -q -i "Error: Invalid or missing Anthropic API key"; then
     echo "✓ Invalid API key test passed"
 else
     echo "✗ Invalid API key test failed"

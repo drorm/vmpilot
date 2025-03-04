@@ -1,4 +1,4 @@
-# VMPilot Best Practices Guide
+# VMPilot Tips
 
 ## Getting Started
 
@@ -13,10 +13,10 @@ For optimal cost control and usage tracking:
 
 #### Managing Conversations
 Long conversations can reduce effectiveness. To maintain quality:
+
 1. Keep conversations focused on specific tasks
 2. Start new sessions for new topics
 3. Include relevant context when starting fresh
-4. Save important snippets for future reference
 
 #### Task Management
 Break down complex tasks:
@@ -30,9 +30,10 @@ To track changes made by the LLM, if possible, use a clean git branch. That way,
 
 # Using OpenWebUI
 
-## Using Workspaces
+## Use Workspaces
 
 Workspaces are powerful organizational tools that allow you to group related pipelines and prompts. Here are some example workspace categories:
+
 - My software with OpenAI
 - My software with Anthropic
 - Frontend development
@@ -40,6 +41,7 @@ Workspaces are powerful organizational tools that allow you to group related pip
 - Personal
 
 When setting up a workspace prompt, include:
+
 - The root directory of your project (crucial for file operations)
 - Your technology stack
 - A brief project description and file structure overview
@@ -55,17 +57,22 @@ When setting up a workspace prompt, include:
 Sometimes you'll see the message: "Sorry, need more steps to process this request. I've done 25 steps in a row. Let me know if you'd like me to continue."
 The agent has a built in limit on the number of steps that it can take in a row to prevent it from getting stuck in a loop. The number is defined in the config file as recursion_limit. 
 When you see this message, you can either:
+
 - Just type "continue" to let the agent continue
 - Break down the task into smaller steps
 
 ## LLM Issues and Error Handling
 
 The LLM may run into issues when using tools. You'll see errors like:
+
 - "Field required [type=missing, input_value={}, input_type=dict]"
 - "messages.1.content.1.tool_use.name: String should match pattern '^[a-zA-Z0-9_-]{1,64}$'"}"
 - "messages.5.content.1.tool_use.name: String should have at most 64 characters'}}"
 
-This mostly happens when the LLM tries to edit a file with a large amount of content. To resolve this try:
+### Why This Happens
+
+This mostly happens when the LLM tries to edit a file with a large amount of content or when the history becomes large: the full request is 8000 tokens or more. To resolve this try:
+
 - Just type "continue". Often the LLM can recover from the error and just keep going
 - Ask the llm to create a new file instead of editing a new
 - Start a new shorter conversation
@@ -73,7 +80,6 @@ This mostly happens when the LLM tries to edit a file with a large amount of con
 
 This is an ongoing issue with LLMs and hopefully will get better with time. We're also working on improving the error handling and recovery mechanisms.
 
-### Why This Happens
 
 ## Edit your prompt
 

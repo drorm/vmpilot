@@ -52,16 +52,55 @@ class Pipeline:
     _api_key: str = ""  # Set based on active provider
 
     class Valves(BaseModel):
-        # Runtime parameters
+        # Private storage for properties
         anthropic_api_key: str = ""
         openai_api_key: str = ""
+        _provider: Provider = Provider(DEFAULT_PROVIDER)
 
         # Model configuration (inherited from config)
         model: str = ""  # Set based on provider's default
-        provider: Provider = Provider(DEFAULT_PROVIDER)
+
+        # Property for provider with setter that updates state
+        @property
+        def provider(self) -> Provider:
+            return self._provider
+
+        @provider.setter
+        def provider(self, value: Provider):
+            self._provider = value
+            self._sync_with_config()
+
+        # Property for anthropic_api_key with setter that updates state
+        @property
+        def anthropic_api_key(self) -> str:
+            return self.anthropic_api_key
+
+        @anthropic_api_key.setter
+        def anthropic_api_key(self, value: str):
+            self.anthropic_api_key = value
+            if self.provider == Provider.ANTHROPIC:
+                self._update_api_key()
+
+        # Property for openai_api_key with setter that updates state
+        @property
+        def openai_api_key(self) -> str:
+            return self.openai_api_key
+
+        @openai_api_key.setter
+        def openai_api_key(self, value: str):
+            self.openai_api_key = value
+            if self.provider == Provider.OPENAI:
+                self._update_api_key()
 
         def __init__(self, **data):
             super().__init__(**data)
+            # Handle direct setting of API keys from initialization
+            if "anthropic_api_key" in data:
+                self.anthropic_api_key = data["anthropic_api_key"]
+            if "openai_api_key" in data:
+                self.openai_api_key = data["openai_api_key"]
+            if "provider" in data:
+                self._provider = data["provider"]
             self._sync_with_config()
 
         def _sync_with_config(self):
@@ -95,6 +134,7 @@ class Pipeline:
             openai_api_key=os.getenv(
                 "OPENAI_API_KEY", "To use OpenAI, enter your API key here"
             ),
+            provider=Provider(DEFAULT_PROVIDER),
         )
 
     async def on_startup(self):
@@ -105,6 +145,8 @@ class Pipeline:
 
     async def on_valves_updated(self):
         """Handle valve updates by re-syncing configuration"""
+        # This will be called when the web UI updates valves
+        # Make sure we re-sync configuration to ensure _api_key is updated
         self.valves._sync_with_config()
         logger.debug("Valves updated and synced with config")
 

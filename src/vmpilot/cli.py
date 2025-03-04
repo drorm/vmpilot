@@ -24,7 +24,7 @@ except ImportError:
 
 def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
     """Create a mock body for pipeline calls"""
-    from vmpilot.config import TOOL_OUTPUT_LINES, MAX_TOKENS
+    from vmpilot.config import MAX_TOKENS, TOOL_OUTPUT_LINES
 
     return {
         "temperature": temperature,
