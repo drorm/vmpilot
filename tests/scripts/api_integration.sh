@@ -49,7 +49,7 @@ fi
 
 # Test 4: Response formatting
 echo "Test 4: Response formatting"
-response=$(ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" $CLI_PATH -t 0 "ls -l" 2>&1)
+response=$(ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" $CLI_PATH -t 0 "run ls -l" 2>&1)
 if echo "$response" | grep -q "\`\`\`"; then
     echo "✓ Response formatting test passed"
 else
