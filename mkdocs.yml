@@ -4,22 +4,29 @@ site_description: Documentation for VMPilot - AI-driven system operations assist
 theme:
   name: material
   features:
-    - navigation.sections
+    - navigation.expand
     - toc.follow
     - search.highlight
     - search.share
     - content.code.copy
 
 nav:
-  - Home: index.md
-  - Installation: installation.md
-  - Configuration: configuration.md
-  - User Guide: user-guide.md
-  - Plugins: plugins.md
-  - VMPilot Prompting: prompting.md
-  - Tips: tips.md
-  - GitHub: github_issues.md
-  - CLI Interface: cli.md
+    - Home: index.md
+    - Installation: installation.md
+    - Configuration: configuration.md
+    - User Guide: user-guide.md
+    - Examples:
+        - Overview: examples/index.md
+        - Hello World: examples/hello-world.md
+        - Fizzbuzz: examples/fizzbuzz.md
+        - Github issue: examples/github-issue.md
+        - Todo App 1: examples/todo1.md
+        - Todo App 2: examples/todo2.md
+    - Plugins: plugins.md
+    - VMPilot Prompting: prompting.md
+    - Tips: tips.md
+    - GitHub: github_issues.md
+    - CLI Interface: cli.md
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -38,7 +45,7 @@ markdown_extensions:
   - tables
   - footnotes
 
-repo_url: https://github.com/your-repo/vmpilot
+repo_url: https://github.com/drorm/vmpilot
 edit_uri: edit/main/docs/
 
 plugins:
