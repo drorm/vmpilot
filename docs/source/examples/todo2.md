@@ -1,13 +1,13 @@
-# Example: Create GitHub Issue
+# Example: Todo List Application (Part 2)
 
-**Objective:** Finish implementation of issue 26: Create a python todo list.
+**Objective:** Complete implementation of Issue #26: Python todo list application
 
-## Notes
+## Context
 
-- In the previous example, we created the TODO app based on [github issue 26](https://github.com/drorm/vmpilot/issues/26): Create a python todo app.
-- Here, we're finishing the app. Have the LLM check that everything works correctly, and then update the README. 
-- We start with "look at issue #26". This gives the LLM context on what we're working on.
-- Notice that we're not diving too much into details, because the Github issue should mostly cover that.
+- In [Part 1](todo1.md), we began implementing the TODO app based on [GitHub Issue #26](https://github.com/drorm/vmpilot/issues/26)
+- This example demonstrates how to complete the implementation, verify functionality, and update documentation
+- By starting with "look at issue #26", we provide VMPilot with the necessary context
+- The GitHub issue contains most requirements, so detailed explanations aren't needed in our prompts
 
 ![Making the request and LLM initial response ](todo1.png)
 ![Continuing the conversation](todo2.png)

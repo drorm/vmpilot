@@ -1,18 +1,26 @@
-# Example: Create GitHub Issue
+# Example: FizzBuzz Implementation
 
-**Objective:** Create a simple fizzbuzz program in Python.
+**Objective:** Create a simple FizzBuzz program in Python.
 
-![Requesting to implement the issue](fizzbuzz1.png)
+## Interaction
+
+![Requesting to implement FizzBuzz](fizzbuzz1.png)
 
 ![Continuing the conversation](fizzbuzz2.png)
 
-- VMPilot has 3 tools available to it. 
-    - A create file tool to create files: used above to create the Python file.
-    - A shell tool to run bash commands: used to make it executable.
-    - An edit file tool to edit files: used below to change the code.
-- When it uses a tool, you see the command or the result in bold.
-- The output of the shell tool is fenced in a code block and is truncated to 10 lines (configurable). 
-- We can't see the full output of the command, so it gives us an opportunity to ask the llm to change the code.
+## VMPilot Features Demonstrated
 
-![Continuing the conversation](fizzbuzz3.png)
+- **Available Tools:** 
+  - **Create File Tool:** Used to create the Python file
+  - **Shell Tool:** Used to run bash commands and make the file executable
+  - **Edit File Tool:** Used to modify the code when needed
+
+- **Tool Interaction:**
+  - When VMPilot uses a tool, the command or result appears in **bold**
+  - Shell tool output is displayed in code blocks and truncated to 10 lines (configurable)
+  - Limited output visibility provides opportunities to request code improvements
+
+## Final Implementation
+
+![Running the finished program](fizzbuzz3.png)
 

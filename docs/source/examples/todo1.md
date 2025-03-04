@@ -1,12 +1,14 @@
-# Example: Create GitHub Issue
+# Example: Todo List Application (Part 1)
 
-**Objective:** Initial implementation of issue 26: Create a python todo list.
+**Objective:** Initial implementation of Issue #26: Create a Python todo list application
 
-## Notes
+## Context
 
-- In the previous example, we created [github issue 26](https://github.com/drorm/vmpilot/issues/26): Create a python todo app.
-- Now we can simply refer to that issue in the conversation, and collaborate with the LLM to implement it.
-- Again we specifically tell the LLM to discuss the issue, not to create files or the issue itself, initially.
+- In the previous example, we created [GitHub Issue #26](https://github.com/drorm/vmpilot/issues/26): Create a Python todo app
+- We can now refer to this issue directly in our conversation with VMPilot
+- Note: We initially ask VMPilot to discuss the issue before creating any files, to establish a clear plan
+
+## Initial Planning
 
 ![Requesting to implement the issue](todo1.png)
 
