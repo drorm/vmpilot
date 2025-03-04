@@ -4,7 +4,7 @@
 
 ## Interaction
 
-![Screenshot of initial prompt and response](shot1.png)
+![Screenshot of initial prompt and response](hello.png)
 
 ## Notes
 
