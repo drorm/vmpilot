@@ -4,8 +4,6 @@ VMPilot is a chat-based AI development agent that operates directly in your virt
 
 ![VMPilot hello world](docs/source/examples/hello.png)
 
-## [Examples](https://drorm.github.io/vmpilot/examples/)
-
 > [!CAUTION]
 > Only run VMPilot if you have sufficient knowledge about the security implications of running arbitrary commands in your virtual machine.
 > **Never run this directly on your personal machine**. You are allowing the AI/LLM to execute commands in your environment, which can be dangerous. Additionally, there is a risk that the AI might interact with the external world and potentially be compromised by an attacker.
@@ -13,6 +11,7 @@ VMPilot is a chat-based AI development agent that operates directly in your virt
 ## Quick Start
 - [Documentation Site](https://drorm.github.io/vmpilot/)
 - [Installation Guide](https://drorm.github.io/vmpilot/installation/)
+- [Examples](https://drorm.github.io/vmpilot/examples/)
 
 ## Why VMPilot?
 
