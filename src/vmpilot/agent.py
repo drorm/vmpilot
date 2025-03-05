@@ -1,6 +1,5 @@
 """
 LangChain-based implementation for VMPilot's agent functionality.
-Replaces the original loop.py from Claude Computer Use with LangChain tools and agents.
 """
 
 import logging
