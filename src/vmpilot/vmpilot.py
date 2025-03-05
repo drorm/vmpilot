@@ -188,7 +188,7 @@ class Pipeline:
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
-        logger.debug(f"DEBUG: Starting pipe with message: {user_message}")
+        logger.degug(f"Full body keys: {list(body.keys())}")
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -213,7 +213,7 @@ class Pipeline:
 
         # Handle title request
         if body.get("title", False):
-            return "VMPilot Pipeline"
+            return "VMPilot Pipeline "
 
         # Handle provider selection and model validation
         try:
