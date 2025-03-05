@@ -51,6 +51,7 @@ class Pipeline:
     # Provider management at Pipeline level
     _provider: Provider = Provider(DEFAULT_PROVIDER)
     _api_key: str = ""  # Set based on active provider
+    chat_id: str = None
 
     async def inlet(self, body: dict, user: Optional[dict] = None) -> dict:
         # Store chat_id as instance variable for use in pipe
