@@ -224,6 +224,7 @@ async def process_messages(
     temperature: float = TEMPERATURE,
     disable_logging: bool = False,
     recursion_limit: int = None,  # Maximum number of steps to run in the request
+    thread_id: str = None,  # Chat ID for conversation state management
 ) -> List[dict]:
     logger.debug(f"DEBUG: model={model}, provider={provider}")
     """Process messages through the agent and handle outputs."""
@@ -328,8 +329,11 @@ async def process_messages(
         raise
 
     # Stream agent responses
-    thread_id = f"vmpilot-{os.getpid()}"
-    logger.debug(f"Starting agent stream with {len(formatted_messages)} messages")
+    if thread_id is None:
+        thread_id = f"vmpilot-{os.getpid()}"
+    logger.info(
+        f"Starting agent stream with {len(formatted_messages)} messages and thread_id: {thread_id}"
+    )
 
     """Send the request and process the stream of messages from the agent."""
 

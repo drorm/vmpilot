@@ -14,8 +14,9 @@ import os
 import queue
 import threading
 import traceback
-from typing import Dict, Generator, Iterator, List, Union
+from typing import Dict, Generator, Iterator, List, Union, Optional
 
+from datetime import datetime
 from pydantic import BaseModel
 
 # Import tool output truncation setting
@@ -50,6 +51,11 @@ class Pipeline:
     # Provider management at Pipeline level
     _provider: Provider = Provider(DEFAULT_PROVIDER)
     _api_key: str = ""  # Set based on active provider
+
+    async def inlet(self, body: dict, user: Optional[dict] = None) -> dict:
+        # Store chat_id as instance variable for use in pipe
+        self.chat_id = body.get("chat_id")
+        return body
 
     class Valves(BaseModel):
         # Private storage for properties
@@ -188,7 +194,7 @@ class Pipeline:
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
-        logger.degug(f"Full body keys: {list(body.keys())}")
+        logger.debug(f"Full body keys: {list(body.keys())}")
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -323,6 +329,7 @@ class Pipeline:
                                 temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
+                                thread_id=self.chat_id,
                             )
                         )
                     except Exception as e:
