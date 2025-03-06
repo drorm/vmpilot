@@ -2,7 +2,7 @@
 
 VMPilot is a chat-based AI development agent that operates directly in your virtual machine environment. It combines natural language understanding with the ability to perform complex development tasks - reading and modifying code, managing GitHub issues, and executing system commands. Powered by [OpenWebUI's](https://openwebui.com) rich chat interface, it provides an intuitive way to interact with your development environment through workspaces, advanced chat features, and support for multiple AI models.
 
-![Requesting to implement the issue](docs/source/examples/hello.png)
+![VMPilot hello world](docs/source/examples/hello.png)
 
 > [!CAUTION]
 > Only run VMPilot if you have sufficient knowledge about the security implications of running arbitrary commands in your virtual machine.
