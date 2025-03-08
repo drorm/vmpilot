@@ -266,6 +266,7 @@ class Pipeline:
                 formatted_messages[-1]["content"][-1]["cache_control"] = {
                     "type": "ephemeral"
                 }
+            formatted_messages = formatted_messages[-1:]
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
@@ -329,7 +330,7 @@ class Pipeline:
                                 temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
-                                thread_id=self.chat_id,
+                                thread_id=getattr(self, "chat_id", None),
                             )
                         )
                     except Exception as e:
