@@ -4,7 +4,7 @@ This is a simple implementation to verify the caching fix approach.
 """
 
 import logging
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.messages import BaseMessage
 
