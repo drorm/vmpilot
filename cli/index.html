@@ -643,6 +643,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#chat-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Chat Mode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-input-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      File Input Mode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#provider-selection" class="md-nav__link">
     <span class="md-ellipsis">
       Provider Selection
@@ -746,6 +764,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#chat-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Chat Mode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-input-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      File Input Mode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#provider-selection" class="md-nav__link">
     <span class="md-ellipsis">
       Provider Selection
@@ -816,7 +852,7 @@
 <span class="normal"><a href="#__codelineno-1-2">2</a></span>
 <span class="normal"><a href="#__codelineno-1-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Show me the contents of /etc/hosts&quot;</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Create a new Python script that prints Hello World&quot;</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3"></a>cli.sh<span class="w">  </span>cli.sh<span class="w">  </span><span class="sb">`</span>cat<span class="w"> </span>reqeust.sh<span class="sb">`</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3"></a>cli.sh<span class="w">  </span><span class="sb">`</span>cat<span class="w"> </span>request.sh<span class="sb">`</span>
 </code></pre></div></td></tr></table></div></p>
 <p>Remember to enclose your command in quotes to ensure that it is passed as a single argument to the CLI.
 In the last example, we used backticks to execute a command and pass its output as an argument to the CLI.</p>
@@ -833,55 +869,138 @@ In the last example, we used backticks to execute a command and pass its output 
 <span class="normal"><a href="#__codelineno-2-9"> 9</a></span>
 <span class="normal"><a href="#__codelineno-2-10">10</a></span>
 <span class="normal"><a href="#__codelineno-2-11">11</a></span>
-<span class="normal"><a href="#__codelineno-2-12">12</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>usage: cli.sh [-h] [-t TEMPERATURE] [-p {anthropic,openai}] [-d] request
+<span class="normal"><a href="#__codelineno-2-12">12</a></span>
+<span class="normal"><a href="#__codelineno-2-13">13</a></span>
+<span class="normal"><a href="#__codelineno-2-14">14</a></span>
+<span class="normal"><a href="#__codelineno-2-15">15</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>usage: cli.py [-h] [-t TEMPERATURE] [-f FILE] [-p {anthropic,openai}] [-d] [-c [CHAT]] [command]
 <a id="__codelineno-2-2" name="__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3"></a>positional arguments:
-<a id="__codelineno-2-4" name="__codelineno-2-4"></a>  request               request to the llm
+<a id="__codelineno-2-4" name="__codelineno-2-4"></a>  command               Command to execute (not required if using -f/--file)
 <a id="__codelineno-2-5" name="__codelineno-2-5"></a>
 <a id="__codelineno-2-6" name="__codelineno-2-6"></a>options:
 <a id="__codelineno-2-7" name="__codelineno-2-7"></a>  -h, --help           Show this help message and exit
-<a id="__codelineno-2-8" name="__codelineno-2-8"></a>  -t TEMPERATURE,      Temperature for response generation (default: 0.7)
+<a id="__codelineno-2-8" name="__codelineno-2-8"></a>  -t TEMPERATURE,      Temperature for response generation (default: 0.8)
 <a id="__codelineno-2-9" name="__codelineno-2-9"></a>  --temperature
-<a id="__codelineno-2-10" name="__codelineno-2-10"></a>  -p {anthropic,openai},
-<a id="__codelineno-2-11" name="__codelineno-2-11"></a>  --provider          API provider to use (default: anthropic)
-<a id="__codelineno-2-12" name="__codelineno-2-12"></a>  -d, --debug         Enable debug mode
+<a id="__codelineno-2-10" name="__codelineno-2-10"></a>  -f FILE, --file FILE Input file with commands (one per line)
+<a id="__codelineno-2-11" name="__codelineno-2-11"></a>  -p {anthropic,openai},
+<a id="__codelineno-2-12" name="__codelineno-2-12"></a>  --provider          API provider to use (default: anthropic)
+<a id="__codelineno-2-13" name="__codelineno-2-13"></a>  -d, --debug         Enable debug mode
+<a id="__codelineno-2-14" name="__codelineno-2-14"></a>  -c [CHAT], --chat [CHAT]
+<a id="__codelineno-2-15" name="__codelineno-2-15"></a>                      Enable chat mode to maintain conversation context. Optional: provide a specific chat ID.
 </code></pre></div></td></tr></table></div>
 <h3 id="temperature">Temperature</h3>
 <p>The temperature parameter controls the randomness in the response generation. Higher values (e.g., 0.8) make the output more creative but potentially less focused, while lower values (e.g., 0.2) make it more deterministic and focused. As a rule you should not provide a temperature value, since these are set by the API provider. For testing we use a value of 0 so that the output is deterministic.</p>
 <p>Example:
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>cli.sh<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span><span class="s2">&quot;Write a Python function to calculate factorial&quot;</span>
 </code></pre></div></td></tr></table></div></p>
+<h3 id="chat-mode">Chat Mode</h3>
+<p>Chat mode maintains conversation context across multiple commands, allowing for follow-up questions and references to previous interactions.</p>
+<p>Examples:
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-4-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-4-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-4-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-4-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-4-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-4-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-4-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-4-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-4-10">10</a></span>
+<span class="normal"><a href="#__codelineno-4-11">11</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="c1"># Start a chat session</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;List all Python files&quot;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4"></a><span class="c1"># Continue the same chat session</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Explain what these files do&quot;</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6"></a>
+<a id="__codelineno-4-7" name="__codelineno-4-7"></a><span class="c1"># Specify a custom chat ID</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span>my_session_123<span class="w"> </span><span class="s2">&quot;Show system information&quot;</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9"></a>
+<a id="__codelineno-4-10" name="__codelineno-4-10"></a><span class="c1"># Combine with file input for batch processing with context</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11"></a>cli.sh<span class="w"> </span>-f<span class="w"> </span>commands.txt<span class="w"> </span>-c
+</code></pre></div></td></tr></table></div></p>
+<h3 id="file-input-mode">File Input Mode</h3>
+<p>The file input mode allows you to provide a file containing multiple commands, with each command on a separate line. VMPilot will:
+1. It creates a unique chat ID for the session, unless you specify one
+2. Processes each line in the file as a separate command while maintaining conversation context
+3. This simulates a continuous conversation as if you were interacting with VMPilot in chat mode
+It's similar to chat mode, but with commands read from a file, making it easier to process multiple tasks in sequence.</p>
+<p>Example:
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a>cli.sh<span class="w"> </span>-f<span class="w"> </span>commands.txt
+</code></pre></div></td></tr></table></div></p>
+<p>Where <code>commands.txt</code> might contain:
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-6-1">1</a></span>
+<span class="normal"><a href="#__codelineno-6-2">2</a></span>
+<span class="normal"><a href="#__codelineno-6-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a>List all files in the current directory
+<a id="__codelineno-6-2" name="__codelineno-6-2"></a>Show me the content of the largest file
+<a id="__codelineno-6-3" name="__codelineno-6-3"></a>Explain what it does
+</code></pre></div></td></tr></table></div></p>
 <h3 id="provider-selection">Provider Selection</h3>
 <p>You can choose between different LLM providers:
 - anthropic (default)
 - openai</p>
 <p>Example:
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a>cli.sh<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span><span class="s2">&quot;Explain how to use the ls command&quot;</span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-7-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1"></a>cli.sh<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span><span class="s2">&quot;Explain how to use the ls command&quot;</span>
 </code></pre></div></td></tr></table></div></p>
 <h3 id="debug-mode">Debug Mode</h3>
 <p>Enable debug mode to see detailed logging information, which can be helpful for troubleshooting:</p>
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-5-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1"></a>cli.sh<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;Show system information&quot;</span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-8-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1"></a>cli.sh<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;Show system information&quot;</span>
 </code></pre></div></td></tr></table></div>
 <h2 id="examples">Examples</h2>
 <p>Here are some common usage examples:</p>
 <ol>
 <li>
 <p>Basic system operations:
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-6-1">1</a></span>
-<span class="normal"><a href="#__codelineno-6-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Show me all Python files in the current directory&quot;</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Create a new directory called &#39;test&#39; and add a README file&quot;</span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-9-1">1</a></span>
+<span class="normal"><a href="#__codelineno-9-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Show me all Python files in the current directory&quot;</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Create a new directory called &#39;test&#39; and add a README file&quot;</span>
 </code></pre></div></td></tr></table></div></p>
 </li>
 <li>
 <p>File editing:
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-7-1">1</a></span>
-<span class="normal"><a href="#__codelineno-7-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Change the word &#39;error&#39; to &#39;warning&#39; in log.txt&quot;</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Add a new function to myscript.py&quot;</span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-10-1">1</a></span>
+<span class="normal"><a href="#__codelineno-10-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Change the word &#39;error&#39; to &#39;warning&#39; in log.txt&quot;</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;Add a new function to myscript.py&quot;</span>
 </code></pre></div></td></tr></table></div></p>
 </li>
 <li>
 <p>Using different providers with custom temperature:
-<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-8-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1"></a>cli.sh<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="s2">&quot;Optimize this Python script for performance&quot;</span>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-11-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1"></a>cli.sh<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="s2">&quot;Optimize this Python script for performance&quot;</span>
+</code></pre></div></td></tr></table></div></p>
+</li>
+<li>
+<p>Chat sessions for complex tasks:
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-12-1">1</a></span>
+<span class="normal"><a href="#__codelineno-12-2">2</a></span>
+<span class="normal"><a href="#__codelineno-12-3">3</a></span>
+<span class="normal"><a href="#__codelineno-12-4">4</a></span>
+<span class="normal"><a href="#__codelineno-12-5">5</a></span>
+<span class="normal"><a href="#__codelineno-12-6">6</a></span>
+<span class="normal"><a href="#__codelineno-12-7">7</a></span>
+<span class="normal"><a href="#__codelineno-12-8">8</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1"></a><span class="c1"># First command in a chat session</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Find all log files with errors&quot;</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4"></a><span class="c1"># Follow-up in the same session</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Summarize the most common errors&quot;</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6"></a>
+<a id="__codelineno-12-7" name="__codelineno-12-7"></a><span class="c1"># Another follow-up</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Create a script to fix these errors&quot;</span>
+</code></pre></div></td></tr></table></div></p>
+</li>
+<li>
+<p>Batch processing with file input:
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-13-1">1</a></span>
+<span class="normal"><a href="#__codelineno-13-2">2</a></span>
+<span class="normal"><a href="#__codelineno-13-3">3</a></span>
+<span class="normal"><a href="#__codelineno-13-4">4</a></span>
+<span class="normal"><a href="#__codelineno-13-5">5</a></span>
+<span class="normal"><a href="#__codelineno-13-6">6</a></span>
+<span class="normal"><a href="#__codelineno-13-7">7</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1"></a><span class="c1"># Create a file with multiple commands</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;List all services running&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>tasks.txt
+<a id="__codelineno-13-3" name="__codelineno-13-3"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Show disk usage&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>tasks.txt
+<a id="__codelineno-13-4" name="__codelineno-13-4"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Find large log files&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>tasks.txt
+<a id="__codelineno-13-5" name="__codelineno-13-5"></a>
+<a id="__codelineno-13-6" name="__codelineno-13-6"></a><span class="c1"># Process all commands in sequence with context</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7"></a>cli.sh<span class="w"> </span>-f<span class="w"> </span>tasks.txt<span class="w"> </span>-c
 </code></pre></div></td></tr></table></div></p>
 </li>
 </ol>
@@ -894,7 +1013,8 @@ In the last example, we used backticks to execute a command and pass its output 
 <p>If you encounter errors, try:
 1. Using debug mode (-d) to get more information
 2. Checking your API provider configuration
-3. Verifying you have the necessary permissions for the requested operation</p>
+3. Verifying you have the necessary permissions for the requested operation
+4. For file input mode, ensure each command is on a separate line</p>
 
 
 
