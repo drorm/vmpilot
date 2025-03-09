@@ -46,13 +46,13 @@ run_command() {
 echo "=== Test 1: Basic functionality with --chat flag ==="
 run_command "What is the current working directory?" "$TEST_DIR/test1_output.txt" "$CHAT_ID"
 
-# Test 2: Verify context is maintained (referencing previous command)
+# Test 2: Verify context is maintained (referencing the sample files directory)
 echo "=== Test 2: Verify context is maintained ==="
-run_command "List all Python files in that directory" "$TEST_DIR/test2_output.txt" "$CHAT_ID"
+run_command "What files are in the tests/sample_files directory?" "$TEST_DIR/test2_output.txt" "$CHAT_ID"
 
-# Test 3: Continuing the conversation with further context
+# Test 3: Continuing the conversation with further context about a specific file
 echo "=== Test 3: Continuing the conversation ==="
-run_command "How many lines of code are in the largest Python file you found?" "$TEST_DIR/test3_output.txt" "$CHAT_ID"
+run_command "What is the content of the test2.py file you found in that directory?" "$TEST_DIR/test3_output.txt" "$CHAT_ID"
 
 # Test 4: Verify a new chat ID creates a separate conversation
 echo "=== Test 4: New chat ID creates separate conversation ==="
@@ -82,11 +82,11 @@ check_output() {
 # Perform validation checks
 echo -e "\n=== Validation Checks ==="
 
-# Check Test 2 - Should reference information from Test 1
-check_output "$TEST_DIR/test2_output.txt" "\.py" "Context Maintenance Test"
+# Check Test 2 - Should list files in sample_files directory
+check_output "$TEST_DIR/test2_output.txt" "test1\.txt|test2\.py|test_commands\.txt" "Context Maintenance Test"
 
-# Check Test 3 - Should understand the context of Python files
-check_output "$TEST_DIR/test3_output.txt" "lines" "Extended Context Test"
+# Check Test 3 - Should show content of test2.py
+check_output "$TEST_DIR/test3_output.txt" "sample_function|print|This is a sample Python file" "Extended Context Test"
 
 # Check Test 4 - Should NOT have context from the first chat session
 check_output "$TEST_DIR/test4_output.txt" "previous|don't know|new conversation" "Separate Chat Test"
