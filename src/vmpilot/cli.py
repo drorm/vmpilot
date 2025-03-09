@@ -127,13 +127,13 @@ if __name__ == "__main__":
     from vmpilot.config import Provider, config
 
     parser = argparse.ArgumentParser(
-        description="VMPilot CLI using LangChain",
+        description="VMPilot CLI",
         epilog="Examples:\n"
-        "  vmpilot 'list all python files'              # Execute a single command\n"
-        "  vmpilot -c 'list python files'               # Start a chat session\n"
-        "  vmpilot -c 'tell me about those files'       # Continue the chat session\n"
-        "  vmpilot -f commands.txt                      # Execute commands from a file\n"
-        "  vmpilot -f commands.txt -c                   # Execute commands from a file with chat context",
+        "  cli.sh 'list all python files'              # Execute a single command\n"
+        "  cli.sh -c 'list python files'               # Start a chat session\n"
+        "  cli.sh -c 'tell me about those files'       # Continue the chat session\n"
+        "  cli.sh -f commands.txt                      # Execute commands from a file one line at the time\n"
+        "  cli.sh -f commands.txt -c                   # Execute commands from a file one line at the time with chat context",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
