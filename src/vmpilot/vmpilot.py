@@ -14,7 +14,8 @@ import os
 import queue
 import threading
 import traceback
-from typing import Dict, Generator, Iterator, List, Union
+from datetime import datetime
+from typing import Dict, Generator, Iterator, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -50,6 +51,11 @@ class Pipeline:
     # Provider management at Pipeline level
     _provider: Provider = Provider(DEFAULT_PROVIDER)
     _api_key: str = ""  # Set based on active provider
+
+    async def inlet(self, body: dict, user: Optional[dict] = None) -> dict:
+        # Store chat_id as instance variable for use in pipe
+        self.chat_id = body.get("chat_id")
+        return body
 
     class Valves(BaseModel):
         # Private storage for properties
@@ -188,7 +194,7 @@ class Pipeline:
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
-        logger.debug(f"DEBUG: Starting pipe with message: {user_message}")
+        logger.debug(f"Full body keys: {list(body.keys())}")
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -213,7 +219,7 @@ class Pipeline:
 
         # Handle title request
         if body.get("title", False):
-            return "VMPilot Pipeline"
+            return "VMPilot Pipeline "
 
         # Handle provider selection and model validation
         try:
@@ -260,6 +266,7 @@ class Pipeline:
                 formatted_messages[-1]["content"][-1]["cache_control"] = {
                     "type": "ephemeral"
                 }
+            formatted_messages = formatted_messages[-1:]
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
@@ -323,6 +330,7 @@ class Pipeline:
                                 temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
+                                thread_id=getattr(self, "chat_id", None),
                             )
                         )
                     except Exception as e:
