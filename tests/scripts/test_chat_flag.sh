@@ -30,6 +30,7 @@ run_command() {
     echo -e "\n>>> Running command: $prompt"
     if [ -n "$chat_flag" ]; then
         $CLI_PATH --chat "$chat_flag" "$prompt" > "$output_file" 2>&1
+        # $CLI_PATH --chat "$chat_flag" "$prompt" | tee > "$output_file" 2>&1
     else
         $CLI_PATH "$prompt" > "$output_file" 2>&1
     fi
