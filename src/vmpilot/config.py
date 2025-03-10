@@ -9,7 +9,7 @@ import sys
 from configparser import ConfigParser
 from enum import StrEnum
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from pydantic import BaseModel, Field
 
@@ -184,3 +184,33 @@ TOOL_OUTPUT_LINES = parser.getint("general", "tool_output_lines")
 TEMPERATURE = parser.getfloat("inference", "temperature")
 MAX_TOKENS = parser.getint("inference", "max_tokens")
 RECURSION_LIMIT = parser.getint("model", "recursion_limit")
+
+# Database configuration
+DATA_DIR = os.environ.get(
+    "VMPILOT_DATA_DIR",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data"),
+)
+DB_PATH = os.environ.get("VMPILOT_DB_PATH", os.path.join(DATA_DIR, "vmpilot.db"))
+
+# Create data directory if it doesn't exist
+os.makedirs(DATA_DIR, exist_ok=True)
+
+
+def get_config_value(section: str, key: str, default: Any = None) -> Any:
+    """
+    Get a configuration value from the config file.
+
+    Args:
+        section: The section in the config file
+        key: The key in the section
+        default: Default value if the key doesn't exist
+
+    Returns:
+        The configuration value or the default
+    """
+    try:
+        if section in parser and key in parser[section]:
+            return parser[section][key]
+        return default
+    except Exception:
+        return default
