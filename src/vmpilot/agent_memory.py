@@ -58,16 +58,32 @@ def save_conversation_state(
     for i, message in enumerate(messages):
         # Convert LangChain message to a format suitable for database storage
         role = message.type
-        
+
         # Convert content to string if it's a complex type (like a list)
         if isinstance(message.content, (list, dict)):
             content = json.dumps(message.content)
         else:
             content = str(message.content)
 
+        # Prepare message metadata
+        message_metadata = {}
+
+        # Store tool name in metadata for tool messages
+        if role == "tool":
+            if hasattr(message, "name"):
+                message_metadata["name"] = message.name
+
+            # Store tool_call_id if present (for newer LangChain versions)
+            if hasattr(message, "tool_call_id") and message.tool_call_id:
+                message_metadata["tool_call_id"] = message.tool_call_id
+
         try:
             repository.save_message(
-                conversation_id=thread_id, role=role, content=content, message_id=str(i)
+                conversation_id=thread_id,
+                role=role,
+                content=content,
+                message_id=str(i),
+                metadata=message_metadata,
             )
         except Exception as e:
             logger.error(f"Error saving message in conversation {thread_id}: {e}")
@@ -125,21 +141,26 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
         db_messages = repository.get_messages(thread_id)
 
         # Convert database messages to LangChain format
-        from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+        from langchain_core.messages import (
+            HumanMessage,
+            AIMessage,
+            SystemMessage,
+            ToolMessage,
+        )
 
         messages = []
         for msg in db_messages:
             role = msg.get("role", "")
             content = msg.get("content", "")
-            
+
             # Try to detect and parse JSON content
-            if content and (content.startswith('[') or content.startswith('{')):
+            if content and (content.startswith("[") or content.startswith("{")):
                 try:
                     content = json.loads(content)
                 except json.JSONDecodeError:
                     # If it's not valid JSON, keep it as is
                     pass
-            
+
             # Create appropriate message type based on role
             if role == "human":
                 messages.append(HumanMessage(content=content))
@@ -147,6 +168,36 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
                 messages.append(AIMessage(content=content))
             elif role == "system":
                 messages.append(SystemMessage(content=content))
+            elif role == "tool":
+                # Get tool name and tool_call_id from metadata if available
+                tool_name = ""
+                tool_call_id = ""
+                if msg.get("metadata"):
+                    if "name" in msg["metadata"]:
+                        tool_name = msg["metadata"]["name"]
+                    if "tool_call_id" in msg["metadata"]:
+                        tool_call_id = msg["metadata"]["tool_call_id"]
+
+                # Create ToolMessage with appropriate parameters
+                # Note: Different versions of LangChain may require different parameters
+                try:
+                    # First try with all parameters
+                    messages.append(
+                        ToolMessage(
+                            content=content, name=tool_name, tool_call_id=tool_call_id
+                        )
+                    )
+                except TypeError as e:
+                    # If that fails, try without tool_call_id
+                    logger.debug(f"Trying alternative ToolMessage construction: {e}")
+                    try:
+                        messages.append(ToolMessage(content=content, name=tool_name))
+                    except Exception as e2:
+                        logger.error(f"Failed to create ToolMessage: {e2}")
+                        # Fall back to AIMessage to prevent breaking the conversation
+                        messages.append(
+                            AIMessage(content=f"Tool Result ({tool_name}): {content}")
+                        )
             else:
                 logger.warning(f"Unknown message role '{role}' in thread {thread_id}")
 
