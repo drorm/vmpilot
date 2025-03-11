@@ -178,7 +178,7 @@ class TestShellToolEdgeCases:
         """Test handling of commands that launch background processes."""
         result = shell_tool.run(
             {
-                "command": "(sleep 1 && echo 'Done') & echo 'Started'; sleep 2",
+                "command": "(sleep 1 && echo 'Done') & echo 'Started'; sleep 1",
                 "language": "bash",
             }
         )
