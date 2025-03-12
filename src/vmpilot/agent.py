@@ -17,6 +17,7 @@ from langgraph.prebuilt.chat_agent_executor import AgentState
 
 from vmpilot.agent_logging import log_conversation_messages
 from vmpilot.agent_memory import (
+    clear_conversation_state,
     get_conversation_state,
     save_conversation_state,
     update_cache_info,
@@ -284,6 +285,9 @@ async def process_messages(
     if thread_id is not None:
         # Retrieve previous conversation state
         previous_messages, previous_cache_info = get_conversation_state(thread_id)
+        clear_conversation_state(
+            thread_id
+        )  # Clear the conversation state after retrieval
         if previous_messages:
             logger.debug(
                 f"Retrieved previous conversation state with {len(previous_messages)} messages for thread_id: {thread_id}"
@@ -480,6 +484,27 @@ async def process_messages(
         # Get the final state after processing
         # We need to save the full conversation state including the response from the LLM
         final_messages = response.get("messages", formatted_messages)
+
+        # Clean up cache_control from older messages to stay within API limits
+        # Anthropic has a limit of 4 blocks with cache_control
+        for msg in final_messages:
+            # Remove cache_control from message content if it's a list
+            if hasattr(msg, "content") and isinstance(msg.content, list):
+                for item in msg.content:
+                    if isinstance(item, dict) and "cache_control" in item:
+                        del item["cache_control"]
+
+            # Remove cache_control from additional_kwargs
+            if (
+                hasattr(msg, "additional_kwargs")
+                and "cache_control" in msg.additional_kwargs
+            ):
+                del msg.additional_kwargs["cache_control"]
+
+            # Remove cache_control from direct attributes (HumanMessage)
+            if hasattr(msg, "cache_control"):
+                delattr(msg, "cache_control")
+
         save_conversation_state(thread_id, final_messages)
         logger.debug(
             f"Saved conversation state with {len(final_messages)} messages for thread_id: {thread_id}"
