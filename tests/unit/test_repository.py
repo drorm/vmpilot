@@ -4,12 +4,12 @@ Unit tests for the ConversationRepository class using a fresh in-memory database
 
 import json
 import os
-import unittest
 import sqlite3
+import unittest
 from unittest.mock import patch
 
-from vmpilot.db.models import CREATE_TABLES_SQL
 from vmpilot.db.crud import ConversationRepository
+from vmpilot.db.models import CREATE_TABLES_SQL
 
 
 class TestRepository(unittest.TestCase):

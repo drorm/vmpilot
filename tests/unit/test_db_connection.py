@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from vmpilot.config import DATA_DIR, DB_PATH
-from vmpilot.db.connection import get_db_path, get_db_connection
+from vmpilot.db.connection import get_db_connection, get_db_path
 
 
 class TestDatabaseConnection(unittest.TestCase):
