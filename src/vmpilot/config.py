@@ -9,7 +9,7 @@ import sys
 from configparser import ConfigParser
 from enum import StrEnum
 from pathlib import Path
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
