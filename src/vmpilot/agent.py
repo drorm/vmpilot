@@ -465,6 +465,15 @@ async def process_messages(
             if "Recursion limit" in error_message and "reached" in error_message:
                 message = f" I've done {recursion_limit} steps in a row. Let me know if you'd like me to continue. "
                 logger.info(message)
+            # Handle specific tool_use/tool_result error
+            elif (
+                "Messages containing `tool_use` blocks must be followed by a user message with `tool_result` blocks"
+                in error_message
+            ):
+                logger.error(f"Tool use/result sequence error: {e}")
+                message = "I got the error: {str(e)}."
+                logger.error(f"last message: {formatted_messages[-1]}")
+                # logger.info(message)
             else:
                 logger.error(f"Error in agent stream: {e}")
                 logger.error("".join(traceback.format_tb(e.__traceback__)))
