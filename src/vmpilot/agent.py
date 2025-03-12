@@ -1,6 +1,5 @@
 """
 LangChain-based implementation for VMPilot's agent functionality.
-Replaces the original loop.py from Claude Computer Use with LangChain tools and agents.
 """
 
 import logging
@@ -16,6 +15,12 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
 
+from vmpilot.agent_logging import log_conversation_messages
+from vmpilot.agent_memory import (
+    get_conversation_state,
+    save_conversation_state,
+    update_cache_info,
+)
 from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
@@ -93,6 +98,7 @@ def _modify_state_messages(state: AgentState):
                 message.additional_kwargs.pop("cache_control", None)
 
     logger.debug(f"Modified state messages: {state['messages']}")
+    log_conversation_messages(messages, level="debug")
     return messages
 
 
@@ -116,7 +122,8 @@ def setup_tools(llm=None):
             tools.append(EditTool())  # for editing
             tools.append(CreateFileTool())  # for creating files
         except Exception as e:
-            logger.error(f"Error: Error creating SetupShellTool: {e}")
+            logger.error(f"Error: Error creating tool: {e}")
+            logger.error("".join(traceback.format_tb(e.__traceback__)))
 
     # Return all tools
     return tools
@@ -207,7 +214,7 @@ async def create_agent(
 
 
 """
-Process messages through the agent and handle outputs
+Process user's message through the agent and handle outputs
 """
 
 
@@ -224,8 +231,11 @@ async def process_messages(
     temperature: float = TEMPERATURE,
     disable_logging: bool = False,
     recursion_limit: int = None,  # Maximum number of steps to run in the request
+    thread_id: str = None,  # Chat ID for conversation state management
 ) -> List[dict]:
-    logger.debug(f"DEBUG: model={model}, provider={provider}")
+    logger.debug(
+        f"------------- Processing new message: model={model}, provider={provider} --------------- "
+    )
     """Process messages through the agent and handle outputs."""
     # Get recursion limit from config if not explicitly set
     if recursion_limit is None:
@@ -268,8 +278,26 @@ async def process_messages(
 
     logger.debug("DEBUG: Agent created successfully")
 
-    # Convert messages from openai to LangChain format
+    # Check if we have a previous conversation state for this thread_id
     formatted_messages = []
+    cache_info = {}
+    if thread_id is not None:
+        # Retrieve previous conversation state
+        previous_messages, previous_cache_info = get_conversation_state(thread_id)
+        if previous_messages:
+            logger.debug(
+                f"Retrieved previous conversation state with {len(previous_messages)} messages for thread_id: {thread_id}"
+            )
+            formatted_messages.extend(previous_messages)
+            cache_info = previous_cache_info
+            # If we have previous messages, we only need to process the last message from the current request
+            if messages:
+                messages = [messages[-1]]
+                logger.debug(
+                    f"Using only the last message from current request: {messages}"
+                )
+
+    # Convert messages from openai to LangChain format
     try:
         for msg in messages:
             logger.debug(f"Processing message: {msg}")
@@ -328,14 +356,21 @@ async def process_messages(
         raise
 
     # Stream agent responses
-    thread_id = f"vmpilot-{os.getpid()}"
-    logger.debug(f"Starting agent stream with {len(formatted_messages)} messages")
+    if thread_id is None:
+        thread_id = f"vmpilot-{os.getpid()}"
+    logger.debug(
+        f"Starting agent stream with {len(formatted_messages)} messages and thread_id: {thread_id}"
+    )
 
     """Send the request and process the stream of messages from the agent."""
 
+    # Store the latest response for saving the conversation state later
+    response = {"messages": formatted_messages}
+
     async def send_request():
+        nonlocal response
         try:
-            async for response in agent.astream(
+            async for agent_response in agent.astream(
                 {"messages": formatted_messages},
                 config={
                     "thread_id": thread_id,
@@ -349,8 +384,8 @@ async def process_messages(
 
                     """Process the messages from the agent."""
                     # Handle different response types
-                    if "messages" in response:
-                        message = response["messages"][-1]
+                    if "messages" in agent_response:
+                        message = agent_response["messages"][-1]
 
                         # Log message receipt and usage for all message types
                         log_message_received(message)
@@ -362,6 +397,10 @@ async def process_messages(
                             ToolMessage,
                         )
 
+                        # Update our response object with the latest state
+                        response = agent_response
+
+                        # log_conversation_messages(response["messages"], level="info")
                         if isinstance(message, ToolMessage):
                             logger.debug(f"isinstance message: {message}")
                             # Handle tool message responses
@@ -435,4 +474,15 @@ async def process_messages(
 
     # Run the stream processor
     await send_request()
+
+    # Save the conversation state for future requests
+    if thread_id is not None and formatted_messages:
+        # Get the final state after processing
+        # We need to save the full conversation state including the response from the LLM
+        final_messages = response.get("messages", formatted_messages)
+        save_conversation_state(thread_id, final_messages)
+        logger.debug(
+            f"Saved conversation state with {len(final_messages)} messages for thread_id: {thread_id}"
+        )
+
     return messages

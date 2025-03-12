@@ -14,7 +14,8 @@ import os
 import queue
 import threading
 import traceback
-from typing import Dict, Generator, Iterator, List, Union
+from datetime import datetime
+from typing import Dict, Generator, Iterator, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -47,41 +48,80 @@ logger.propagate = False
 
 
 class Pipeline:
-    api_key: str = ""  # Set based on active provider
+    # Provider management at Pipeline level
+    _provider: Provider = Provider(DEFAULT_PROVIDER)
+    _api_key: str = ""  # Set based on active provider
+
+    async def inlet(self, body: dict, user: Optional[dict] = None) -> dict:
+        # Store chat_id as instance variable for use in pipe
+        self.chat_id = body.get("chat_id")
+        return body
 
     class Valves(BaseModel):
-        # Runtime parameters
+        # Private storage for properties
         anthropic_api_key: str = ""
         openai_api_key: str = ""
+        _provider: Provider = Provider(DEFAULT_PROVIDER)
 
         # Model configuration (inherited from config)
-        provider: Provider = Provider(DEFAULT_PROVIDER)
         model: str = ""  # Set based on provider's default
-        recursion_limit: int = RECURSION_LIMIT
 
-        # Inference parameters from config
-        temperature: float = TEMPERATURE
-        max_tokens: int = MAX_TOKENS
+        # Property for provider with setter that updates state
+        @property
+        def provider(self) -> Provider:
+            return self._provider
+
+        @provider.setter
+        def provider(self, value: Provider):
+            self._provider = value
+            self._sync_with_config()
+
+        # Property for anthropic_api_key with setter that updates state
+        @property
+        def anthropic_api_key(self) -> str:
+            return self.anthropic_api_key
+
+        @anthropic_api_key.setter
+        def anthropic_api_key(self, value: str):
+            self.anthropic_api_key = value
+            if self.provider == Provider.ANTHROPIC:
+                self._update_api_key()
+
+        # Property for openai_api_key with setter that updates state
+        @property
+        def openai_api_key(self) -> str:
+            return self.openai_api_key
+
+        @openai_api_key.setter
+        def openai_api_key(self, value: str):
+            self.openai_api_key = value
+            if self.provider == Provider.OPENAI:
+                self._update_api_key()
 
         def __init__(self, **data):
             super().__init__(**data)
+            # Handle direct setting of API keys from initialization
+            if "anthropic_api_key" in data:
+                self.anthropic_api_key = data["anthropic_api_key"]
+            if "openai_api_key" in data:
+                self.openai_api_key = data["openai_api_key"]
+            if "provider" in data:
+                self._provider = data["provider"]
             self._sync_with_config()
 
         def _sync_with_config(self):
             """Synchronize valve state with config defaults"""
-            # Always get default model when provider changes
-            self.model = config.get_default_model(self.provider)
-
-            provider_config = config.get_provider_config(self.provider)
-            if self.recursion_limit is None:
-                self.recursion_limit = provider_config.recursion_limit
+            # Get default model if not set
+            if not self.model:
+                self.model = config.get_default_model(self.provider)
 
             # Update API key based on provider
             self._update_api_key()
 
         def _update_api_key(self):
-            """Update api_key based on current provider"""
-            Pipeline.api_key = (
+            """Update API key based on current provider"""
+            Pipeline._provider = self.provider
+            Pipeline._api_key = (
                 self.anthropic_api_key
                 if self.provider == Provider.ANTHROPIC
                 else self.openai_api_key
@@ -94,8 +134,13 @@ class Pipeline:
 
         # Initialize valves with environment variables and defaults
         self.valves = self.Valves(
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
-            openai_api_key=os.getenv("OPENAI_API_KEY", ""),
+            anthropic_api_key=os.getenv(
+                "ANTHROPIC_API_KEY", "To use Anthropic, enter your API key here"
+            ),
+            openai_api_key=os.getenv(
+                "OPENAI_API_KEY", "To use OpenAI, enter your API key here"
+            ),
+            provider=Provider(DEFAULT_PROVIDER),
         )
 
     async def on_startup(self):
@@ -106,8 +151,26 @@ class Pipeline:
 
     async def on_valves_updated(self):
         """Handle valve updates by re-syncing configuration"""
+        # This will be called when the web UI updates valves
+        # Make sure we re-sync configuration to ensure _api_key is updated
         self.valves._sync_with_config()
         logger.debug("Valves updated and synced with config")
+
+    def set_provider(self, provider: str):
+        """Set the provider and update configuration"""
+        try:
+            self.valves.provider = Provider(provider.lower())
+            self.valves.model = ""  # Reset model to use provider default
+            self.valves._sync_with_config()
+        except ValueError as e:
+            raise ValueError(f"Invalid provider: {provider}")
+
+    def set_model(self, model: str):
+        """Set the model and validate against current provider"""
+        if config.validate_model(model, self.valves.provider):
+            self.valves.model = model
+        else:
+            raise ValueError(f"Unsupported model: {model}")
 
     def pipelines(self) -> List[dict]:
         """Return list of supported models/pipelines"""
@@ -125,13 +188,13 @@ class Pipeline:
         ]
 
         # Only show models with valid API keys
-        return [model for model in models if len(self.api_key) >= 32]
+        return [model for model in models if len(self._api_key) >= 32]
 
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
-        logger.debug(f"DEBUG: Starting pipe with message: {user_message}")
+        logger.debug(f"Full body keys: {list(body.keys())}")
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -139,7 +202,7 @@ class Pipeline:
             logger.disabled = True
 
         # Validate API key
-        if not self.api_key or len(self.api_key) < 32:
+        if not self._api_key or len(self._api_key) < 32:
             error_msg = (
                 f"Error: Invalid or missing {self.valves.provider.value} API key"
             )
@@ -156,28 +219,18 @@ class Pipeline:
 
         # Handle title request
         if body.get("title", False):
-            return "VMPilot Pipeline"
+            return "VMPilot Pipeline "
 
-        # Update provider and related configuration based on model ID
+        # Handle provider selection and model validation
         try:
-            # Handle provider change if model_id matches a provider name
+            # Set provider or model based on model_id
             try:
-                if model_id.lower() in [p.value for p in Provider]:
-                    new_provider = Provider(model_id.lower())
-                    self.valves.provider = new_provider
-                    self.valves.model = (
-                        ""  # Reset model to force using provider default
-                    )
-                    self.valves._sync_with_config()
-                else:
-                    # Treat as actual model name
-                    if not config.validate_model(model_id, self.valves.provider):
-                        error_msg = f"Unsupported model: {model_id}"
-                        logger.error(error_msg)
-                        return error_msg
-                    self.valves.model = model_id
-            except ValueError:
-                error_msg = f"Unsupported model: {model_id}"
+                if model_id and model_id.lower() in [p.value for p in Provider]:
+                    self.set_provider(model_id)
+                elif model_id:
+                    self.set_model(model_id)
+            except ValueError as e:
+                error_msg = str(e)
                 logger.error(error_msg)
                 return error_msg
 
@@ -213,6 +266,7 @@ class Pipeline:
                 formatted_messages[-1]["content"][-1]["cache_control"] = {
                     "type": "ephemeral"
                 }
+            formatted_messages = formatted_messages[-1:]
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
@@ -251,9 +305,11 @@ class Pipeline:
                     for output in outputs:
                         output_lines = str(output).splitlines()
                         truncated_output = "\n".join(output_lines[:TOOL_OUTPUT_LINES])
-                        if len(output_lines) > TOOL_OUTPUT_LINES:
+                        if len(output_lines) > (TOOL_OUTPUT_LINES + 1):
                             # we use 4 backticks to escape the 3 backticks that might be in the markdown
                             truncated_output += f"\n...\n````\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
+                        else:
+                            truncated_output += "\n"
                         output_queue.put(truncated_output)
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
@@ -271,15 +327,12 @@ class Pipeline:
                                 messages=formatted_messages,
                                 output_callback=output_callback,
                                 tool_output_callback=tool_callback,
-                                api_key=self.api_key,
-                                max_tokens=1024,
-                                temperature=body.get(
-                                    "temperature", self.valves.temperature
-                                ),
+                                api_key=self._api_key,
+                                max_tokens=MAX_TOKENS,
+                                temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
-                                recursion_limit=body.get(
-                                    "recursion_limit", self.valves.recursion_limit
-                                ),
+                                recursion_limit=RECURSION_LIMIT,
+                                thread_id=getattr(self, "chat_id", None),
                             )
                         )
                     except Exception as e:

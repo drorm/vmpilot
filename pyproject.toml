@@ -16,12 +16,15 @@ dependencies = [
     "fastapi>=0.100.0",
     "pygments>=2.15.0",
     "asyncio>=3.4.3",
+    "langchain>=0.3.14",
+    "anthropic>=0.18.0",
+    "langchain-openai>=0.0.5",
+    "langgraph>=0.0.20",
+    "langchain-anthropic>=0.1.1",
+    "langchain-core>=0.1.20"
 ]
 
 [project.optional-dependencies]
-pipeline = [
-    "langchain==0.3.14"
-]
 dev = [
     "pytest>=7.0.0",
     "black>=23.0.0",

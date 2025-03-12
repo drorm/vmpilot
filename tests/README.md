@@ -6,7 +6,8 @@ This directory contains the test suite for VMPilot. The tests use an innovative 
 ## Directory Structure
 ```
 tests/
-├── harness.sh         # Main test runner that sets up environment and runs all tests
+├── harness.sh         # Main test runner that sets up environment and runs all tests sequentially
+├── parallel_harness.sh # Runs tests in parallel with success/failure tracking
 ├── scripts/           # Individual test scripts
 │   ├── ls_files.sh    # Tests file listing functionality
 │   ├── modify_file.sh # Tests file modification
@@ -20,17 +21,23 @@ tests/
 
 There are several ways to run the tests:
 
-1. To run all tests:
+1. To run all tests sequentially:
 ```bash
 cd /home/dror/vmpilot/tests
 ./harness.sh
 ```
 
-2. To run specific test(s) using harness:
+2. To run all tests in parallel (faster):
 ```bash
 cd /home/dror/vmpilot/tests
-./harness.sh scripts/ls_files.sh           # Run single test
-./harness.sh scripts/ls_files.sh scripts/modify_file.sh  # Run multiple tests
+./parallel_harness.sh
+```
+
+3. To run specific test(s) using harness:
+```bash
+cd /home/dror/vmpilot/tests
+./harness.sh scripts/ls_files.sh           # Run single test sequentially
+./parallel_harness.sh scripts/ls_files.sh scripts/modify_file.sh  # Run multiple tests in parallel
 ```
 
 3. To run a test script directly:
