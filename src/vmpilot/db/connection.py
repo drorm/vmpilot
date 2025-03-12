@@ -9,7 +9,7 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 
-from ..config import get_config_value, DATA_DIR, DB_PATH
+from ..config import DATA_DIR, DB_PATH, get_config_value
 from .models import CREATE_TABLES_SQL, SCHEMA_VERSION, get_set_schema_version_sql
 
 # Configure logging
