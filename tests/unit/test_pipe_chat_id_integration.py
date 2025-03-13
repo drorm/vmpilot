@@ -1,12 +1,13 @@
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-import threading
+import asyncio
+import functools
 import queue
 import signal
+import threading
 import time
-import functools
-import asyncio
 import warnings
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from vmpilot.vmpilot import Pipeline
 

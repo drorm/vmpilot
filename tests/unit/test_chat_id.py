@@ -1,6 +1,7 @@
 import re
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from vmpilot.vmpilot import Pipeline
 
