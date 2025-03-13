@@ -198,7 +198,8 @@ class Pipeline:
 
         if chat_id is None:
             if len(messages) <= 2:  # one system message and one user message
-                import secrets, string
+                import secrets
+                import string
 
                 chat_id = "".join(
                     secrets.choice(string.ascii_letters + string.digits)
