@@ -1,7 +1,8 @@
 import os
-import pytest
 import tempfile
 import time
+
+import pytest
 
 from vmpilot.tools.shelltool import ShellTool
 

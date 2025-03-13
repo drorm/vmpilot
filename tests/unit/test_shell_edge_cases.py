@@ -1,8 +1,9 @@
 import os
-import pytest
-import tempfile
 import subprocess
-from unittest.mock import patch, MagicMock
+import tempfile
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from vmpilot.tools.shelltool import ShellTool
 
