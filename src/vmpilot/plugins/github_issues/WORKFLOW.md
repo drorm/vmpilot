@@ -4,7 +4,7 @@
 
 1. When a user mentions a GitHub issue number:
    - Immediately change to the project root directory
-   - Fetch the issue information using `gh issue view <number>`
+   - Fetch the issue information using `gh issue view --comments <number>`
    - Display the relevant information to the user
 
 2. For issue creation:
