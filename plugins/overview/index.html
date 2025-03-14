@@ -580,6 +580,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#vmpilot-specific-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      VMPilot-Specific Implementation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#current-plugin-system" class="md-nav__link">
     <span class="md-ellipsis">
       Current Plugin System
@@ -601,6 +610,15 @@
   <a href="#creating-new-plugins" class="md-nav__link">
     <span class="md-ellipsis">
       Creating New Plugins
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adapting-to-other-projects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adapting to Other Projects
     </span>
   </a>
   
@@ -743,6 +761,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#vmpilot-specific-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      VMPilot-Specific Implementation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#current-plugin-system" class="md-nav__link">
     <span class="md-ellipsis">
       Current Plugin System
@@ -764,6 +791,15 @@
   <a href="#creating-new-plugins" class="md-nav__link">
     <span class="md-ellipsis">
       Creating New Plugins
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adapting-to-other-projects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adapting to Other Projects
     </span>
   </a>
   
@@ -791,8 +827,14 @@
 <h1 id="plugins">Plugins</h1>
 <p>VMPilot uses a unique text-based plugin system that extends LLM functionality without requiring traditional code-based implementations. This approach makes plugins easy to add, remove, and maintain.</p>
 <h2 id="how-plugins-work">How Plugins Work</h2>
-<p>Instead of using code-based integrations, VMPilot plugins work by injecting the plutin's directory README.md that lists the plugins into the main prompt. When the llm needs to access a plugin, it reads the README.md for that plugin and knows what actions are available.</p>
+<p>Instead of using code-based integrations, VMPilot plugins work by injecting the plugin's directory README.md that lists the plugins into the main prompt. When the LLM needs to access a plugin, it reads the README.md for that plugin and knows what actions are available.</p>
 <p>For example, the <code>github_issues</code> plugin enables GitHub issue management through simple text commands. This plugin could be easily replaced with alternatives (like a Jira plugin) by swapping the plugin configuration.</p>
+<h2 id="vmpilot-specific-implementation">VMPilot-Specific Implementation</h2>
+<p>The plugin system design is based on VMPilot's own development stack:
+- <strong>GitHub</strong>: Issue tracking and workflow management
+- <strong>Python</strong>: Backend implementation language
+- <strong>Backend-focused</strong>: Designed for system operations tasks</p>
+<p>Other projects should adapt this plugin system to their specific tech stack and needs. The text-based approach makes it highly adaptable to different environments, languages, and toolchains.</p>
 <h2 id="current-plugin-system">Current Plugin System</h2>
 <p>The system currently looks like this:
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Markdown</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1"> 1</a></span>
@@ -826,6 +868,16 @@
 3. Add your plugin's entry to the main README.md file in the plugins directory
 4. Test the plugin functionality with various prompts</p>
 <p>For examples of existing plugins, see the <code>codemap</code> and <code>github_issues</code> implementations in the plugins directory.</p>
+<h2 id="adapting-to-other-projects">Adapting to Other Projects</h2>
+<p>When implementing this plugin system in your own projects:</p>
+<ol>
+<li><strong>Use VMPilot</strong>: Ask VMPilot to look at the plugin system and adapt it to your project</li>
+<li><strong>Evaluate your stack</strong>: Consider which tools and platforms your project relies on</li>
+<li><strong>Identify integration points</strong>: Determine which aspects of your workflow would benefit from LLM assistance</li>
+<li><strong>Design plugin interfaces</strong>: Create clear, concise instructions that tell the LLM how to interact with your tools</li>
+<li><strong>Start simple</strong>: Begin with basic plugins and expand functionality as needed</li>
+</ol>
+<p>The flexibility of text-based plugins allows for easy experimentation and iteration without significant code changes.</p>
 
 
 
