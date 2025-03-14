@@ -190,11 +190,57 @@ class Pipeline:
         # Only show models with valid API keys
         return [model for model in models if len(self._api_key) >= 32]
 
+    def get_or_generate_chat_id(self, messages, output_callback):
+        """Get an existing chat_id or generate a new one if needed."""
+        chat_id = getattr(self, "chat_id", None)
+        CHAT_ID_PREFIX = "Chat_id:"
+        logger.debug(f"Current chat_id: {chat_id}, messages: {len(messages)}")
+
+        if chat_id is None:
+            if len(messages) <= 2:  # one system message and one user message
+                import secrets
+                import string
+
+                chat_id = "".join(
+                    secrets.choice(string.ascii_letters + string.digits)
+                    for _ in range(8)
+                )
+                self.chat_id = chat_id
+                output_callback(
+                    {
+                        "type": "text",
+                        "text": f"Chat id:{chat_id} ...\n\n",
+                    }
+                )
+                logger.debug(f"Generated new chat_id: {chat_id}")
+            else:
+                # Find the first assistant message
+                for msg in messages:
+                    if msg["role"] == "assistant" and isinstance(msg["content"], str):
+                        content_lines = msg["content"].split("\n")
+                        if content_lines and content_lines[0].startswith(
+                            CHAT_ID_PREFIX
+                        ):
+                            # Extract chat_id from the first line
+                            chat_id = (
+                                content_lines[0].split(":", 1)[1].strip()
+                                if ":" in content_lines[0]
+                                else content_lines[0]
+                            )
+                            self.chat_id = chat_id
+                            logger.debug(
+                                f"Retrieved chat_id from message history: {chat_id}"
+                            )
+                            break
+        return chat_id
+
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"Full body keys: {list(body.keys())}")
+        logger.debug(f"Messages: {messages}")
+
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -266,7 +312,10 @@ class Pipeline:
                 formatted_messages[-1]["content"][-1]["cache_control"] = {
                     "type": "ephemeral"
                 }
-            formatted_messages = formatted_messages[-1:]
+
+            # if we have a chat_id, we only want to keep the last message that'll get appended to the existing chat
+            if getattr(self, "chat_id", None):
+                formatted_messages = formatted_messages[-1:]
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
@@ -311,6 +360,9 @@ class Pipeline:
                         else:
                             truncated_output += "\n"
                         output_queue.put(truncated_output)
+
+                # Get or generate chat_id
+                self.get_or_generate_chat_id(messages, output_callback)
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
 
