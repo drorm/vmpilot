@@ -52,11 +52,6 @@ class Pipeline:
     _provider: Provider = Provider(DEFAULT_PROVIDER)
     _api_key: str = ""  # Set based on active provider
 
-    async def inlet(self, body: dict, user: Optional[dict] = None) -> dict:
-        # Store chat_id as instance variable for use in pipe
-        self.chat_id = body.get("chat_id")
-        return body
-
     class Valves(BaseModel):
         # Private storage for properties
         anthropic_api_key: str = ""
@@ -192,9 +187,9 @@ class Pipeline:
 
     def get_or_generate_chat_id(self, messages, output_callback):
         """Get an existing chat_id or generate a new one if needed."""
-        chat_id = getattr(self, "chat_id", None)
-        CHAT_ID_PREFIX = "Chat_id:"
-        logger.debug(f"Current chat_id: {chat_id}, messages: {len(messages)}")
+        CHAT_ID_PREFIX = "Chat id"
+        CHAT_ID_DELIMITER = ":"
+        chat_id = None
 
         if chat_id is None:
             if len(messages) <= 2:  # one system message and one user message
@@ -205,11 +200,10 @@ class Pipeline:
                     secrets.choice(string.ascii_letters + string.digits)
                     for _ in range(8)
                 )
-                self.chat_id = chat_id
                 output_callback(
                     {
                         "type": "text",
-                        "text": f"Chat id:{chat_id} ...\n\n",
+                        "text": f"{CHAT_ID_PREFIX} {CHAT_ID_DELIMITER}{chat_id}\n\n",
                     }
                 )
                 logger.debug(f"Generated new chat_id: {chat_id}")
@@ -223,15 +217,15 @@ class Pipeline:
                         ):
                             # Extract chat_id from the first line
                             chat_id = (
-                                content_lines[0].split(":", 1)[1].strip()
+                                content_lines[0].split(CHAT_ID_DELIMITER, 1)[1].strip()
                                 if ":" in content_lines[0]
                                 else content_lines[0]
                             )
-                            self.chat_id = chat_id
                             logger.debug(
                                 f"Retrieved chat_id from message history: {chat_id}"
                             )
                             break
+        logger.info(f"chat_id: {chat_id}")
         return chat_id
 
     def pipe(
@@ -314,7 +308,7 @@ class Pipeline:
                 }
 
             # if we have a chat_id, we only want to keep the last message that'll get appended to the existing chat
-            if getattr(self, "chat_id", None):
+            if body.get("chat_id"):
                 formatted_messages = formatted_messages[-1:]
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
@@ -361,8 +355,11 @@ class Pipeline:
                             truncated_output += "\n"
                         output_queue.put(truncated_output)
 
+                # Get chat_id from body
+                chat_id = body.get("chat_id")
+
                 # Get or generate chat_id
-                self.get_or_generate_chat_id(messages, output_callback)
+                chat_id = self.get_or_generate_chat_id(messages, output_callback)
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
 
@@ -384,7 +381,7 @@ class Pipeline:
                                 temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
-                                thread_id=getattr(self, "chat_id", None),
+                                thread_id=chat_id,
                             )
                         )
                     except Exception as e:
