@@ -24,6 +24,7 @@ nav:
         - Todo App 2: examples/todo2.md
     - Plugins:
         - Overview: plugins/overview.md
+        - GitHub Plugin: plugins/github.md
     - VMPilot Prompting: prompting.md
     - Tips: tips.md
     - CLI Interface: cli.md
