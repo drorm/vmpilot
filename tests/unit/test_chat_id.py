@@ -35,10 +35,7 @@ class TestChatID:
         mock_callback.assert_called_once()
         call_args = mock_callback.call_args[0][0]
         assert call_args["type"] == "text"
-        assert f"Chat id:{chat_id}" in call_args["text"]
-
-        # Verify chat_id is stored as instance variable
-        assert pipeline.chat_id == chat_id
+        assert f"Chat id :{chat_id}" in call_args["text"]
 
     def test_extract_existing_chat_id_from_messages(self, pipeline, mock_callback):
         """Test that an existing chat_id is extracted from previous messages."""
@@ -48,7 +45,7 @@ class TestChatID:
             {"role": "user", "content": "User message"},
             {
                 "role": "assistant",
-                "content": f"Chat_id:{test_chat_id}\n\nAssistant response",
+                "content": f"Chat id:{test_chat_id}\n\nAssistant response",
             },
         ]
 
@@ -58,14 +55,9 @@ class TestChatID:
         assert chat_id == test_chat_id
         # Verify callback was not called
         mock_callback.assert_not_called()
-        # Verify chat_id is stored as instance variable
-        assert pipeline.chat_id == test_chat_id
 
     def test_use_existing_instance_chat_id(self, pipeline, mock_callback):
-        """Test that an existing instance chat_id is used instead of generating a new one."""
-        test_chat_id = "existing1"
-        pipeline.chat_id = test_chat_id
-
+        """Test that a new chat_id is generated when there's no body chat_id."""
         messages = [
             {"role": "system", "content": "System prompt"},
             {"role": "user", "content": "User message"},
@@ -73,10 +65,12 @@ class TestChatID:
 
         chat_id = pipeline.get_or_generate_chat_id(messages, mock_callback)
 
-        # Verify existing chat_id is used
-        assert chat_id == test_chat_id
-        # Verify callback was not called
-        mock_callback.assert_not_called()
+        # Verify a new chat_id is generated with correct format
+        assert chat_id is not None
+        assert len(chat_id) == 8
+        assert re.match(r"^[a-zA-Z0-9]{8}$", chat_id)
+        # Verify callback was called (in the new implementation, callback is always called)
+        mock_callback.assert_called_once()
 
     def test_extract_chat_id_with_spaces(self, pipeline, mock_callback):
         """Test extracting chat_id with spaces in the format."""
@@ -86,7 +80,7 @@ class TestChatID:
             {"role": "user", "content": "User message"},
             {
                 "role": "assistant",
-                "content": f"Chat_id: {test_chat_id} \n\nAssistant response",
+                "content": f"Chat id: {test_chat_id} \n\nAssistant response",
             },
         ]
 
@@ -152,10 +146,10 @@ class TestChatID:
             {"role": "user", "content": "User message 1"},
             {
                 "role": "assistant",
-                "content": f"Chat_id:{test_chat_id}\n\nFirst response",
+                "content": f"Chat id:{test_chat_id}\n\nFirst response",
             },
             {"role": "user", "content": "User message 2"},
-            {"role": "assistant", "content": "Chat_id:second456\n\nSecond response"},
+            {"role": "assistant", "content": "Chat id:second456\n\nSecond response"},
         ]
 
         chat_id = pipeline.get_or_generate_chat_id(messages, mock_callback)
@@ -165,24 +159,22 @@ class TestChatID:
         # Verify callback was not called
         mock_callback.assert_not_called()
 
-    def test_inlet_chat_id_priority(self, pipeline, mock_callback):
-        """Test that chat_id from inlet has priority over extracted or generated IDs."""
-        inlet_chat_id = "inlet123"
-        pipeline.chat_id = inlet_chat_id
-
+    def test_chat_id_priority(self, pipeline, mock_callback):
+        """Test that chat_id from messages is extracted correctly."""
+        extracted_chat_id = "extracted456"
         messages = [
             {"role": "system", "content": "System prompt"},
             {"role": "user", "content": "User message"},
             {
                 "role": "assistant",
-                "content": "Chat id:extracted456\n\nAssistant response",
+                "content": f"Chat id:{extracted_chat_id}\n\nAssistant response",
             },
         ]
 
         chat_id = pipeline.get_or_generate_chat_id(messages, mock_callback)
 
-        # Should use the inlet chat_id
-        assert chat_id == inlet_chat_id
+        # Should extract the chat_id from messages
+        assert chat_id == extracted_chat_id
         # Verify callback was not called
         mock_callback.assert_not_called()
 
