@@ -28,6 +28,8 @@ nav:
     - VMPilot Prompting: prompting.md
     - Tips: tips.md
     - CLI Interface: cli.md
+    - DNS and SSL: dns_ssl_setup.md
+    - Release Process: release-process.md
 
 markdown_extensions:
   - pymdownx.highlight:

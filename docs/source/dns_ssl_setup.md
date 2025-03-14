@@ -4,7 +4,7 @@
 This guide covers setting up secure access to your OpenWebUI and VMPilot Pipeline services using DNS and SSL certificates. We'll walk through setting up dynamic DNS and configuring Caddy as a reverse proxy with automatic SSL certificate management.
 This is optional and not only recommended for secure access to your services, it'll make your life easier to not have to deal with browser warnings about insecure connections.
 > [!CAUTION]
-While I tried to make this guide somewhat comprehensive, check with Claude or GPT for any additional steps or configurations that might be needed for your specific setup.
+While I tried to make this guide somewhat comprehensive, check with Claude or GPT for any additional steps or configurations that might be needed for your specific setup. At the end of the day, you're responsible for your own security.
 
 ## Dynamic DNS Setup
 If you're running these services from a location without a static IP which is often the case with home servers, you'll need to set up dynamic DNS to ensure your domain/subdomain always points to the correct IP address.
