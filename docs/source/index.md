@@ -53,6 +53,6 @@ Get up and running with VMPilot in minutes:
 - [CLI Reference](cli.md) - Complete command-line interface documentation
 
 ### Tools and Extensions
-- [Plugins](plugins.md) - Extend VMPilot's capabilities with plugins
-- [GitHub Issues](github_issues.md) - Streamline GitHub issue management
+- [Plugins](plugins/overview.md) - Extend VMPilot's capabilities with plugins
+- [GitHub Issues](plugins/github.md) - Streamline GitHub issue management
 - [DNS and SSL Setup](dns_ssl_setup.md) - Secure your VMPilot deployment

@@ -22,11 +22,14 @@ nav:
         - Github issue: examples/github-issue.md
         - Todo App 1: examples/todo1.md
         - Todo App 2: examples/todo2.md
-    - Plugins: plugins.md
+    - Plugins:
+        - Overview: plugins/overview.md
+        - GitHub Plugin: plugins/github.md
     - VMPilot Prompting: prompting.md
     - Tips: tips.md
-    - GitHub: github_issues.md
     - CLI Interface: cli.md
+    - DNS and SSL: dns_ssl_setup.md
+    - Release Process: release-process.md
 
 markdown_extensions:
   - pymdownx.highlight:

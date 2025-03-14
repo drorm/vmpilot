@@ -71,11 +71,11 @@ We support multiple providers such as OpenAI and Anthropic. You can choose the p
 # Additional Features
 
 ## Plugins
-VMPilot supports various plugins to extend its functionality. See the [Plugins](plugins.md) documentation for details about available plugins and how to use them.
+VMPilot supports various plugins to extend its functionality. See the [Plugins](plugins/overview.md) documentation for details about available plugins and how to use them.
 
 Some key plugins include:
 
-- [GitHub Issues](github_issues.md) - Manage GitHub issues directly from VMPilot
+- [GitHub Issues](plugins/github.md) - Manage GitHub issues directly from VMPilot
 - Code Map - Generate code documentation automatically. This is a work in progress.
 
 ## Tips and Best Practices
