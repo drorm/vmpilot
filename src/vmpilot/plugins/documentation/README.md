@@ -1,17 +1,37 @@
 # Documentation Plugin for VMPilot
 
-A plugin that helps users create and maintain clear, concise, and user-friendly documentation.
+A plugin that helps users create and maintain clear, concise, and user-friendly documentation
 
 ## Purpose
 
-Provide guidance for creating effective documentation following best practices for technical writing and plain language principles.
+This plugin provides guidance for creating effective documentation following best practices for technical writing and plain language principles, and helps users work with the MkDocs documentation system used by VMPilot.
+
+## VMPilot Documentation System
+
+### MkDocs Setup
+- VMPilot uses MkDocs with the Material theme for documentation
+- The configuration file is located at `/home/dror/vmpilot/mkdocs.yml`
+- The documentation source files are in Markdown format in the `/home/dror/vmpilot/docs/source` directory
+- The navigation structure is defined in the `nav` section of the MkDocs configuration file
+
+### Documentation Structure
+- Main documentation pages are in the root of `docs/source`
+- Examples are in the `docs/source/examples` directory
+- Plugin documentation is in the `docs/source/plugins` directory
+- Assets and images are stored in their respective directories
+
+### Working with Documentation
+- To add a new page, create a Markdown file in the appropriate directory
+- Update the `nav` section in `mkdocs.yml` to include the new page
+- To preview documentation locally, run `mkdocs serve` from the project root
+- MkDocs supports code highlighting, admonitions, and other Markdown extensions as configured in `mkdocs.yml`
 
 ## Documentation Guidelines
 
 ### Audience Focus
 - Write for our intended audience: developers both new and experienced
 - Use language and terms familiar to this audience
-- Explain technical concepts at appropriate depth for them
+- Explain technical concepts at appropriate depth
 
 ### Content Structure
 - Put the most important information first, followed by details
@@ -26,7 +46,7 @@ Provide guidance for creating effective documentation following best practices f
 - Use "users" (plural) to avoid gender-specific pronouns
 - Use active voice with strong verbs (e.g., "We mailed your form" not "Your form was mailed")
 - Use conversational tone and contractions (e.g., "we're" instead of "we are")
-- Eliminate all unnecessary words and be concise
+- Eliminate unnecessary words and be concise
 
 ### Formatting for Readability
 - Create short paragraphs (5-7 lines maximum)
@@ -39,6 +59,14 @@ Provide guidance for creating effective documentation following best practices f
 - Link text should describe what users will find at the destination
 - Include keywords in link text to help with search engine optimization
 
+## MkDocs Features Used in VMPilot
+
+Use the following MkDocs features to enhance documentation readability:
+- code Blocks
+- admonitions
+- tables
+- tabs
+
 ## Usage
 
 When a user asks for help with documentation, guide them through:
@@ -47,6 +75,7 @@ When a user asks for help with documentation, guide them through:
 2. **Structuring the content**: Suggest appropriate headings and organization
 3. **Applying plain language principles**: Edit text to be clear, concise, and active
 4. **Enhancing readability**: Format content for easy scanning
+5. **Enhancing readability**: Format content for easy scanning using MkDocs features
 
 ## Examples
 
