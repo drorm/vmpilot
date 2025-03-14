@@ -1,10 +1,10 @@
 # Documentation Plugin for VMPilot
 
-A plugin that helps users create and maintain clear, concise, and user-friendly documentation
+A plugin that helps users create and maintain clear, concise, and factual documentation
 
 ## Purpose
 
-This plugin provides guidance for creating effective documentation following best practices for technical writing and plain language principles, and helps users work with the MkDocs documentation system used by VMPilot.
+This plugin provides guidance for creating effective documentation following best practices for technical writing and plain language principles, and helps users work with the MkDocs documentation system used by VMPilot. It emphasizes factual, straightforward content that avoids marketing language and exaggerated claims.
 
 ## VMPilot Documentation System
 
@@ -27,6 +27,12 @@ This plugin provides guidance for creating effective documentation following bes
 - MkDocs supports code highlighting, admonitions, and other Markdown extensions as configured in `mkdocs.yml`
 
 ## Documentation Guidelines
+
+### Avoid Marketing Speak and Exaggeration
+- Describe functionality accurately without embellishment
+- Avoid superlatives like "revolutionary," "groundbreaking," or "best-in-class"
+- Focus on what the project does, not how amazing it allegedly is
+- Use objective descriptions rather than subjective praise
 
 ### Audience Focus
 - Write for our intended audience: developers both new and experienced
@@ -74,7 +80,7 @@ When a user asks for help with documentation, guide them through:
 1. **Determining the purpose**: Help clarify what information needs to be conveyed
 2. **Structuring the content**: Suggest appropriate headings and organization
 3. **Applying plain language principles**: Edit text to be clear, concise, and active
-4. **Enhancing readability**: Format content for easy scanning
+4. **Ensuring factual accuracy**: Don't use marketing language and exaggerated claims
 5. **Enhancing readability**: Format content for easy scanning using MkDocs features
 
 ## Examples
