@@ -14,7 +14,8 @@ import os
 import queue
 import threading
 import traceback
-from typing import Dict, Generator, Iterator, List, Union
+from datetime import datetime
+from typing import Dict, Generator, Iterator, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -184,11 +185,56 @@ class Pipeline:
         # Only show models with valid API keys
         return [model for model in models if len(self._api_key) >= 32]
 
+    def get_or_generate_chat_id(self, messages, output_callback):
+        """Get an existing chat_id or generate a new one if needed."""
+        CHAT_ID_PREFIX = "Chat id"
+        CHAT_ID_DELIMITER = ":"
+        chat_id = None
+
+        if chat_id is None:
+            if len(messages) <= 2:  # one system message and one user message
+                import secrets
+                import string
+
+                chat_id = "".join(
+                    secrets.choice(string.ascii_letters + string.digits)
+                    for _ in range(8)
+                )
+                output_callback(
+                    {
+                        "type": "text",
+                        "text": f"{CHAT_ID_PREFIX} {CHAT_ID_DELIMITER}{chat_id}\n\n",
+                    }
+                )
+                logger.debug(f"Generated new chat_id: {chat_id}")
+            else:
+                # Find the first assistant message
+                for msg in messages:
+                    if msg["role"] == "assistant" and isinstance(msg["content"], str):
+                        content_lines = msg["content"].split("\n")
+                        if content_lines and content_lines[0].startswith(
+                            CHAT_ID_PREFIX
+                        ):
+                            # Extract chat_id from the first line
+                            chat_id = (
+                                content_lines[0].split(CHAT_ID_DELIMITER, 1)[1].strip()
+                                if ":" in content_lines[0]
+                                else content_lines[0]
+                            )
+                            logger.debug(
+                                f"Retrieved chat_id from message history: {chat_id}"
+                            )
+                            break
+        logger.info(f"chat_id: {chat_id}")
+        return chat_id
+
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
-        logger.debug(f"DEBUG: Starting pipe with message: {user_message}")
+        logger.debug(f"Full body keys: {list(body.keys())}")
+        logger.debug(f"Messages: {messages}")
+
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -213,7 +259,7 @@ class Pipeline:
 
         # Handle title request
         if body.get("title", False):
-            return "VMPilot Pipeline"
+            return "VMPilot Pipeline "
 
         # Handle provider selection and model validation
         try:
@@ -261,6 +307,10 @@ class Pipeline:
                     "type": "ephemeral"
                 }
 
+            # if we have a chat_id, we only want to keep the last message that'll get appended to the existing chat
+            if body.get("chat_id"):
+                formatted_messages = formatted_messages[-1:]
+
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
             def generate_responses():
@@ -298,10 +348,18 @@ class Pipeline:
                     for output in outputs:
                         output_lines = str(output).splitlines()
                         truncated_output = "\n".join(output_lines[:TOOL_OUTPUT_LINES])
-                        if len(output_lines) > TOOL_OUTPUT_LINES:
+                        if len(output_lines) > (TOOL_OUTPUT_LINES + 1):
                             # we use 4 backticks to escape the 3 backticks that might be in the markdown
                             truncated_output += f"\n...\n````\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
+                        else:
+                            truncated_output += "\n"
                         output_queue.put(truncated_output)
+
+                # Get chat_id from body
+                chat_id = body.get("chat_id")
+
+                # Get or generate chat_id
+                chat_id = self.get_or_generate_chat_id(messages, output_callback)
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
 
@@ -323,6 +381,7 @@ class Pipeline:
                                 temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
+                                thread_id=chat_id,
                             )
                         )
                     except Exception as e:

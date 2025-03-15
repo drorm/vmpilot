@@ -1,0 +1,7 @@
+# Test commands file for -f/--file flag
+# Empty lines and comments are skipped
+
+ls -la
+pwd
+echo "Hello from VMPilot!"
+uname -a

@@ -4,6 +4,10 @@
 
 This guide provides step-by-step instructions for setting up VMPilot in your environment.
 
+> [!CAUTION]
+> Only run this if you have enough knowledge about the security implications of running arbitrary commands in your virtual machine.
+> **Never run this directly on your personal machine**. You are letting the AI/LLM pilot run commands in your machine and it can be dangerous.
+
 # Prerequisites
 
 Before you begin, ensure you have:

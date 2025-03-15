@@ -14,7 +14,7 @@ For example:
 ```bash
 cli.sh "Show me the contents of /etc/hosts"
 cli.sh "Create a new Python script that prints Hello World"
-cli.sh  cli.sh  `cat reqeust.sh`
+cli.sh  `cat request.sh`
 ```
 
 Remember to enclose your command in quotes to ensure that it is passed as a single argument to the CLI.
@@ -25,18 +25,21 @@ In the last example, we used backticks to execute a command and pass its output 
 The CLI supports several command line options to customize its behavior:
 
 ```
-usage: cli.sh [-h] [-t TEMPERATURE] [-p {anthropic,openai}] [-d] request
+usage: cli.py [-h] [-t TEMPERATURE] [-f FILE] [-p {anthropic,openai}] [-d] [-c [CHAT]] [command]
 
 positional arguments:
-  request               request to the llm
+  command               Command to execute (not required if using -f/--file)
 
 options:
   -h, --help           Show this help message and exit
-  -t TEMPERATURE,      Temperature for response generation (default: 0.7)
+  -t TEMPERATURE,      Temperature for response generation (default: 0.8)
   --temperature
+  -f FILE, --file FILE Input file with commands (one per line)
   -p {anthropic,openai},
   --provider          API provider to use (default: anthropic)
   -d, --debug         Enable debug mode
+  -c [CHAT], --chat [CHAT]
+                      Enable chat mode to maintain conversation context. Optional: provide a specific chat ID.
 ```
 
 ### Temperature
@@ -48,6 +51,44 @@ Example:
 cli.sh -t 0.3 "Write a Python function to calculate factorial"
 ```
 
+### Chat Mode
+
+Chat mode maintains conversation context across multiple commands, allowing for follow-up questions and references to previous interactions.
+
+Examples:
+```bash
+# Start a chat session
+cli.sh -c "List all Python files"
+
+# Continue the same chat session
+cli.sh -c "Explain what these files do"
+
+# Specify a custom chat ID
+cli.sh -c my_session_123 "Show system information"
+
+# Combine with file input for batch processing with context
+cli.sh -f commands.txt -c
+```
+
+### File Input Mode
+
+The file input mode allows you to provide a file containing multiple commands, with each command on a separate line. VMPilot will:
+1. It creates a unique chat ID for the session, unless you specify one
+2. Processes each line in the file as a separate command while maintaining conversation context
+3. This simulates a continuous conversation as if you were interacting with VMPilot in chat mode
+It's similar to chat mode, but with commands read from a file, making it easier to process multiple tasks in sequence.
+
+Example:
+```bash
+cli.sh -f commands.txt
+```
+
+Where `commands.txt` might contain:
+```
+List all files in the current directory
+Show me the content of the largest file
+Explain what it does
+```
 ### Provider Selection
 
 You can choose between different LLM providers:
@@ -88,6 +129,29 @@ cli.sh "Add a new function to myscript.py"
 cli.sh -p openai -t 0.5 "Optimize this Python script for performance"
 ```
 
+4. Chat sessions for complex tasks:
+```bash
+# First command in a chat session
+cli.sh -c "Find all log files with errors"
+
+# Follow-up in the same session
+cli.sh -c "Summarize the most common errors"
+
+# Another follow-up
+cli.sh -c "Create a script to fix these errors"
+```
+
+5. Batch processing with file input:
+```bash
+# Create a file with multiple commands
+echo "List all services running" > tasks.txt
+echo "Show disk usage" >> tasks.txt
+echo "Find large log files" >> tasks.txt
+
+# Process all commands in sequence with context
+cli.sh -f tasks.txt -c
+```
+
 ## Error Handling
 
 The CLI will display error messages when:
@@ -100,3 +164,4 @@ If you encounter errors, try:
 1. Using debug mode (-d) to get more information
 2. Checking your API provider configuration
 3. Verifying you have the necessary permissions for the requested operation
+4. For file input mode, ensure each command is on a separate line
