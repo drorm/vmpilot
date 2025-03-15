@@ -77,12 +77,12 @@ class TestMainFunction:
         # Setup mocks
         mock_pipeline = MagicMock()
         mock_pipeline_class.return_value = mock_pipeline
-        
+
         # Mock the pipe method to return a simple generator
         mock_pipeline.pipe.return_value = [
             {"type": "text", "text": "Response text"}
         ]
-        
+
         # Call main with basic parameters
         with patch("builtins.print") as mock_print:
             await main(
@@ -92,11 +92,11 @@ class TestMainFunction:
                 debug=False,
                 chat_id=None
             )
-        
+
         # Verify pipeline was created and configured correctly
         mock_pipeline_class.assert_called_once()
         mock_pipeline.set_provider.assert_called_once_with("openai")
-        
+
         # Verify output was printed correctly
         mock_print.assert_called_with("Response text", end="\n", flush=True)
 ```
