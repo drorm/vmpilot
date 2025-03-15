@@ -10,3 +10,9 @@ directory: github\_issues
 
 directory: documentation
 - Provides guidance for creating clear, concise, and user-friendly documentation
+
+# Unit Testing
+
+directory: unit_testing
+- Provides guidance for creating comprehensive unit tests for VMPilot components
+- Includes test templates and best practices for effective test implementation
