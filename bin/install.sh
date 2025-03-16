@@ -3,7 +3,7 @@
 
 set -e
 
-# Define the install directory
+# Define the install directory (modify this line to change the installation location)
 VMPILOT_DIR=$HOME/.vmpilot
 
 # Create directories

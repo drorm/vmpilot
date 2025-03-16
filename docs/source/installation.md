@@ -29,26 +29,31 @@ Follow these steps to install and run VMPilot in a Docker container:
 docker pull ghcr.io/drorm/vmpilot:latest
 ```
 
-2. Run the container (Docker will automatically create the required volumes):
+2. You have two options to install VMPilot:
+
+Download the installation script first, review it, and then run it:
+
 ```bash
-docker run -d \
-  --name vmpilot \
-  --security-opt no-new-privileges=true \
-  -p 9099:9099 \
-  -v "vmpilot_config:/app/config:ro" \
-  -v "vmpilot_data:/app/data" \
-  -e VMPILOT_CONFIG=/app/config/config.ini \
-  -e PYTHONUNBUFFERED=1 \
-  -e LOG_LEVEL=INFO \
-  --restart unless-stopped \
-  ghcr.io/drorm/vmpilot:latest
+# Download the installation script
+curl -sSL https://raw.githubusercontent.com/drorm/vmpilot/main/bin/install.sh -o install_vmpilot.sh
+
+# Review the script and make any necessary changes
+# For example, you may want to change the target directory (VMPILOT_DIR)
+nano install_vmpilot.sh
+
+# Make the script executable
+chmod +x install_vmpilot.sh
+
+# Run the installation script
+./install_vmpilot.sh
 ```
 
-This will:
-- Start VMPilot in pipeline mode on port 9099
-- Mount persistent volumes for configuration and data
-- Apply security settings
-- Configure automatic restart
+This script will:
+- Create the necessary directories at the specified location (default is `$HOME/.vmpilot/`)
+- Pull the latest VMPilot image
+- Start the container with proper configuration
+- Copy the default configuration file
+
 
 4. Verify the container is running:
 ```bash
@@ -60,7 +65,7 @@ The Docker container works out of the box without any initial configuration chan
 2. Add your API keys (OpenAI and/or Anthropic) in the OpenWebUI pipeline configuration
 
 Optional Configuration:
-- If you want to customize VMPilot's behavior, you can modify the config file at `/var/lib/docker/volumes/vmpilot_config/_data/config.ini`
+- If you want to customize VMPilot's behavior, you can modify the config file at `$HOME/.vmpilot/config/config.ini`
 - When using the VMPilot CLI interface (not open-webui), you will need to set up a password as described in the Security section
 
 Note: Most users won't need to modify config.ini unless they have specific requirements for customization.
