@@ -815,7 +815,10 @@ Follow these steps to install and run VMPilot in a Docker container:</p>
 </code></pre></div></td></tr></table></div></p>
 </li>
 <li>
-<p>Run the container (Docker will automatically create the required volumes):
+<p>You have two options to install VMPilot:</p>
+</li>
+</ol>
+<p>Download the installation script first, review it, and then run it:</p>
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1"> 1</a></span>
 <span class="normal"><a href="#__codelineno-1-2"> 2</a></span>
 <span class="normal"><a href="#__codelineno-1-3"> 3</a></span>
@@ -826,25 +829,25 @@ Follow these steps to install and run VMPilot in a Docker container:</p>
 <span class="normal"><a href="#__codelineno-1-8"> 8</a></span>
 <span class="normal"><a href="#__codelineno-1-9"> 9</a></span>
 <span class="normal"><a href="#__codelineno-1-10">10</a></span>
-<span class="normal"><a href="#__codelineno-1-11">11</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="w">  </span>--name<span class="w"> </span>vmpilot<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="w">  </span>--security-opt<span class="w"> </span>no-new-privileges<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">9099</span>:9099<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="w">  </span>-v<span class="w"> </span><span class="s2">&quot;vmpilot_config:/app/config:ro&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6"></a><span class="w">  </span>-v<span class="w"> </span><span class="s2">&quot;vmpilot_data:/app/data&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">VMPILOT_CONFIG</span><span class="o">=</span>/app/config/config.ini<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">PYTHONUNBUFFERED</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">LOG_LEVEL</span><span class="o">=</span>INFO<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10"></a><span class="w">  </span>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11"></a><span class="w">  </span>ghcr.io/drorm/vmpilot:latest
-</code></pre></div></td></tr></table></div></p>
-</li>
-</ol>
-<p>This will:
-- Start VMPilot in pipeline mode on port 9099
-- Mount persistent volumes for configuration and data
-- Apply security settings
-- Configure automatic restart</p>
+<span class="normal"><a href="#__codelineno-1-11">11</a></span>
+<span class="normal"><a href="#__codelineno-1-12">12</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="c1"># Download the installation script</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2"></a>curl<span class="w"> </span>-sSL<span class="w"> </span>https://raw.githubusercontent.com/drorm/vmpilot/main/bin/install.sh<span class="w"> </span>-o<span class="w"> </span>install_vmpilot.sh
+<a id="__codelineno-1-3" name="__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="c1"># Review the script and make any necessary changes</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="c1"># For example, you may want to change the target directory (VMPILOT_DIR)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6"></a>nano<span class="w"> </span>install_vmpilot.sh
+<a id="__codelineno-1-7" name="__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8"></a><span class="c1"># Make the script executable</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9"></a>chmod<span class="w"> </span>+x<span class="w"> </span>install_vmpilot.sh
+<a id="__codelineno-1-10" name="__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11"></a><span class="c1"># Run the installation script</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12"></a>./install_vmpilot.sh
+</code></pre></div></td></tr></table></div>
+<p>This script will:
+- Create the necessary directories at the specified location (default is <code>$HOME/.vmpilot/</code>)
+- Pull the latest VMPilot image
+- Start the container with proper configuration
+- Copy the default configuration file</p>
 <ol>
 <li>Verify the container is running:
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>docker<span class="w"> </span>ps<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>vmpilot
@@ -854,7 +857,7 @@ Follow these steps to install and run VMPilot in a Docker container:</p>
 1. Set up the OpenWebUI connection and pipeline as described in Section 3
 2. Add your API keys (OpenAI and/or Anthropic) in the OpenWebUI pipeline configuration</p>
 <p>Optional Configuration:
-- If you want to customize VMPilot's behavior, you can modify the config file at <code>/var/lib/docker/volumes/vmpilot_config/_data/config.ini</code>
+- If you want to customize VMPilot's behavior, you can modify the config file at <code>$HOME/.vmpilot/config/config.ini</code>
 - When using the VMPilot CLI interface (not open-webui), you will need to set up a password as described in the Security section</p>
 <p>Note: Most users won't need to modify config.ini unless they have specific requirements for customization.</p>
 <h2 id="12-manual-installation">1.2 Manual Installation</h2>
