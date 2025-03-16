@@ -24,12 +24,7 @@ For secure access setup, we recommend you complete the [DNS and SSL Setup](dns_s
 VMPilot is available as a Docker container from GitHub Container Registry (ghcr.io). Note that this is an Ubuntu based container. If you'd like to use a different distribution, you need to install VMPilot manually.
 Follow these steps to install and run VMPilot in a Docker container:
 
-1. Pull the latest VMPilot image:
-```bash
-docker pull ghcr.io/drorm/vmpilot:latest
-```
-
-2. You have two options to install VMPilot:
+1. You have two options to install VMPilot:
 
 Download the installation script first, review it, and then run it:
 
@@ -50,7 +45,7 @@ chmod +x install_vmpilot.sh
 
 This script will:
 - Create the necessary directories at the specified location (default is `$HOME/.vmpilot/`)
-- Pull the latest VMPilot image
+- Pull the latest VMPilot image from GitHub Container Registry
 - Start the container with proper configuration
 - Copy the default configuration file
 
