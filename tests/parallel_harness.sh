@@ -47,11 +47,17 @@ mkdir -p "$RESULTS_DIR"
 declare -a pids=()
 declare -a test_names=()
 
+# Calculate total number of tests
+total_tests=${#test_files[@]}
+completed_tests=0
+
 # Run all tests in parallel
 for test in "${test_files[@]}"; do
     if [ ! -f "$test" ]; then
         echo "❌ Test file not found: $test"
         echo "$test: NOTFOUND" > "$RESULTS_DIR/$(basename "$test").result"
+        ((completed_tests++))
+        echo "Progress: $completed_tests/$total_tests tests completed"
         continue
     fi
     
@@ -66,14 +72,26 @@ for test in "${test_files[@]}"; do
         else
             echo "$test_name: FAIL" > "$RESULTS_DIR/$test_name.result"
         fi
-        echo "✅ $test_name completed"
+        
+        # Update the completed tests counter using a lockfile to avoid race conditions
+        (
+            flock -x 200
+            current=$(cat "$RESULTS_DIR/completed_count" 2>/dev/null || echo "0")
+            echo $((current + 1)) > "$RESULTS_DIR/completed_count"
+            completed=$(cat "$RESULTS_DIR/completed_count")
+            echo "✅ $test_name completed (Progress: $completed/$total_tests tests completed)"
+        ) 200>"$RESULTS_DIR/count.lock"
     ) &
     
     pids+=($!)
 done
 
+# Initialize the completed tests counter
+echo "0" > "$RESULTS_DIR/completed_count"
+
 echo "All tests launched. Waiting for completion..."
 echo "Running tests: ${test_names[*]}"
+echo "Total tests to run: $total_tests"
 
 # Wait for all tests to complete
 for pid in "${pids[@]}"; do
@@ -89,6 +107,11 @@ failure_count=0
 not_found_count=0
 
 for result_file in "$RESULTS_DIR"/*.result; do
+    # Skip the completed_count file if it exists in the results directory
+    if [[ $(basename "$result_file") == "completed_count" ]]; then
+        continue
+    fi
+    
     result=$(cat "$result_file")
     test_name=$(echo "$result" | cut -d':' -f1)
     status=$(echo "$result" | cut -d':' -f2 | tr -d ' ')
