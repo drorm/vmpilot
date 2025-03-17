@@ -10,6 +10,7 @@ from contextvars import ContextVar
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage
+from vmpilot.exchange import Exchange
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
@@ -25,6 +26,7 @@ from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
+from vmpilot.git_track import GitConfig
 from vmpilot.prompt import SYSTEM_PROMPT
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
@@ -231,7 +233,32 @@ async def process_messages(
     disable_logging: bool = False,
     recursion_limit: int = None,  # Maximum number of steps to run in the request
     thread_id: str = None,  # Chat ID for conversation state management
+    git_enabled: bool = True,  # Whether to enable Git tracking for LLM-generated changes
+    git_config: Optional[
+        GitConfig
+    ] = None,  # Git configuration for commit message style, etc.
 ) -> List[dict]:
+    """Process messages through the agent and handle outputs.
+
+    Args:
+        model: The LLM model to use
+        provider: The API provider (OpenAI/Anthropic)
+        system_prompt_suffix: Additional text to append to the system prompt
+        messages: List of messages to process
+        output_callback: Function to call with output chunks
+        tool_output_callback: Function to call with tool outputs
+        api_key: API key for the provider
+        max_tokens: Maximum tokens to generate
+        temperature: Temperature for generation
+        disable_logging: Whether to disable detailed logging
+        recursion_limit: Maximum number of steps to run in the request
+        thread_id: Chat ID for conversation state management
+        git_enabled: Whether to enable Git tracking for LLM-generated changes
+        git_config: Configuration for Git tracking behavior
+
+    Returns:
+        List of processed messages
+    """
     logger.debug(
         f"------------- Processing new message: model={model}, provider={provider} --------------- "
     )
@@ -253,6 +280,19 @@ async def process_messages(
     # Set prompt suffix and provider
     prompt_suffix.set(system_prompt_suffix)
     current_provider.set(provider)
+    # Create an Exchange object to track this user-LLM interaction with Git tracking
+    user_message = messages[-1] if messages else {"role": "user", "content": ""}
+    exchange = Exchange(
+        chat_id=thread_id,
+        user_message=user_message,
+        git_enabled=git_enabled,
+        git_config=git_config,
+    )
+
+    # Log if Git repository has uncommitted changes
+    if git_enabled and not exchange.check_git_status():
+        logger.warning("Git repository has uncommitted changes before LLM operation")
+        # In a future version, we could add user prompting here to handle uncommitted changes
 
     # Handle prompt caching for Anthropic provider
 
@@ -365,9 +405,11 @@ async def process_messages(
 
     # Store the latest response for saving the conversation state later
     response = {"messages": formatted_messages}
+    # Track tool calls for the Exchange
+    collected_tool_calls = []
 
     async def send_request():
-        nonlocal response
+        nonlocal response, collected_tool_calls
         try:
             async for agent_response in agent.astream(
                 {"messages": formatted_messages},
@@ -405,6 +447,11 @@ async def process_messages(
                             # Handle tool message responses
                             tool_result = {"output": message.content, "error": None}
                             tool_output_callback(tool_result, message.name)
+
+                            # Track tool call for Exchange
+                            collected_tool_calls.append(
+                                {"name": message.name, "content": message.content}
+                            )
 
                         elif isinstance(message, AIMessage):
                             """Handle AI message responses"""
@@ -445,6 +492,14 @@ async def process_messages(
                                                 tool_output_callback(
                                                     tool_result, item["name"]
                                                 )
+
+                                                # Track tool call for Exchange
+                                                collected_tool_calls.append(
+                                                    {
+                                                        "name": item["name"],
+                                                        "content": item["output"],
+                                                    }
+                                                )
                                     else:
                                         logger.warning(
                                             f"Unknown content item type: {type(item)}"
@@ -477,19 +532,58 @@ async def process_messages(
                 logger.error("".join(traceback.format_tb(e.__traceback__)))
                 logger.error(f"messages: {formatted_messages}")
                 message = f"Error in agent stream: {str(e)}"
+
+            # Complete the Exchange with error information
+            error_content = f"Error occurred: {message}"
+            exchange.complete(AIMessage(content=error_content), collected_tool_calls)
+
             output_callback({"type": "text", "text": f"{message}"})
 
     # Run the stream processor
     await send_request()
 
-    # Save the conversation state for future requests
-    if thread_id is not None and formatted_messages:
-        # Get the final state after processing
-        # We need to save the full conversation state including the response from the LLM
-        final_messages = response.get("messages", formatted_messages)
-        save_conversation_state(thread_id, final_messages)
-        logger.debug(
-            f"Saved conversation state with {len(final_messages)} messages for thread_id: {thread_id}"
-        )
+    # Complete the Exchange with the assistant's response and tool calls
+    if response and "messages" in response:
+        # Get the assistant's response message (last AI message)
+        assistant_messages = [
+            msg for msg in response["messages"] if isinstance(msg, AIMessage)
+        ]
+        if assistant_messages:
+            assistant_message = assistant_messages[-1]
+
+            # Complete the exchange with collected tool calls and commit any changes
+            exchange.complete(assistant_message, collected_tool_calls)
+
+            # Log exchange summary
+            exchange_summary = exchange.get_exchange_summary()
+            logger.info(f"Exchange completed: {exchange_summary}")
+
+            # If changes were committed, log the commit message
+            if exchange_summary.get("git_changes_committed"):
+                logger.info("Git changes committed successfully")
+        else:
+            # If no AI messages found but we have a response, use the last message
+            last_message = response["messages"][-1] if response["messages"] else None
+            if last_message:
+                # Convert to AIMessage if it's not already
+                if not isinstance(last_message, AIMessage):
+                    assistant_message = AIMessage(
+                        content=(
+                            str(last_message.content)
+                            if hasattr(last_message, "content")
+                            else ""
+                        )
+                    )
+                else:
+                    assistant_message = last_message
+                exchange.complete(assistant_message, collected_tool_calls)
+            else:
+                # Fallback if no messages at all
+                exchange.complete(
+                    AIMessage(content="No response generated"), collected_tool_calls
+                )
+    else:
+        # In case of error or no response, still try to save what we have
+        exchange.complete(AIMessage(content="Error occurred during processing"), [])
 
     return messages
