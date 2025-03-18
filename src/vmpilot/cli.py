@@ -14,16 +14,17 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from .chat import Chat
-
 # Add parent directory to Python path when running as script
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from .vmpilot import Pipeline  # Try relative import first
+    from vmpilot.chat import Chat
+    from vmpilot.vmpilot import Pipeline
 except ImportError:
-    from vmpilot import Pipeline  # Fallback to direct import
+    # Fallback to relative imports if the module is part of a package
+    from .chat import Chat
+    from .vmpilot import Pipeline
 
 
 def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
