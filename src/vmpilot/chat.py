@@ -84,7 +84,7 @@ class Chat:
 
     def _get_or_generate_chat_id(
         self, messages: List[Dict[str, str]], output_callback: Callable[[Dict], None]
-    ) -> str:
+    ) -> Optional[str]:
         """
         Get an existing chat_id from messages or use/generate one.
 
@@ -93,14 +93,10 @@ class Chat:
             output_callback: Callback function for sending output
 
         Returns:
-            Chat ID string
+            Chat ID string or None if no chat_id could be found in an existing conversation
         """
-        # If we already have a chat_id, use it
-        if self.chat_id:
-            return self.chat_id
-
-        # Check if this is a new chat (only system and one user message)
-        if len(messages) <= 2:
+        # Check if this is a new chat (empty or only system and one user message)
+        if not messages or len(messages) <= 2:
             # New chat, generate and announce chat ID
             output_callback(
                 {
@@ -121,15 +117,13 @@ class Chat:
                         # Extract chat_id from the first line
                         parts = content_lines[0].split(self.CHAT_ID_DELIMITER, 1)
                         if len(parts) > 1:
-                            self.chat_id = parts[1].strip()
-                            logger.debug(f"Extracted chat_id: {self.chat_id}")
-                            return self.chat_id
+                            extracted_id = parts[1].strip()
+                            logger.debug(f"Extracted chat_id: {extracted_id}")
+                            return extracted_id
 
-            # If we couldn't find a chat_id, use the one we have
-            logger.warning(
-                "Could not extract chat_id from messages, using generated one"
-            )
-            return self.chat_id
+            # If we couldn't find a chat_id in an existing conversation, return None
+            logger.warning("Could not extract chat_id from messages")
+            return None
 
     def extract_project_dir(self, messages: List[Dict[str, str]]) -> Optional[str]:
         """
