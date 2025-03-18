@@ -17,6 +17,8 @@ import traceback
 from datetime import datetime
 from typing import Dict, Generator, Iterator, List, Optional, Union
 
+from vmpilot.chat import Chat
+
 from pydantic import BaseModel
 
 # Import tool output truncation setting
@@ -187,44 +189,15 @@ class Pipeline:
 
     def get_or_generate_chat_id(self, messages, output_callback):
         """Get an existing chat_id or generate a new one if needed."""
-        CHAT_ID_PREFIX = "Chat id"
-        CHAT_ID_DELIMITER = ":"
-        chat_id = None
+        # Create a Chat object if we don't have one already
+        if not hasattr(self, "_chat"):
+            self._chat = Chat()
 
-        if chat_id is None:
-            if len(messages) <= 2:  # one system message and one user message
-                import secrets
-                import string
+        # Extract project directory from system message if present
+        self._chat.extract_project_dir(messages)
 
-                chat_id = "".join(
-                    secrets.choice(string.ascii_letters + string.digits)
-                    for _ in range(8)
-                )
-                output_callback(
-                    {
-                        "type": "text",
-                        "text": f"{CHAT_ID_PREFIX} {CHAT_ID_DELIMITER}{chat_id}\n\n",
-                    }
-                )
-                logger.debug(f"Generated new chat_id: {chat_id}")
-            else:
-                # Find the first assistant message
-                for msg in messages:
-                    if msg["role"] == "assistant" and isinstance(msg["content"], str):
-                        content_lines = msg["content"].split("\n")
-                        if content_lines and content_lines[0].startswith(
-                            CHAT_ID_PREFIX
-                        ):
-                            # Extract chat_id from the first line
-                            chat_id = (
-                                content_lines[0].split(CHAT_ID_DELIMITER, 1)[1].strip()
-                                if ":" in content_lines[0]
-                                else content_lines[0]
-                            )
-                            logger.debug(
-                                f"Retrieved chat_id from message history: {chat_id}"
-                            )
-                            break
+        # Get or generate chat ID
+        chat_id = self._chat.get_or_generate_chat_id(messages, output_callback)
         logger.info(f"chat_id: {chat_id}")
         return chat_id
 
@@ -234,6 +207,18 @@ class Pipeline:
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"Full body keys: {list(body.keys())}")
         logger.debug(f"Messages: {messages}")
+
+        # Create a Chat object if we don't have one already
+        if not hasattr(self, "_chat"):
+            self._chat = Chat()
+            # Extract project directory from system message if present
+            self._chat.extract_project_dir(messages)
+
+            # If this is a new chat (only system message + user message)
+            if len(messages) <= 2:
+                # Change to the project directory
+                self._chat.change_to_project_dir()
+                logger.info(f"Changed to project directory: {self._chat.project_dir}")
 
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):

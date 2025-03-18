@@ -14,6 +14,8 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .chat import Chat
+
 # Add parent directory to Python path when running as script
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -63,6 +65,15 @@ async def main(
     """Main CLI execution flow"""
     # Create pipeline with configuration
     pipeline = Pipeline()
+
+    # Create a Chat object for this session
+    chat = Chat(chat_id=chat_id)
+
+    # Change to the project directory when starting a new chat
+    if not chat_id:
+        chat.change_to_project_dir()
+        if debug:
+            logging.debug(f"Changed to project directory: {chat.project_dir}")
 
     # Set chat ID for conversation persistence if provided
     if chat_id:
