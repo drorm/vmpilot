@@ -54,7 +54,35 @@ class Chat:
             logger.warning(f"Project directory {self.project_dir} does not exist")
             # We don't create it as it might be a typo or misconfiguration
 
-    def get_or_generate_chat_id(
+    def initialize_chat(
+        self, messages: List[Dict[str, str]], output_callback: Callable[[Dict], None]
+    ) -> str:
+        """
+        Initialize the chat session - extract project directory, get/generate chat ID,
+        and change to project directory if needed.
+
+        Args:
+            messages: List of chat messages
+            output_callback: Callback function for sending output
+
+        Returns:
+            Chat ID string
+        """
+        # Extract project directory from system message if present
+        self.extract_project_dir(messages)
+
+        # Get or generate chat ID
+        chat_id = self._get_or_generate_chat_id(messages, output_callback)
+
+        # Change to project directory for new chats
+        if len(messages) <= 2:  # only system and one user message
+            self.change_to_project_dir()
+            # Note: logging is done inside change_to_project_dir
+
+        logger.info(f"Using chat_id: {chat_id}")
+        return chat_id
+
+    def _get_or_generate_chat_id(
         self, messages: List[Dict[str, str]], output_callback: Callable[[Dict], None]
     ) -> str:
         """
@@ -81,10 +109,6 @@ class Chat:
                 }
             )
             logger.debug(f"Generated new chat_id: {self.chat_id}")
-
-            # Change to the project directory
-            self.change_to_project_dir()
-
             return self.chat_id
         else:
             # Existing chat, try to extract chat_id from assistant messages

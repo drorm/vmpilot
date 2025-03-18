@@ -17,9 +17,9 @@ import traceback
 from datetime import datetime
 from typing import Dict, Generator, Iterator, List, Optional, Union
 
-from vmpilot.chat import Chat
-
 from pydantic import BaseModel
+
+from vmpilot.chat import Chat
 
 # Import tool output truncation setting
 from vmpilot.config import (
@@ -193,12 +193,8 @@ class Pipeline:
         if not hasattr(self, "_chat"):
             self._chat = Chat()
 
-        # Extract project directory from system message if present
-        self._chat.extract_project_dir(messages)
-
-        # Get or generate chat ID
-        chat_id = self._chat.get_or_generate_chat_id(messages, output_callback)
-        logger.info(f"chat_id: {chat_id}")
+        # Let the Chat object handle all initialization
+        chat_id = self._chat.initialize_chat(messages, output_callback)
         return chat_id
 
     def pipe(
@@ -207,18 +203,6 @@ class Pipeline:
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"Full body keys: {list(body.keys())}")
         logger.debug(f"Messages: {messages}")
-
-        # Create a Chat object if we don't have one already
-        if not hasattr(self, "_chat"):
-            self._chat = Chat()
-            # Extract project directory from system message if present
-            self._chat.extract_project_dir(messages)
-
-            # If this is a new chat (only system message + user message)
-            if len(messages) <= 2:
-                # Change to the project directory
-                self._chat.change_to_project_dir()
-                logger.info(f"Changed to project directory: {self._chat.project_dir}")
 
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
