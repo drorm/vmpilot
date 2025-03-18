@@ -138,7 +138,7 @@ async def main(
 
 
 if __name__ == "__main__":
-    from vmpilot.config import Provider, config, CommitMessageStyle
+    from vmpilot.config import CommitMessageStyle, Provider, config
 
     parser = argparse.ArgumentParser(
         description="VMPilot CLI",

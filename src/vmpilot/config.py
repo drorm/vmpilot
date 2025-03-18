@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 from configparser import ConfigParser
-from enum import StrEnum, Enum
+from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Dict, Optional
 

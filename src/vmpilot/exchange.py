@@ -17,8 +17,8 @@ from typing import Any, Dict, List, Optional, Union
 from langchain_core.messages import AIMessage, HumanMessage
 
 from vmpilot.agent_memory import save_conversation_state
-from vmpilot.git_track import GitStatus, GitTracker
 from vmpilot.config import GitConfig, config
+from vmpilot.git_track import GitStatus, GitTracker
 
 logger = logging.getLogger(__name__)
 

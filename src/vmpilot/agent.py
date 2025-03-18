@@ -10,7 +10,6 @@ from contextvars import ContextVar
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage
-from vmpilot.exchange import Exchange
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
@@ -23,9 +22,10 @@ from vmpilot.agent_memory import (
     update_cache_info,
 )
 from vmpilot.caching.chat_models import ChatAnthropic
-from vmpilot.config import MAX_TOKENS, TEMPERATURE
+from vmpilot.config import MAX_TOKENS, TEMPERATURE, GitConfig
 from vmpilot.config import Provider as APIProvider
-from vmpilot.config import config, GitConfig
+from vmpilot.config import config
+from vmpilot.exchange import Exchange
 from vmpilot.prompt import SYSTEM_PROMPT
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool

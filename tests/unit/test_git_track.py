@@ -9,16 +9,16 @@ These tests cover the GitTracker class which provides functionality for:
 5. Configuring Git tracking behavior
 """
 
+import asyncio
 import os
 import shutil
+import subprocess
 import tempfile
 import unittest
-import asyncio
-import subprocess
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from vmpilot.git_track import GitStatus, GitTracker, GitConfig, CommitMessageStyle
 from vmpilot.config import Provider as APIProvider
+from vmpilot.git_track import CommitMessageStyle, GitConfig, GitStatus, GitTracker
 
 
 class TestGitConfig(unittest.TestCase):
