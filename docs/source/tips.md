@@ -26,7 +26,28 @@ Break down complex tasks:
 
 # Track LLM changes with git
 
-To track changes made by the LLM, if possible, use a clean git branch. That way, you can simply do a `git diff` to see the changes made by the LLM. 
+To track changes made by the LLM, if possible, use a clean git branch. That way, you can simply do a `git diff` to see the changes made by the LLM.
+
+## Multi-Project Support
+
+The multi-project support feature simplifies working with multiple codebases:
+
+1. **No need for manual project root specification**:
+   Previously, you had to include phrases like "The root directory of this project is '/path/to/project'" in your prompts. Now simply add `$PROJECT_ROOT=/path/to/your/project` to your workspace system prompt once.
+
+2. **Workspace-specific project contexts**:
+   - Create separate workspaces for different projects
+   - Each workspace maintains its own project context
+   - All operations (file editing, shell commands, git) automatically work in the correct directory
+
+3. **Set a default project**:
+   Configure `default_project` in your `config.ini` file to provide a fallback when no project is specified.
+
+4. **Seamless project switching**:
+   When switching between workspaces, VMPilot automatically changes to the appropriate project directory without any additional commands.
+
+5. **Improved plugin functionality**:
+   Plugins like GitHub Issues will automatically operate in the correct repository context based on the current project directory.
 
 # Using OpenWebUI
 

@@ -36,6 +36,7 @@ The `config.ini` file is organized into the following sections:
 | Setting | Description | Default |
 |---------|-------------|---------|
 | default_provider | Primary LLM provider (anthropic/openai) | anthropic |
+| default_project | Default project directory for git operations and file access | ~/vmpilot |
 | tool_output_lines | Number of lines shown in tool output | 15 |
 
 ### Model Settings [model]
