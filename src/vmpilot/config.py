@@ -232,6 +232,9 @@ config = ModelConfig()
 # General configuration
 DEFAULT_PROVIDER = parser.get("general", "default_provider")
 TOOL_OUTPUT_LINES = parser.getint("general", "tool_output_lines")
+DEFAULT_PROJECT = os.path.expanduser(
+    parser.get("general", "default_project", fallback="~/vmpilot")
+)
 
 # Inference parameters
 TEMPERATURE = parser.getfloat("inference", "temperature")

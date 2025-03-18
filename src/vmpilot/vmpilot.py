@@ -19,6 +19,8 @@ from typing import Dict, Generator, Iterator, List, Optional, Union
 
 from pydantic import BaseModel
 
+from vmpilot.chat import Chat
+
 # Import tool output truncation setting
 from vmpilot.config import (
     DEFAULT_PROVIDER,
@@ -187,45 +189,12 @@ class Pipeline:
 
     def get_or_generate_chat_id(self, messages, output_callback):
         """Get an existing chat_id or generate a new one if needed."""
-        CHAT_ID_PREFIX = "Chat id"
-        CHAT_ID_DELIMITER = ":"
-        chat_id = None
+        # Create a Chat object if we don't have one already
+        if not hasattr(self, "_chat"):
+            self._chat = Chat()
 
-        if chat_id is None:
-            if len(messages) <= 2:  # one system message and one user message
-                import secrets
-                import string
-
-                chat_id = "".join(
-                    secrets.choice(string.ascii_letters + string.digits)
-                    for _ in range(8)
-                )
-                output_callback(
-                    {
-                        "type": "text",
-                        "text": f"{CHAT_ID_PREFIX} {CHAT_ID_DELIMITER}{chat_id}\n\n",
-                    }
-                )
-                logger.debug(f"Generated new chat_id: {chat_id}")
-            else:
-                # Find the first assistant message
-                for msg in messages:
-                    if msg["role"] == "assistant" and isinstance(msg["content"], str):
-                        content_lines = msg["content"].split("\n")
-                        if content_lines and content_lines[0].startswith(
-                            CHAT_ID_PREFIX
-                        ):
-                            # Extract chat_id from the first line
-                            chat_id = (
-                                content_lines[0].split(CHAT_ID_DELIMITER, 1)[1].strip()
-                                if ":" in content_lines[0]
-                                else content_lines[0]
-                            )
-                            logger.debug(
-                                f"Retrieved chat_id from message history: {chat_id}"
-                            )
-                            break
-        logger.info(f"chat_id: {chat_id}")
+        # Let the Chat object handle all initialization
+        chat_id = self._chat.initialize_chat(messages, output_callback)
         return chat_id
 
     def pipe(
