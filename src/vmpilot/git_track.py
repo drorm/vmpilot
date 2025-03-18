@@ -13,55 +13,47 @@ import asyncio
 import logging
 import os
 import subprocess
-from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
 import vmpilot.worker_llm as worker_llm
-from vmpilot.config import Provider as APIProvider
+from vmpilot.config import (
+    CommitMessageStyle,
+    GitConfig,
+    Provider as APIProvider,
+    config,
+)
 
 logger = logging.getLogger(__name__)
 
+
 class GitStatus(Enum):
     """Enum representing the status of the Git repository."""
+
     CLEAN = "clean"
     DIRTY = "dirty"
     NOT_A_REPO = "not_a_repo"
 
 
-class CommitMessageStyle(Enum):
-    """Enum representing the style of commit messages."""
-    SHORT = "short"
-    DETAILED = "detailed"
-    BULLET_POINTS = "bullet_points"
-
-
-@dataclass
-class GitConfig:
-    """Configuration for Git tracking."""
-    auto_commit: bool = True
-    commit_message_style: CommitMessageStyle = CommitMessageStyle.DETAILED
-    pre_execution_check: bool = True
-    model: str = "gpt-3.5-turbo"
-    provider: APIProvider = APIProvider.OPENAI
-    temperature: float = 0.2
-
 class GitTracker:
     """Class for tracking LLM-generated changes in Git."""
 
-    def __init__(self, repo_path: Optional[str] = None, config: Optional[GitConfig] = None):
+    def __init__(
+        self, repo_path: Optional[str] = None, config: Optional[GitConfig] = None
+    ):
         """Initialize the GitTracker.
-        
+
         Args:
             repo_path: Path to the Git repository. If None, the current directory is used.
             config: Configuration for Git tracking. If None, default configuration is used.
         """
         self.repo_path = repo_path or os.getcwd()
-        self.config = config or GitConfig()
-        
+        # Use provided config or the global configuration
+        self.config = config or config.git_config
+
     def is_git_repo(self) -> bool:
         """Check if the directory is a Git repository.
-        
+
         Returns:
             True if the directory is a Git repository, False otherwise.
         """
@@ -77,16 +69,16 @@ class GitTracker:
             return True
         except subprocess.CalledProcessError:
             return False
-    
+
     def get_repo_status(self) -> GitStatus:
         """Get the status of the Git repository.
-        
+
         Returns:
             GitStatus enum indicating if the repo is clean, dirty, or not a repo.
         """
         if not self.is_git_repo():
             return GitStatus.NOT_A_REPO
-            
+
         result = subprocess.run(
             ["git", "status", "--porcelain"],
             cwd=self.repo_path,
@@ -95,22 +87,22 @@ class GitTracker:
             check=True,
             text=True,
         )
-        
+
         return GitStatus.CLEAN if not result.stdout.strip() else GitStatus.DIRTY
-    
+
     def stash_changes(self, message: str = "User changes before LLM request") -> bool:
         """Stash uncommitted changes.
-        
+
         Args:
             message: Message to use for the stash.
-            
+
         Returns:
             True if changes were stashed, False otherwise.
         """
         if self.get_repo_status() != GitStatus.DIRTY:
             logger.info("No changes to stash")
             return False
-            
+
         try:
             result = subprocess.run(
                 ["git", "stash", "push", "-m", message],
@@ -120,31 +112,31 @@ class GitTracker:
                 stderr=subprocess.PIPE,
                 text=True,
             )
-            
+
             # Check if changes were actually stashed
             if "No local changes to save" in result.stdout:
                 logger.info("No changes to stash")
                 return False
-                
+
             logger.info(f"Stashed changes: {result.stdout.strip()}")
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to stash changes: {e}")
             return False
-    
+
     def pop_stash(self, stash_index: int = 0) -> bool:
         """Pop a stash.
-        
+
         Args:
             stash_index: Index of the stash to pop. Default is 0 (most recent).
-            
+
         Returns:
             True if stash was popped, False otherwise.
         """
         if not self.has_stashed_changes():
             logger.info("No stashed changes to pop")
             return False
-            
+
         try:
             stash_ref = f"stash@{{{stash_index}}}" if stash_index > 0 else "stash@{0}"
             result = subprocess.run(
@@ -160,13 +152,13 @@ class GitTracker:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to pop stash: {e}")
             return False
-    
+
     def get_diff(self, include_staged: bool = True) -> str:
         """Get the diff of uncommitted changes.
-        
+
         Args:
             include_staged: Whether to include staged changes in the diff.
-            
+
         Returns:
             String containing the diff output.
         """
@@ -181,7 +173,7 @@ class GitTracker:
                 text=True,
             )
             working_diff = result.stdout
-            
+
             # Get diff for staged changes if requested
             staged_diff = ""
             if include_staged:
@@ -194,7 +186,7 @@ class GitTracker:
                     text=True,
                 )
                 staged_diff = result.stdout
-            
+
             # Combine diffs with headers if both exist
             if working_diff and staged_diff:
                 return f"# Staged changes\n{staged_diff}\n# Working directory changes\n{working_diff}"
@@ -205,24 +197,26 @@ class GitTracker:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to get diff: {e}")
             return ""
-    
-    def commit_changes(self, message: str, author: str = "VMPilot <vmpilot@ai.assistant>") -> bool:
+
+    def commit_changes(
+        self, message: str, author: str = "VMPilot <vmpilot@ai.assistant>"
+    ) -> bool:
         """Commit uncommitted changes.
-        
+
         This method stages all changes in the working directory using 'git add .'
         and then commits them with the specified message and author.
-        
+
         Args:
             message: Commit message.
             author: Author string in the format "Name <email>".
-            
+
         Returns:
             True if changes were committed, False otherwise.
         """
         if self.get_repo_status() != GitStatus.DIRTY:
             logger.info("No changes to commit")
             return False
-            
+
         try:
             # Add all changes
             subprocess.run(
@@ -233,7 +227,7 @@ class GitTracker:
                 stderr=subprocess.PIPE,
                 text=True,
             )
-            
+
             # Commit with specified author
             result = subprocess.run(
                 ["git", "commit", "--author", author, "-m", message],
@@ -248,10 +242,10 @@ class GitTracker:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to commit changes: {e}")
             return False
-    
+
     def has_stashed_changes(self) -> bool:
         """Check if there are stashed changes.
-        
+
         Returns:
             True if there are stashed changes, False otherwise.
         """
@@ -268,15 +262,15 @@ class GitTracker:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to check stashed changes: {e}")
             return False
-    
+
     def generate_commit_message(self, diff: str) -> str:
         """Generate a commit message from a diff.
-        
+
         Uses the worker LLM to analyze the diff and generate a meaningful commit message.
-        
+
         Args:
             diff: Git diff output to analyze.
-            
+
         Returns:
             Generated commit message.
         """
@@ -297,10 +291,10 @@ class GitTracker:
         except Exception as e:
             logger.error(f"Failed to generate commit message: {e}")
             return "LLM-generated changes"
-    
+
     def auto_commit_changes(self) -> Tuple[bool, str]:
         """Automatically generate a commit message and commit changes.
-        
+
         Returns:
             Tuple of (success, message) where success is True if changes were committed
             and message is the commit message or error message.
@@ -308,10 +302,10 @@ class GitTracker:
         if not self.config.auto_commit:
             logger.info("Auto-commit is disabled")
             return (False, "Auto-commit is disabled")
-            
+
         if self.get_repo_status() != GitStatus.DIRTY:
             return (False, "No changes to commit")
-            
+
         try:
             diff = self.get_diff(include_staged=True)
             commit_msg = self.generate_commit_message(diff)
@@ -320,10 +314,10 @@ class GitTracker:
         except Exception as e:
             logger.error(f"Error in auto_commit_changes: {e}")
             return (False, str(e))
-    
+
     def undo_last_commit(self) -> bool:
         """Undo the last commit using git revert.
-        
+
         Returns:
             True if the last commit was reverted, False otherwise.
         """
@@ -340,21 +334,23 @@ class GitTracker:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to revert last commit: {e}")
             return False
-    
-    def reset_to_previous_commit(self, num_commits: int = 1, hard: bool = False) -> bool:
+
+    def reset_to_previous_commit(
+        self, num_commits: int = 1, hard: bool = False
+    ) -> bool:
         """Reset to a previous commit.
-        
+
         Args:
             num_commits: Number of commits to go back.
             hard: Whether to use --hard (discard changes) or --soft (keep changes staged).
-            
+
         Returns:
             True if reset was successful, False otherwise.
         """
         try:
             reset_type = "--hard" if hard else "--soft"
             commit_ref = f"HEAD~{num_commits}"
-            
+
             subprocess.run(
                 ["git", "reset", reset_type, commit_ref],
                 cwd=self.repo_path,
@@ -367,21 +363,24 @@ class GitTracker:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to reset to previous commit: {e}")
             return False
-    
+
     def pre_execution_check(self) -> Tuple[bool, str]:
         """Check if the repository is clean before execution.
-        
+
         Returns:
             Tuple of (can_proceed, message) where can_proceed is True if execution can proceed
             and message is a status message or error message.
         """
         if not self.config.pre_execution_check:
             return (True, "Pre-execution check is disabled")
-            
+
         status = self.get_repo_status()
         if status == GitStatus.NOT_A_REPO:
             return (True, "Not a Git repository")
         elif status == GitStatus.CLEAN:
             return (True, "Repository is clean")
         else:
-            return (False, "Repository has uncommitted changes. Please commit or stash them before proceeding.")
+            return (
+                False,
+                "Repository has uncommitted changes. Please commit or stash them before proceeding.",
+            )

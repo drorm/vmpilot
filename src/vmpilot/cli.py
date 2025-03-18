@@ -24,14 +24,9 @@ except ImportError:
     from vmpilot import Pipeline  # Fallback to direct import
 
 
-def create_mock_body(
-    temperature: float = 0.7, 
-    debug: bool = False,
-    git_enabled: bool = True,
-    git_commit_style: str = "detailed"
-) -> Dict:
+def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
     """Create a mock body for pipeline calls"""
-    from vmpilot.config import MAX_TOKENS, TOOL_OUTPUT_LINES
+    from vmpilot.config import MAX_TOKENS, TOOL_OUTPUT_LINES, config
 
     return {
         "temperature": temperature,
@@ -39,8 +34,6 @@ def create_mock_body(
         "debug": False,  # Can be enabled via -d flag
         "max_tokens": MAX_TOKENS,  # Use from config
         "tool_output_lines": TOOL_OUTPUT_LINES,  # Use from config
-        "git_enabled": git_enabled,  # Git tracking enabled/disabled
-        "git_commit_style": git_commit_style,  # Style for commit messages
     }
 
 
@@ -66,8 +59,6 @@ async def main(
     provider: str,
     debug: bool,
     chat_id: Optional[str] = None,
-    git_enabled: bool = True,
-    git_commit_style: str = "detailed",
 ):
     """Main CLI execution flow"""
     # Create pipeline with configuration
@@ -80,25 +71,13 @@ async def main(
             logging.debug(f"Using chat context with ID: {chat_id}")
 
     # Create pipeline call parameters
-    body = create_mock_body(
-        temperature=temperature, 
-        debug=debug,
-        git_enabled=git_enabled,
-        git_commit_style=git_commit_style
-    )
+    body = create_mock_body(temperature=temperature, debug=debug)
     messages = create_mock_messages(command)
 
     # Set provider before executing pipeline
     pipeline.set_provider(provider)
-    
-    # Configure git tracking
-    pipeline.valves.git_enabled = git_enabled
-    pipeline.valves.git_commit_style = git_commit_style
-    
-    # Create GitConfig object
-    git_config = GitConfig(commit_style=git_commit_style) if git_enabled else None
-    
-    # Update configuration with git settings
+
+    # Update configuration
     pipeline.valves._sync_with_config()
 
     # Execute pipeline with configuration
@@ -148,8 +127,7 @@ async def main(
 
 
 if __name__ == "__main__":
-    from vmpilot.config import Provider, config
-    from vmpilot.git_track import GitConfig
+    from vmpilot.config import Provider, config, CommitMessageStyle
 
     parser = argparse.ArgumentParser(
         description="VMPilot CLI",
@@ -202,26 +180,19 @@ if __name__ == "__main__":
         const=str(uuid.uuid4()),  # Generate a random ID if flag is used without value
         help="Enable chat mode to maintain conversation context. Optional: provide a specific chat ID.",
     )
-    
-    # Git tracking options
+
+    # Git tracking options (use defaults from config)
     parser.add_argument(
         "--git",
         action="store_true",
-        default=True,
-        help="Enable Git tracking for LLM-generated changes (default: enabled)",
+        dest="git_override",
+        help="Override: Enable Git tracking for LLM-generated changes",
     )
     parser.add_argument(
         "--no-git",
         action="store_false",
-        dest="git",
-        help="Disable Git tracking for LLM-generated changes",
-    )
-    parser.add_argument(
-        "--git-commit-style",
-        type=str,
-        default="detailed",
-        choices=["short", "detailed", "bullet_points"],
-        help="Style for auto-generated commit messages (default: detailed)",
+        dest="git_override",
+        help="Override: Disable Git tracking for LLM-generated changes",
     )
 
     args = parser.parse_args()
@@ -233,6 +204,13 @@ if __name__ == "__main__":
     else:
         logging.basicConfig(level=logging.INFO)
         logging.getLogger("vmpilot").setLevel(logging.INFO)
+
+    # Override Git configuration from command line if specified
+    if hasattr(args, "git_override") and args.git_override is not None:
+        config.git_config.enabled = args.git_override
+        logging.info(
+            f"Git tracking {'enabled' if args.git_override else 'disabled'} via command line"
+        )
 
     # Check if file input is provided
     if args.file:
@@ -260,15 +238,7 @@ if __name__ == "__main__":
 
                     print(f"\n--- Executing command (line {line_num}): {line} ---")
                     asyncio.run(
-                        main(
-                            line, 
-                            args.temperature, 
-                            args.provider, 
-                            args.debug, 
-                            chat_id,
-                            args.git,
-                            args.git_commit_style
-                        )
+                        main(line, args.temperature, args.provider, args.debug, chat_id)
                     )
         except FileNotFoundError:
             print(f"Error: File not found: {args.file}", file=sys.stderr)
@@ -279,15 +249,7 @@ if __name__ == "__main__":
     elif args.command:
         # Regular command execution
         asyncio.run(
-            main(
-                args.command, 
-                args.temperature, 
-                args.provider, 
-                args.debug, 
-                args.chat,
-                args.git,
-                args.git_commit_style
-            )
+            main(args.command, args.temperature, args.provider, args.debug, args.chat)
         )
     else:
         parser.error("Either a command or an input file (-f/--file) must be specified")

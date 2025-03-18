@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 from configparser import ConfigParser
-from enum import StrEnum
+from enum import StrEnum, Enum
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -21,6 +21,14 @@ class ConfigError(Exception):
     """Configuration related errors"""
 
     pass
+
+
+class CommitMessageStyle(str, Enum):
+    """Enum for Git commit message styles."""
+
+    SHORT = "short"
+    DETAILED = "detailed"
+    BULLET_POINTS = "bullet_points"
 
 
 def find_config_file() -> Path:
@@ -113,11 +121,34 @@ class ProviderConfig(BaseModel):
     )
 
 
+class GitConfig(BaseModel):
+    """Git tracking configuration"""
+
+    enabled: bool = Field(default=True, description="Enable Git tracking")
+    auto_commit: bool = Field(default=True, description="Auto-commit changes")
+    commit_message_style: CommitMessageStyle = Field(
+        default=CommitMessageStyle.DETAILED, description="Commit message style"
+    )
+    pre_execution_check: bool = Field(
+        default=True, description="Check repository status before execution"
+    )
+    model: str = Field(
+        default="gpt-3.5-turbo", description="Model for commit message generation"
+    )
+    provider: Provider = Field(
+        default=Provider.OPENAI, description="Provider for commit message generation"
+    )
+    temperature: float = Field(
+        default=0.2, description="Temperature for commit message generation"
+    )
+
+
 class ModelConfig(BaseModel):
     """Global model configuration"""
 
     providers: Dict[Provider, ProviderConfig] = Field(default_factory=dict)
     default_provider: Provider
+    git_config: GitConfig = Field(default_factory=GitConfig)
 
     def __init__(self):
         try:
@@ -149,15 +180,37 @@ class ModelConfig(BaseModel):
                         recursion_limit=recursion_limit,
                     )
 
+            # Initialize Git configuration
+            git_config = None
+            if parser.has_section("git"):
+                git_section = parser["git"]
+                git_config = GitConfig(
+                    enabled=git_section.getboolean("enabled", fallback=True),
+                    auto_commit=git_section.getboolean("auto_commit", fallback=True),
+                    commit_message_style=CommitMessageStyle(
+                        git_section.get("commit_message_style", fallback="detailed")
+                    ),
+                    pre_execution_check=git_section.getboolean(
+                        "pre_execution_check", fallback=True
+                    ),
+                    model=git_section.get("model", fallback="gpt-3.5-turbo"),
+                    provider=Provider(git_section.get("provider", fallback="openai")),
+                    temperature=git_section.getfloat("temperature", fallback=0.2),
+                )
+
             super().__init__(
-                providers=providers, default_provider=Provider(default_provider)
+                providers=providers,
+                default_provider=Provider(default_provider),
+                git_config=git_config or GitConfig(),
             )
 
         except Exception as e:
             logger.error(f"Failed to initialize model config: {str(e)}")
             # Initialize with empty/default values
             super().__init__(
-                providers={}, default_provider=Provider.ANTHROPIC  # Set a default
+                providers={},
+                default_provider=Provider.ANTHROPIC,  # Set a default
+                git_config=GitConfig(),
             )
 
     def get_provider_config(

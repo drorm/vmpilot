@@ -36,6 +36,7 @@ Example good commit messages:
 Please analyze the provided Git diff and generate an appropriate commit message.
 """
 
+
 def get_worker_llm(
     model: str = "gpt-3.5-turbo",
     provider: APIProvider = APIProvider.OPENAI,
@@ -43,13 +44,13 @@ def get_worker_llm(
     max_tokens: int = 256,
 ) -> ChatOpenAI:
     """Get a worker LLM instance.
-    
+
     Args:
         model: Model name to use.
         provider: API provider to use.
         temperature: Temperature setting for the LLM.
         max_tokens: Maximum tokens for the LLM response.
-        
+
     Returns:
         ChatOpenAI instance.
     """
@@ -64,6 +65,7 @@ def get_worker_llm(
         # Add support for other providers as needed
         raise ValueError(f"Unsupported provider: {provider}")
 
+
 async def generate_commit_message(
     diff: str,
     model: str = "gpt-3.5-turbo",
@@ -71,35 +73,37 @@ async def generate_commit_message(
     temperature: float = 0.2,
 ) -> str:
     """Generate a commit message from a Git diff.
-    
+
     Args:
         diff: Git diff to analyze.
         model: Model name to use.
         provider: API provider to use.
         temperature: Temperature setting for the LLM.
-        
+
     Returns:
         Generated commit message.
     """
     logger.debug("Generating commit message from diff")
-    
+
     # Truncate diff if it's too large
     if len(diff) > 8000:
         logger.warning("Diff is too large, truncating")
         diff = diff[:8000] + "\n...[truncated]..."
-    
+
     # Create messages for the LLM
     messages = [
         SystemMessage(content=COMMIT_MESSAGE_SYSTEM_PROMPT),
-        HumanMessage(content=f"Here is the Git diff to analyze:\n\n```diff\n{diff}\n```"),
+        HumanMessage(
+            content=f"Here is the Git diff to analyze:\n\n```diff\n{diff}\n```"
+        ),
     ]
-    
+
     # Get worker LLM
     llm = get_worker_llm(model=model, provider=provider, temperature=temperature)
-    
+
     # Generate commit message
     response = await llm.ainvoke(messages)
     commit_message = response.content.strip()
-    
+
     logger.debug(f"Generated commit message: {commit_message}")
     return commit_message

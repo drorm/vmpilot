@@ -30,7 +30,6 @@ from vmpilot.config import (
     config,
     parser,
 )
-from vmpilot.git_track import GitConfig
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -53,10 +52,6 @@ class Pipeline:
     _provider: Provider = Provider(DEFAULT_PROVIDER)
     _api_key: str = ""  # Set based on active provider
 
-    # Git tracking configuration
-    _git_enabled: bool = True
-    _git_config: Optional[GitConfig] = None
-
     class Valves(BaseModel):
         # Private storage for properties
         anthropic_api_key: str = ""
@@ -65,12 +60,6 @@ class Pipeline:
 
         # Model configuration (inherited from config)
         model: str = ""  # Set based on provider's default
-
-        # Git tracking configuration
-        git_enabled: bool = True
-        git_commit_style: str = (
-            "detailed"  # Options: "short", "detailed", "bullet_points"
-        )
 
         # Property for provider with setter that updates state
         @property
@@ -123,15 +112,6 @@ class Pipeline:
 
             # Update API key based on provider
             self._update_api_key()
-
-            """
-            # Update Git configuration
-            Pipeline._git_enabled = self.git_enabled
-            if self.git_enabled:
-                Pipeline._git_config = GitConfig(commit_style=self.git_commit_style)
-            else:
-                Pipeline._git_config = None
-            """
 
         def _update_api_key(self):
             """Update API key based on current provider"""
@@ -402,8 +382,8 @@ class Pipeline:
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
                                 thread_id=chat_id,
-                                git_enabled=Pipeline._git_enabled,
-                                git_config=Pipeline._git_config,
+                                git_enabled=config.git_config.enabled,
+                                git_config=config.git_config,
                             )
                         )
                     except Exception as e:
