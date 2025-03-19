@@ -60,17 +60,28 @@ from vmpilot.worker_llm import run_worker, run_worker_async
 from vmpilot.config import Provider
 import argparse
 
+def get_model_for_provider(provider_name):
+    """Get the appropriate model name for the given provider."""
+    if provider_name.upper() == "OPENAI":
+        return "gpt-3.5-turbo"
+    elif provider_name.upper() == "ANTHROPIC":
+        return "claude-3-7-sonnet-latest"
+    else:
+        return "gpt-3.5-turbo"  # Default fallback
+
 def test_sync_worker(provider_name):
     """Test the synchronous worker."""
     provider = getattr(Provider, provider_name.upper())
     prompt = "What is the capital of France? Respond with just the city name, nothing else."
     system_prompt = "You are a helpful assistant that provides concise, accurate answers."
+    model = get_model_for_provider(provider_name)
     
-    print(f"Testing synchronous worker with provider: {provider_name}")
+    print(f"Testing synchronous worker with provider: {provider_name}, model: {model}")
     try:
         result = run_worker(
             prompt=prompt,
             system_prompt=system_prompt,
+            model=model,
             provider=provider,
             temperature=0,  # Use temperature 0 for deterministic results
         )
@@ -85,12 +96,14 @@ async def test_async_worker(provider_name):
     provider = getattr(Provider, provider_name.upper())
     prompt = "What is the capital of Germany? Respond with just the city name, nothing else."
     system_prompt = "You are a helpful assistant that provides concise, accurate answers."
+    model = get_model_for_provider(provider_name)
     
-    print(f"Testing asynchronous worker with provider: {provider_name}")
+    print(f"Testing asynchronous worker with provider: {provider_name}, model: {model}")
     try:
         result = await run_worker_async(
             prompt=prompt,
             system_prompt=system_prompt,
+            model=model,
             provider=provider,
             temperature=0,  # Use temperature 0 for deterministic results
         )
