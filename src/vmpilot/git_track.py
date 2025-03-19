@@ -235,8 +235,6 @@ class GitTracker:
 
         try:
             # Add all changes
-            logger.info(f"Would run git add .")
-            """
             subprocess.run(
                 ["git", "add", "."],
                 cwd=self.repo_path,
@@ -245,11 +243,8 @@ class GitTracker:
                 stderr=subprocess.PIPE,
                 text=True,
             )
-            """
 
             # Commit with specified author
-            logger.info(f"Would commit changes, author: {author}, message: {message}")
-            """
             result = subprocess.run(
                 ["git", "commit", "--author", author, "-m", message],
                 cwd=self.repo_path,
@@ -258,7 +253,6 @@ class GitTracker:
                 stderr=subprocess.PIPE,
                 text=True,
             )
-            """
             logger.info(f"Committed changes: {result.stdout.strip()}")
             return True
         except subprocess.CalledProcessError as e:
@@ -430,20 +424,28 @@ class GitTracker:
     def pre_execution_check(self) -> Tuple[bool, str]:
         """Check if the repository is clean before execution.
 
+        If the repository is dirty, either abort or stash changes based on configuration.
+
         Returns:
             Tuple of (can_proceed, message) where can_proceed is True if execution can proceed
             and message is a status message or error message.
         """
-        if not self.config.pre_execution_check:
-            return (True, "Pre-execution check is disabled")
-
         status = self.get_repo_status()
+
         if status == GitStatus.NOT_A_REPO:
             return (True, "Not a Git repository")
         elif status == GitStatus.CLEAN:
             return (True, "Repository is clean")
         else:
-            return (
-                False,
-                "Repository has uncommitted changes. Please commit or stash them before proceeding.",
-            )
+            # Repository is dirty, handle according to configuration
+            if self.config.dirty_repo_action == "stash":
+                stash_success = self.stash_changes()
+                if stash_success:
+                    return (True, "Uncommitted changes have been stashed")
+                else:
+                    return (False, "Failed to stash uncommitted changes")
+            else:  # Default is "abort"
+                return (
+                    False,
+                    "Repository has uncommitted changes. Please commit or stash them before proceeding.",
+                )

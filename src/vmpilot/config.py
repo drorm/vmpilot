@@ -124,13 +124,9 @@ class ProviderConfig(BaseModel):
 class GitConfig(BaseModel):
     """Git tracking configuration"""
 
-    enabled: bool = Field(default=True, description="Enable Git tracking")
     auto_commit: bool = Field(default=True, description="Auto-commit changes")
     commit_message_style: CommitMessageStyle = Field(
         default=CommitMessageStyle.DETAILED, description="Commit message style"
-    )
-    pre_execution_check: bool = Field(
-        default=True, description="Check repository status before execution"
     )
     model: str = Field(
         default="gpt-3.5-turbo", description="Model for commit message generation"
@@ -140,6 +136,13 @@ class GitConfig(BaseModel):
     )
     temperature: float = Field(
         default=0.2, description="Temperature for commit message generation"
+    )
+    dirty_repo_action: str = Field(
+        default="abort",
+        description="What to do when repository is dirty (abort, stash)",
+    )
+    commit_prefix: str = Field(
+        default="[VMPilot]", description="Prefix for commit messages"
     )
 
 
@@ -185,17 +188,19 @@ class ModelConfig(BaseModel):
             if parser.has_section("git"):
                 git_section = parser["git"]
                 git_config = GitConfig(
-                    enabled=git_section.getboolean("enabled", fallback=True),
                     auto_commit=git_section.getboolean("auto_commit", fallback=True),
                     commit_message_style=CommitMessageStyle(
                         git_section.get("commit_message_style", fallback="detailed")
                     ),
-                    pre_execution_check=git_section.getboolean(
-                        "pre_execution_check", fallback=True
-                    ),
                     model=git_section.get("model", fallback="gpt-3.5-turbo"),
                     provider=Provider(git_section.get("provider", fallback="openai")),
                     temperature=git_section.getfloat("temperature", fallback=0.2),
+                    dirty_repo_action=git_section.get(
+                        "dirty_repo_action", fallback="abort"
+                    ),
+                    commit_prefix=git_section.get(
+                        "commit_prefix", fallback="[VMPilot]"
+                    ),
                 )
 
             super().__init__(
