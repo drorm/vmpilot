@@ -358,8 +358,6 @@ class Pipeline:
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
                                 thread_id=chat_id,
-                                git_enabled=config.git_config.enabled,
-                                git_config=config.git_config,
                             )
                         )
                     except Exception as e:

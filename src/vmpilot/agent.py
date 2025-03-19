@@ -234,10 +234,6 @@ async def process_messages(
     disable_logging: bool = False,
     recursion_limit: int = None,  # Maximum number of steps to run in the request
     thread_id: str = None,  # Chat ID for conversation state management
-    git_enabled: bool = None,  # Override Git tracking setting (None uses config default)
-    git_config: Optional[
-        GitConfig
-    ] = None,  # Git configuration for commit message style (None uses config default)
 ) -> List[dict]:
     """Process messages through the agent and handle outputs.
 
@@ -254,8 +250,6 @@ async def process_messages(
         disable_logging: Whether to disable detailed logging
         recursion_limit: Maximum number of steps to run in the request
         thread_id: Chat ID for conversation state management
-        git_enabled: Whether to enable Git tracking (overrides config if provided)
-        git_config: Configuration for Git tracking (uses config default if None)
 
     Returns:
         List of processed messages
@@ -286,12 +280,10 @@ async def process_messages(
     exchange = Exchange(
         chat_id=thread_id,
         user_message=user_message,
-        git_enabled=git_enabled,  # Will use config default if None
-        git_config=git_config,  # Will use config default if None
     )
 
     # Log if Git repository has uncommitted changes
-    if git_enabled and not exchange.check_git_status():
+    if not exchange.check_git_status():
         logger.warning("Git repository has uncommitted changes before LLM operation")
         # In a future version, we could add user prompting here to handle uncommitted changes
 

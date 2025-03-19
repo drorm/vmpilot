@@ -30,16 +30,12 @@ class Exchange:
         self,
         chat_id: str,
         user_message: Union[Dict, HumanMessage],
-        git_enabled: bool = None,
-        git_config: Optional[GitConfig] = None,
     ):
         """Initialize a new exchange.
 
         Args:
             chat_id: Identifier for the chat this exchange belongs to
             user_message: The user's message that initiated this exchange
-            git_enabled: Whether Git tracking is enabled for this exchange (overrides config if provided)
-            git_config: Configuration for Git tracking (if None, default config is used)
         """
         self.chat_id = chat_id
 
@@ -55,17 +51,11 @@ class Exchange:
         self.completed_at = None
 
         # Use provided git_enabled or fall back to config
-        self.git_enabled = (
-            git_enabled if git_enabled is not None else config.git_config.enabled
-        )
-        logger.info(f"Git tracking enabled: {self.git_enabled}")
+        self.git_enabled = config.git_config.enabled
+        logger.info(f"Git tracking enabled: {self.git_enabled}, config.git_config: {config.git_config}")
 
         # Initialize Git tracker if enabled
-        self.git_tracker = (
-            GitTracker(git_config=git_config or config.git_config)
-            if self.git_enabled
-            else None
-        )
+        self.git_tracker = GitTracker() if self.git_enabled else None
 
         # Check Git repo status at start of exchange
         self.check_git_status()

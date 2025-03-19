@@ -16,10 +16,10 @@ import subprocess
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
+import vmpilot.worker_llm as worker_llm
 from vmpilot.config import CommitMessageStyle, GitConfig
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
-import vmpilot.worker_llm as worker_llm
 
 logger = logging.getLogger(__name__)
 
@@ -54,18 +54,11 @@ class GitStatus(Enum):
 class GitTracker:
     """Class for tracking LLM-generated changes in Git."""
 
-    def __init__(
-        self, repo_path: Optional[str] = None, git_config: Optional[GitConfig] = None
-    ):
-        """Initialize the GitTracker.
-
-        Args:
-            repo_path: Path to the Git repository. If None, the current directory is used.
-            git_config: Configuration for Git tracking. If None, default configuration is used.
-        """
-        self.repo_path = repo_path or os.getcwd()
-        # Use provided config or the global configuration
-        self.config = git_config or config.git_config
+    def __init__(self):
+        """Initialize the GitTracker."""
+        self.repo_path = os.getcwd()
+        # Use the global configuration
+        self.config = config.git_config
 
     def is_git_repo(self) -> bool:
         """Check if the directory is a Git repository.

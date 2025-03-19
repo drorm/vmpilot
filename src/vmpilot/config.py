@@ -124,6 +124,7 @@ class ProviderConfig(BaseModel):
 class GitConfig(BaseModel):
     """Git tracking configuration"""
 
+    enabled: bool = Field(default=False, description="Enable Git tracking")
     auto_commit: bool = Field(default=True, description="Auto-commit changes")
     commit_message_style: CommitMessageStyle = Field(
         default=CommitMessageStyle.DETAILED, description="Commit message style"
@@ -188,6 +189,7 @@ class ModelConfig(BaseModel):
             if parser.has_section("git"):
                 git_section = parser["git"]
                 git_config = GitConfig(
+                    enabled=git_section.getboolean("enabled", fallback=False),
                     auto_commit=git_section.getboolean("auto_commit", fallback=True),
                     commit_message_style=CommitMessageStyle(
                         git_section.get("commit_message_style", fallback="detailed")
