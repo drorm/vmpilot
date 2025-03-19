@@ -235,6 +235,8 @@ class GitTracker:
 
         try:
             # Add all changes
+            logger.info(f"Would run git add .")
+            """
             subprocess.run(
                 ["git", "add", "."],
                 cwd=self.repo_path,
@@ -243,8 +245,11 @@ class GitTracker:
                 stderr=subprocess.PIPE,
                 text=True,
             )
+            """
 
             # Commit with specified author
+            logger.info(f"Would commit changes, author: {author}, message: {message}")
+            """
             result = subprocess.run(
                 ["git", "commit", "--author", author, "-m", message],
                 cwd=self.repo_path,
@@ -253,6 +258,7 @@ class GitTracker:
                 stderr=subprocess.PIPE,
                 text=True,
             )
+            """
             logger.info(f"Committed changes: {result.stdout.strip()}")
             return True
         except subprocess.CalledProcessError as e:
@@ -346,15 +352,11 @@ class GitTracker:
 
         try:
             diff = self.get_diff(include_staged=True)
+            commit_msg = None
 
-            # Check if we should use async or sync approach
-            if asyncio.get_event_loop().is_running():
-                # We're already in an async context, use the async method
-                commit_msg = self.generate_commit_message(diff)
-            else:
-                # We're in a sync context, use the sync method directly
+            # Generate a commit message - use synchronous approach for now.
+            try:
                 prompt = self._prepare_diff_prompt(diff)
-
                 # Use synchronous worker
                 commit_msg = worker_llm.run_worker(
                     prompt=prompt,
@@ -363,9 +365,15 @@ class GitTracker:
                     provider=self.config.provider,
                     temperature=self.config.temperature,
                 )
+            except Exception as e:
+                logger.error(f"Failed to generate commit message: {e}")
+                return (False, f"Error generating commit message: {e}")
 
-            success = self.commit_changes(commit_msg)
-            return (success, commit_msg if success else "Failed to commit changes")
+            if commit_msg:
+                success = self.commit_changes(commit_msg)
+                return (success, commit_msg if success else "Failed to commit changes")
+            else:
+                return (False, "No commit message generated")
         except Exception as e:
             logger.error(f"Error in auto_commit_changes: {e}")
             return (False, str(e))

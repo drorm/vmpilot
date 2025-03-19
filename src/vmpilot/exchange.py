@@ -116,7 +116,11 @@ class Exchange:
         self.completed_at = datetime.now()
 
         # Commit any changes the LLM made
-        self.commit_changes()
+        try:
+            self.commit_changes()
+        except Exception as e:
+            logger.error(f"Error committing changes: {e}")
+            # Continue with the exchange even if commit fails
 
         # Save conversation state
         self.save_state()

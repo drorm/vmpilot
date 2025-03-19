@@ -59,8 +59,8 @@ def get_worker_llm(
 def run_worker(
     prompt: str,
     system_prompt: str = "",
-    model: str = "gpt-3.5-turbo",
-    provider: APIProvider = APIProvider.OPENAI,
+    model: str = "claude-3-7-sonnet-latest",
+    provider: APIProvider = APIProvider.ANTHROPIC,
     temperature: float = TEMPERATURE,
     max_tokens: int = MAX_TOKENS,
 ) -> str:
@@ -101,8 +101,8 @@ def run_worker(
 async def run_worker_async(
     prompt: str,
     system_prompt: str = "",
-    model: str = "gpt-3.5-turbo",
-    provider: APIProvider = APIProvider.OPENAI,
+    model: str = "claude-3-7-sonnet-latest",
+    provider: APIProvider = APIProvider.ANTHROPIC,
     temperature: float = TEMPERATURE,
     max_tokens: int = MAX_TOKENS,
 ) -> str:
