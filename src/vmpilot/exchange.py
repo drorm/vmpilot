@@ -62,7 +62,7 @@ class Exchange:
 
         # Initialize Git tracker if enabled
         self.git_tracker = (
-            GitTracker(config=git_config or config.git_config)
+            GitTracker(git_config=git_config or config.git_config)
             if self.git_enabled
             else None
         )

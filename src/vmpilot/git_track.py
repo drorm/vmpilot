@@ -16,12 +16,31 @@ import subprocess
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
-import vmpilot.worker_llm as worker_llm
 from vmpilot.config import CommitMessageStyle, GitConfig
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
+import vmpilot.worker_llm as worker_llm
 
 logger = logging.getLogger(__name__)
+
+# System prompt for commit message generation
+COMMIT_MESSAGE_SYSTEM_PROMPT = """You are a commit message generator for an AI assistant called VMPilot.
+Your task is to analyze Git diffs and generate concise, informative commit messages.
+
+Your commit messages should:
+1. Start with a verb in the present tense (e.g., "Add", "Fix", "Update")
+2. Be clear and descriptive
+3. Focus on the "what" and "why" of the changes
+4. Be no longer than 72 characters for the first line
+5. Optionally include a more detailed description after a blank line
+
+Example good commit messages:
+- "Add user authentication to API endpoints"
+- "Fix race condition in background task processing"
+- "Refactor database connection handling for better error recovery"
+
+Please analyze the provided Git diff and generate an appropriate commit message.
+"""
 
 
 class GitStatus(Enum):
@@ -36,17 +55,17 @@ class GitTracker:
     """Class for tracking LLM-generated changes in Git."""
 
     def __init__(
-        self, repo_path: Optional[str] = None, config: Optional[GitConfig] = None
+        self, repo_path: Optional[str] = None, git_config: Optional[GitConfig] = None
     ):
         """Initialize the GitTracker.
 
         Args:
             repo_path: Path to the Git repository. If None, the current directory is used.
-            config: Configuration for Git tracking. If None, default configuration is used.
+            git_config: Configuration for Git tracking. If None, default configuration is used.
         """
         self.repo_path = repo_path or os.getcwd()
         # Use provided config or the global configuration
-        self.config = config or config.git_config
+        self.config = git_config or config.git_config
 
     def is_git_repo(self) -> bool:
         """Check if the directory is a Git repository.
@@ -260,6 +279,25 @@ class GitTracker:
             logger.error(f"Failed to check stashed changes: {e}")
             return False
 
+    def _prepare_diff_prompt(self, diff: str) -> str:
+        """Prepare a diff for use in an LLM prompt.
+
+        Truncates the diff if it's too large and formats it as a code block.
+
+        Args:
+            diff: Git diff output to analyze.
+
+        Returns:
+            Formatted prompt string.
+        """
+        # Truncate diff if it's too large
+        if len(diff) > 8000:
+            logger.warning("Diff is too large, truncating")
+            diff = diff[:8000] + "\n...[truncated]..."
+
+        # Create prompt for the LLM
+        return f"Here is the Git diff to analyze:\n\n```diff\n{diff}\n```"
+
     def generate_commit_message(self, diff: str) -> str:
         """Generate a commit message from a diff.
 
@@ -272,12 +310,15 @@ class GitTracker:
             Generated commit message.
         """
         try:
+            prompt = self._prepare_diff_prompt(diff)
+
             # Run the async function in a new event loop
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             commit_message = loop.run_until_complete(
-                worker_llm.generate_commit_message(
-                    diff=diff,
+                worker_llm.run_worker_async(
+                    prompt=prompt,
+                    system_prompt=COMMIT_MESSAGE_SYSTEM_PROMPT,
                     model=self.config.model,
                     provider=self.config.provider,
                     temperature=self.config.temperature,
@@ -305,7 +346,24 @@ class GitTracker:
 
         try:
             diff = self.get_diff(include_staged=True)
-            commit_msg = self.generate_commit_message(diff)
+
+            # Check if we should use async or sync approach
+            if asyncio.get_event_loop().is_running():
+                # We're already in an async context, use the async method
+                commit_msg = self.generate_commit_message(diff)
+            else:
+                # We're in a sync context, use the sync method directly
+                prompt = self._prepare_diff_prompt(diff)
+
+                # Use synchronous worker
+                commit_msg = worker_llm.run_worker(
+                    prompt=prompt,
+                    system_prompt=COMMIT_MESSAGE_SYSTEM_PROMPT,
+                    model=self.config.model,
+                    provider=self.config.provider,
+                    temperature=self.config.temperature,
+                )
+
             success = self.commit_changes(commit_msg)
             return (success, commit_msg if success else "Failed to commit changes")
         except Exception as e:
