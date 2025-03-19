@@ -5,14 +5,14 @@ This test suite verifies the functionality of the Worker LLM implementation,
 including both synchronous and asynchronous operations, edge cases, and error handling.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 import asyncio
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from vmpilot.worker_llm import get_worker_llm, run_worker, run_worker_async
 from vmpilot.config import Provider as APIProvider
+from vmpilot.worker_llm import get_worker_llm, run_worker, run_worker_async
 
 
 class TestGetWorkerLLM:

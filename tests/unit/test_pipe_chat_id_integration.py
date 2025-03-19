@@ -2,6 +2,7 @@ import asyncio
 import functools
 import queue
 import signal
+import sys
 import threading
 import time
 import warnings
@@ -10,11 +11,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from vmpilot.vmpilot import Pipeline
-import sys
 
 sys.path.insert(0, "/home/dror/vmpilot")
-from tests.unit.pipeline_test_adapter import add_test_methods_to_pipeline
 from tests.unit.patched_pipe import patch_for_test
+from tests.unit.pipeline_test_adapter import add_test_methods_to_pipeline
 from vmpilot.chat import Chat
 
 # Apply the adapter to add backward compatibility methods

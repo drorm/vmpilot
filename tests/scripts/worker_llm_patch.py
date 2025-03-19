@@ -8,8 +8,8 @@ for API keys instead of relying on config.get_api_key.
 
 import os
 import sys
-from pathlib import Path
 import types
+from pathlib import Path
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent.parent

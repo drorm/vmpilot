@@ -6,7 +6,6 @@ import asyncio
 import queue
 import threading
 from typing import Dict, Generator, Iterator, List, Union
-
 from unittest.mock import patch
 
 

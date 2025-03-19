@@ -7,14 +7,14 @@ both synchronously and asynchronously.
 """
 
 import asyncio
-import sys
 import os
+import sys
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from vmpilot.worker_llm import run_worker, run_worker_async
 from vmpilot.config import Provider
+from vmpilot.worker_llm import run_worker, run_worker_async
 
 
 def test_sync_worker():

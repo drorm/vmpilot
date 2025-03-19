@@ -1,10 +1,10 @@
 import re
+import sys
 from unittest.mock import MagicMock
 
 import pytest
 
 from vmpilot.vmpilot import Pipeline
-import sys
 
 sys.path.insert(0, "/home/dror/vmpilot")
 from tests.unit.pipeline_test_adapter import add_test_methods_to_pipeline

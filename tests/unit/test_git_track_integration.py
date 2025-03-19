@@ -5,13 +5,15 @@ This test suite verifies that git_track.py properly integrates with worker_llm.p
 for LLM-driven git operations.
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+
+from vmpilot.config import Provider as APIProvider
 
 # Note: Import git_track once it's implemented
 # from vmpilot.git_track import function_to_test
 from vmpilot.worker_llm import run_worker, run_worker_async
-from vmpilot.config import Provider as APIProvider
 
 
 @pytest.mark.skip(reason="git_track.py is not yet implemented")
