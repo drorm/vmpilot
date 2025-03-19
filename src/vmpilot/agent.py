@@ -17,10 +17,10 @@ from langgraph.prebuilt.chat_agent_executor import AgentState
 
 from vmpilot.agent_logging import log_conversation_messages
 from vmpilot.agent_memory import (
+    clear_conversation_state,
     get_conversation_state,
     save_conversation_state,
     update_cache_info,
-    clear_conversation_state,
 )
 from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
