@@ -27,9 +27,7 @@ class Chat:
         r"\$PROJECT_ROOT=([^\s]+)",
     ]
 
-    def __init__(
-        self, chat_id: Optional[str] = None, project_dir: Optional[str] = None
-    ):
+    def __init__(self, chat_id=None, project_dir=None):
         """
         Initialize a chat session.
 
@@ -37,15 +35,22 @@ class Chat:
             chat_id: Optional chat ID. If not provided, one will be generated.
             project_dir: Optional project directory. If not provided, will use default_project.
         """
-        self.chat_id = chat_id or self._generate_chat_id()
-        self.project_dir = project_dir or config.DEFAULT_PROJECT
+        self.chat_id = chat_id if chat_id else self._generate_chat_id()
+        self.project_dir = project_dir if project_dir else config.DEFAULT_PROJECT
         self._ensure_project_dir_exists()
 
     def _generate_chat_id(self) -> str:
         """Generate a new random chat ID."""
-        return "".join(
+        import time
+
+        # Add a timestamp prefix to ensure uniqueness
+        timestamp = (
+            int(time.time() * 1000) % 10000
+        )  # Last 4 digits of current timestamp in ms
+        random_part = "".join(
             secrets.choice(string.ascii_letters + string.digits) for _ in range(8)
         )
+        return f"{timestamp}{random_part}"
 
     def _ensure_project_dir_exists(self):
         """Ensure the project directory exists, creating it if necessary."""
@@ -104,7 +109,7 @@ class Chat:
                     "text": f"{self.CHAT_ID_PREFIX} {self.CHAT_ID_DELIMITER}{self.chat_id}\n\n",
                 }
             )
-            logger.debug(f"Generated new chat_id: {self.chat_id}")
+            logger.info(f"Generated new chat_id: {self.chat_id}")
             return self.chat_id
         else:
             # Existing chat, try to extract chat_id from assistant messages
@@ -118,7 +123,7 @@ class Chat:
                         parts = content_lines[0].split(self.CHAT_ID_DELIMITER, 1)
                         if len(parts) > 1:
                             extracted_id = parts[1].strip()
-                            logger.debug(f"Extracted chat_id: {extracted_id}")
+                            logger.info(f"Extracted chat_id: {extracted_id}")
                             return extracted_id
 
             # If we couldn't find a chat_id in an existing conversation, return None

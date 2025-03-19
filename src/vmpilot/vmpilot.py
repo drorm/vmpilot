@@ -189,9 +189,12 @@ class Pipeline:
 
     def get_or_generate_chat_id(self, messages, output_callback):
         """Get an existing chat_id or generate a new one if needed."""
-        # Create a Chat object if we don't have one already
+        # Extract chat_id from body if present
+        chat_id = getattr(self, "chat_id", None)
+
+        # Create a Chat object if we don't have one already, passing the chat_id if available
         if not hasattr(self, "_chat"):
-            self._chat = Chat()
+            self._chat = Chat(chat_id=chat_id)
 
         # Let the Chat object handle all initialization
         chat_id = self._chat.initialize_chat(messages, output_callback)
@@ -324,10 +327,7 @@ class Pipeline:
                             truncated_output += "\n"
                         output_queue.put(truncated_output)
 
-                # Get chat_id from body
-                chat_id = body.get("chat_id")
-
-                # Get or generate chat_id
+                # Get chat_id
                 chat_id = self.get_or_generate_chat_id(messages, output_callback)
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
