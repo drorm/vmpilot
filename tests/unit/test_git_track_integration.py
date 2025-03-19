@@ -17,33 +17,33 @@ from vmpilot.config import Provider as APIProvider
 @pytest.mark.skip(reason="git_track.py is not yet implemented")
 class TestGitTrackWorkerIntegration:
     """Tests for the integration between git_track.py and worker_llm.py."""
-    
-    @patch('vmpilot.worker_llm.run_worker')
+
+    @patch("vmpilot.worker_llm.run_worker")
     def test_git_track_uses_worker_llm(self, mock_run_worker):
         """Test that git_track uses worker_llm for LLM operations."""
         # Setup
         mock_run_worker.return_value = "LLM response for git operation"
-        
+
         # Execute
         # Note: Update with actual function calls once git_track.py is implemented
         # result = function_to_test("parameters")
-        
+
         # Verify
         # mock_run_worker.assert_called_once()
         # assert result contains expected output based on the mock response
         pass
-    
+
     @pytest.mark.asyncio
-    @patch('vmpilot.worker_llm.run_worker_async')
+    @patch("vmpilot.worker_llm.run_worker_async")
     async def test_git_track_uses_worker_llm_async(self, mock_run_worker_async):
         """Test that git_track uses worker_llm_async for async LLM operations."""
         # Setup
         mock_run_worker_async.return_value = "Async LLM response for git operation"
-        
+
         # Execute
         # Note: Update with actual async function calls once git_track.py is implemented
         # result = await async_function_to_test("parameters")
-        
+
         # Verify
         # mock_run_worker_async.assert_called_once()
         # assert result contains expected output based on the mock response

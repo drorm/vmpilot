@@ -19,6 +19,7 @@ sys.path.insert(0, str(project_root))
 import vmpilot.worker_llm as worker_llm
 from vmpilot.config import Provider
 
+
 # Create a new get_worker_llm function that uses environment variables directly
 def patched_get_worker_llm(
     model="claude-3-7-sonnet-latest",
@@ -32,7 +33,7 @@ def patched_get_worker_llm(
         if not api_key and os.path.exists(os.path.expanduser("~/.openai")):
             with open(os.path.expanduser("~/.openai"), "r") as f:
                 api_key = f.read().strip()
-        
+
         return worker_llm.ChatOpenAI(
             model=model,
             temperature=temperature,
@@ -44,7 +45,7 @@ def patched_get_worker_llm(
         if not api_key and os.path.exists(os.path.expanduser("~/.anthropic/api_key")):
             with open(os.path.expanduser("~/.anthropic/api_key"), "r") as f:
                 api_key = f.read().strip()
-        
+
         return worker_llm.ChatAnthropic(
             model=model,
             temperature=temperature,
@@ -53,6 +54,7 @@ def patched_get_worker_llm(
         )
     else:
         raise ValueError(f"Unsupported provider: {provider}")
+
 
 # Replace the original get_worker_llm function with our patched version
 worker_llm.get_worker_llm = patched_get_worker_llm

@@ -21,7 +21,7 @@ def test_sync_worker():
     """Test the synchronous worker."""
     prompt = "Explain the concept of recursion in programming in one paragraph."
     system_prompt = "You are a helpful assistant that explains programming concepts clearly and concisely."
-    
+
     result = run_worker(
         prompt=prompt,
         system_prompt=system_prompt,
@@ -29,7 +29,7 @@ def test_sync_worker():
         provider=Provider.OPENAI,
         temperature=0.2,
     )
-    
+
     print("\n=== Synchronous Worker Result ===")
     print(result)
     print("================================\n")
@@ -39,7 +39,7 @@ async def test_async_worker():
     """Test the asynchronous worker."""
     prompt = "Explain the concept of concurrency in programming in one paragraph."
     system_prompt = "You are a helpful assistant that explains programming concepts clearly and concisely."
-    
+
     result = await run_worker_async(
         prompt=prompt,
         system_prompt=system_prompt,
@@ -47,7 +47,7 @@ async def test_async_worker():
         provider=Provider.OPENAI,
         temperature=0.2,
     )
-    
+
     print("\n=== Asynchronous Worker Result ===")
     print(result)
     print("==================================\n")
@@ -57,7 +57,7 @@ async def main():
     """Run all tests."""
     # Run synchronous test
     test_sync_worker()
-    
+
     # Run asynchronous test
     await test_async_worker()
 
