@@ -230,6 +230,7 @@ class TestConfigurationStructure:
             "anthropic",
             "openai",
             "pipeline",
+            "git",
         }
         for section in config.sections():
             assert section in allowed_sections, f"Unexpected section '{section}' found"
