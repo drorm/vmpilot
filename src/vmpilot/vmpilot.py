@@ -274,18 +274,30 @@ class Pipeline:
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
             def generate_responses():
+                output_queue = queue.Queue()
+                loop_done = threading.Event()
+
+                """ Output callback to handle messages from the LLM """
+
+                def output_callback(content: Dict):
+                    logger.debug(f"Received content: {content}")
+                    if content["type"] == "text":
+                        logger.debug(f"Assistant: {content['text']}")
+                        output_queue.put(content["text"])
+
+                # Extract chat_id from body if present
+                chat_id = getattr(self, "chat_id", None)
+
                 # It's a new Chat if we only have system and user messages
-                if messages and len(messages) <= 2:
+                if not hasattr(self, "_chat") or (messages and len(messages) <= 2):
                     self._chat = Chat(
                         chat_id=chat_id,
                         messages=messages,
                         output_callback=output_callback,
                     )
 
+                # Make sure we have the chat_id from the chat object
                 chat_id = self._chat.chat_id
-
-                output_queue = queue.Queue()
-                loop_done = threading.Event()
 
                 """ Output callback to handle messages from the LLM """
 
