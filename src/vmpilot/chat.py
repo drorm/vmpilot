@@ -27,17 +27,35 @@ class Chat:
         r"\$PROJECT_ROOT=([^\s]+)",
     ]
 
-    def __init__(self, chat_id=None, project_dir=None):
+    def __init__(
+        self, chat_id=None, project_dir=None, messages=None, output_callback=None
+    ):
         """
         Initialize a chat session.
 
         Args:
             chat_id: Optional chat ID. If not provided, one will be generated.
             project_dir: Optional project directory. If not provided, will use default_project.
+            messages: Optional list of chat messages to extract information from.
+            output_callback: Optional callback function for sending output.
         """
-        self.chat_id = chat_id if chat_id else self._generate_chat_id()
         self.project_dir = project_dir if project_dir else config.DEFAULT_PROJECT
+
+        # Extract project directory from messages if provided
+        if messages:
+            self.extract_project_dir(messages)
+
+        # Get or generate chat_id
+        self.chat_id = self._get_or_generate_chat_id(chat_id, messages, output_callback)
+
+        # Ensure project directory exists
         self._ensure_project_dir_exists()
+
+        # Change to project directory for new chats
+        self.change_to_project_dir()
+
+        if self.chat_id:
+            logger.info(f"Using chat_id: {self.chat_id}")
 
     def _generate_chat_id(self) -> str:
         """Generate a new random chat ID."""
@@ -59,59 +77,30 @@ class Chat:
             logger.warning(f"Project directory {self.project_dir} does not exist")
             # We don't create it as it might be a typo or misconfiguration
 
-    def initialize_chat(
-        self, messages: List[Dict[str, str]], output_callback: Callable[[Dict], None]
+    def _get_or_generate_chat_id(
+        self,
+        provided_chat_id: Optional[str],
+        messages: Optional[List[Dict[str, str]]],
+        output_callback: Optional[Callable[[Dict], None]],
     ) -> str:
         """
-        Initialize the chat session - extract project directory, get/generate chat ID,
-        and change to project directory if needed.
+        Get an existing chat_id from messages, use provided chat_id, or generate a new one.
 
         Args:
+            provided_chat_id: Chat ID explicitly provided to the constructor
             messages: List of chat messages
             output_callback: Callback function for sending output
 
         Returns:
             Chat ID string
         """
-        # Extract project directory from system message if present
-        self.extract_project_dir(messages)
+        # If a chat_id was explicitly provided, use it
+        if provided_chat_id:
+            logger.info(f"Using provided chat_id: {provided_chat_id}")
+            return provided_chat_id
 
-        # Get or generate chat ID
-        chat_id = self._get_or_generate_chat_id(messages, output_callback)
-
-        # Change to project directory for new chats
-        if len(messages) <= 2:  # only system and one user message
-            self.change_to_project_dir()
-            # Note: logging is done inside change_to_project_dir
-
-        logger.info(f"Using chat_id: {chat_id}")
-        return chat_id
-
-    def _get_or_generate_chat_id(
-        self, messages: List[Dict[str, str]], output_callback: Callable[[Dict], None]
-    ) -> Optional[str]:
-        """
-        Get an existing chat_id from messages or use/generate one.
-
-        Args:
-            messages: List of chat messages
-            output_callback: Callback function for sending output
-
-        Returns:
-            Chat ID string or None if no chat_id could be found in an existing conversation
-        """
-        # Check if this is a new chat (empty or only system and one user message)
-        if not messages or len(messages) <= 2:
-            # New chat, generate and announce chat ID
-            output_callback(
-                {
-                    "type": "text",
-                    "text": f"{self.CHAT_ID_PREFIX} {self.CHAT_ID_DELIMITER}{self.chat_id}\n\n",
-                }
-            )
-            logger.info(f"Generated new chat_id: {self.chat_id}")
-            return self.chat_id
-        else:
+        # If we have messages, try to extract from them
+        if messages and len(messages) > 2:
             # Existing chat, try to extract chat_id from assistant messages
             for msg in messages:
                 if msg["role"] == "assistant" and isinstance(msg["content"], str):
@@ -126,9 +115,22 @@ class Chat:
                             logger.info(f"Extracted chat_id: {extracted_id}")
                             return extracted_id
 
-            # If we couldn't find a chat_id in an existing conversation, return None
             logger.warning("Could not extract chat_id from messages")
-            return None
+
+        # Generate a new chat_id
+        new_chat_id = self._generate_chat_id()
+        logger.info(f"Generated new chat_id: {new_chat_id}")
+
+        # Announce chat ID if callback is provided
+        if output_callback:
+            output_callback(
+                {
+                    "type": "text",
+                    "text": f"{self.CHAT_ID_PREFIX} {self.CHAT_ID_DELIMITER}{new_chat_id}\n\n",
+                }
+            )
+
+        return new_chat_id
 
     def extract_project_dir(self, messages: List[Dict[str, str]]) -> Optional[str]:
         """
