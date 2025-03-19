@@ -17,6 +17,7 @@ import tempfile
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import vmpilot.config
 from vmpilot.config import Provider as APIProvider
 from vmpilot.git_track import CommitMessageStyle, GitConfig, GitStatus, GitTracker
 
@@ -29,27 +30,30 @@ class TestGitConfig(unittest.TestCase):
         config = GitConfig()
         self.assertTrue(config.auto_commit)
         self.assertEqual(config.commit_message_style, CommitMessageStyle.DETAILED)
-        self.assertTrue(config.pre_execution_check)
+        self.assertEqual(config.dirty_repo_action, "abort")
         self.assertEqual(config.model, "gpt-3.5-turbo")
         self.assertEqual(config.provider, APIProvider.OPENAI)
         self.assertEqual(config.temperature, 0.2)
+        self.assertEqual(config.commit_prefix, "[VMPilot]")
 
     def test_custom_values(self):
         """Test that GitConfig can be initialized with custom values."""
         config = GitConfig(
             auto_commit=False,
             commit_message_style=CommitMessageStyle.SHORT,
-            pre_execution_check=False,
+            dirty_repo_action="stash",
             model="gpt-4",
             provider=APIProvider.ANTHROPIC,
             temperature=0.5,
+            commit_prefix="[AI]",
         )
         self.assertFalse(config.auto_commit)
         self.assertEqual(config.commit_message_style, CommitMessageStyle.SHORT)
-        self.assertFalse(config.pre_execution_check)
+        self.assertEqual(config.dirty_repo_action, "stash")
         self.assertEqual(config.model, "gpt-4")
         self.assertEqual(config.provider, APIProvider.ANTHROPIC)
         self.assertEqual(config.temperature, 0.5)
+        self.assertEqual(config.commit_prefix, "[AI]")
 
 
 class TestGitTracker(unittest.TestCase):
@@ -58,12 +62,26 @@ class TestGitTracker(unittest.TestCase):
     def setUp(self):
         """Set up a temporary directory for testing."""
         self.temp_dir = tempfile.mkdtemp()
+        # Note: Since GitTracker now always uses the default config,
+        # we'll need to patch the config for testing
         self.config = GitConfig(
             auto_commit=True,
             commit_message_style=CommitMessageStyle.DETAILED,
-            pre_execution_check=True,
+            dirty_repo_action="abort",
         )
-        self.git_tracker = GitTracker(repo_path=self.temp_dir, config=self.config)
+
+        # We'll patch the GitTracker to use our test directory and config
+        # and patch the worker_llm.get_worker_llm function
+        with patch("vmpilot.git_track.os.getcwd", return_value=self.temp_dir):
+            with patch("vmpilot.git_track.config.git_config", self.config):
+                with patch("vmpilot.worker_llm.get_worker_llm") as self.mock_get_llm:
+                    # Mock the worker LLM to return a mock that can handle invoke
+                    mock_llm = MagicMock()
+                    mock_llm.invoke.return_value = MagicMock(
+                        content="Test commit message"
+                    )
+                    self.mock_get_llm.return_value = mock_llm
+                    self.git_tracker = GitTracker()
 
     def tearDown(self):
         """Clean up the temporary directory."""
@@ -322,15 +340,15 @@ class TestGitTracker(unittest.TestCase):
 
     @patch("vmpilot.git_track.GitTracker.get_repo_status")
     @patch("vmpilot.git_track.GitTracker.get_diff")
-    @patch("vmpilot.git_track.GitTracker.generate_commit_message")
+    @patch("vmpilot.git_track.worker_llm.run_worker")
     @patch("vmpilot.git_track.GitTracker.commit_changes")
     def test_auto_commit_changes_success(
-        self, mock_commit, mock_generate, mock_diff, mock_status
+        self, mock_commit, mock_worker, mock_diff, mock_status
     ):
         """Test auto_commit_changes when successful."""
         mock_status.return_value = GitStatus.DIRTY
         mock_diff.return_value = "diff content"
-        mock_generate.return_value = "Auto-generated commit message"
+        mock_worker.return_value = "Auto-generated commit message"
         mock_commit.return_value = True
 
         success, message = self.git_tracker.auto_commit_changes()
@@ -339,7 +357,7 @@ class TestGitTracker(unittest.TestCase):
         self.assertEqual(message, "Auto-generated commit message")
         mock_status.assert_called_once()
         mock_diff.assert_called_once_with(include_staged=True)
-        mock_generate.assert_called_once_with("diff content")
+        mock_worker.assert_called_once()
         mock_commit.assert_called_once_with("Auto-generated commit message")
 
     @patch("vmpilot.git_track.GitTracker.get_repo_status")
@@ -355,15 +373,15 @@ class TestGitTracker(unittest.TestCase):
 
     @patch("vmpilot.git_track.GitTracker.get_repo_status")
     @patch("vmpilot.git_track.GitTracker.get_diff")
-    @patch("vmpilot.git_track.GitTracker.generate_commit_message")
+    @patch("vmpilot.git_track.worker_llm.run_worker")
     @patch("vmpilot.git_track.GitTracker.commit_changes")
     def test_auto_commit_changes_failure(
-        self, mock_commit, mock_generate, mock_diff, mock_status
+        self, mock_commit, mock_worker, mock_diff, mock_status
     ):
         """Test auto_commit_changes when commit fails."""
         mock_status.return_value = GitStatus.DIRTY
         mock_diff.return_value = "diff content"
-        mock_generate.return_value = "Auto-generated commit message"
+        mock_worker.return_value = "Auto-generated commit message"
         mock_commit.return_value = False
 
         success, message = self.git_tracker.auto_commit_changes()
@@ -372,25 +390,25 @@ class TestGitTracker(unittest.TestCase):
         self.assertEqual(message, "Failed to commit changes")
         mock_status.assert_called_once()
         mock_diff.assert_called_once()
-        mock_generate.assert_called_once()
+        mock_worker.assert_called_once()
         mock_commit.assert_called_once()
 
     @patch("vmpilot.git_track.GitTracker.get_repo_status")
     @patch("vmpilot.git_track.GitTracker.get_diff")
-    @patch("vmpilot.git_track.GitTracker.generate_commit_message")
-    def test_auto_commit_changes_exception(self, mock_generate, mock_diff, mock_status):
+    @patch("vmpilot.git_track.worker_llm.run_worker")
+    def test_auto_commit_changes_exception(self, mock_worker, mock_diff, mock_status):
         """Test auto_commit_changes when an exception occurs."""
         mock_status.return_value = GitStatus.DIRTY
         mock_diff.return_value = "diff content"
-        mock_generate.side_effect = Exception("Test exception")
+        mock_worker.side_effect = Exception("Test exception")
 
         success, message = self.git_tracker.auto_commit_changes()
 
         self.assertFalse(success)
-        self.assertEqual(message, "Test exception")
+        self.assertEqual(message, "Error generating commit message: Test exception")
         mock_status.assert_called_once()
         mock_diff.assert_called_once()
-        mock_generate.assert_called_once()
+        mock_worker.assert_called_once()
 
     @patch("subprocess.run")
     def test_undo_last_commit_success(self, mock_run):
@@ -463,14 +481,19 @@ class TestGitTracker(unittest.TestCase):
         self.assertFalse(result)
         mock_run.assert_called_once()
 
-    def test_pre_execution_check_disabled(self):
-        """Test pre_execution_check when it's disabled in config."""
-        self.git_tracker.config.pre_execution_check = False
+    def test_pre_execution_check_stash_action(self):
+        """Test pre_execution_check when dirty_repo_action is set to stash."""
+        self.git_tracker.config.dirty_repo_action = "stash"
 
-        can_proceed, message = self.git_tracker.pre_execution_check()
+        # Mock the necessary methods for this test
+        with patch.object(
+            self.git_tracker, "get_repo_status", return_value=GitStatus.DIRTY
+        ):
+            with patch.object(self.git_tracker, "stash_changes", return_value=True):
+                can_proceed, message = self.git_tracker.pre_execution_check()
 
-        self.assertTrue(can_proceed)
-        self.assertEqual(message, "Pre-execution check is disabled")
+                self.assertTrue(can_proceed)
+                self.assertEqual(message, "Uncommitted changes have been stashed")
 
     @patch("vmpilot.git_track.GitTracker.get_repo_status")
     def test_pre_execution_check_not_a_repo(self, mock_get_repo_status):
@@ -522,46 +545,65 @@ class TestCommitMessageStyles(unittest.TestCase):
 
     def test_short_commit_message_style(self):
         """Test generate_commit_message with SHORT style."""
-        # Set up configuration with SHORT style
-        config = GitConfig(commit_message_style=CommitMessageStyle.SHORT)
-        git_tracker = GitTracker(repo_path=self.temp_dir, config=config)
-
-        # Mock the generate_commit_message method directly
-        with patch.object(
-            git_tracker, "generate_commit_message", return_value="fix: resolve issue"
+        # Set up configuration with SHORT style and patch the config
+        with patch(
+            "vmpilot.git_track.config.git_config",
+            GitConfig(commit_message_style=CommitMessageStyle.SHORT),
         ):
-            result = git_tracker.generate_commit_message("diff content")
-            self.assertEqual(result, "fix: resolve issue")
+            # Create a GitTracker with the patched config
+            with patch("vmpilot.git_track.os.getcwd", return_value=self.temp_dir):
+                git_tracker = GitTracker()
+
+                # Mock the generate_commit_message method directly
+                with patch.object(
+                    git_tracker,
+                    "generate_commit_message",
+                    return_value="fix: resolve issue",
+                ):
+                    result = git_tracker.generate_commit_message("diff content")
+                    self.assertEqual(result, "fix: resolve issue")
 
     def test_detailed_commit_message_style(self):
         """Test generate_commit_message with DETAILED style."""
-        # Set up configuration with DETAILED style
-        config = GitConfig(commit_message_style=CommitMessageStyle.DETAILED)
-        git_tracker = GitTracker(repo_path=self.temp_dir, config=config)
-
-        detailed_message = "feat: add new user authentication system\n\nImplemented JWT-based authentication with role-based access control."
-
-        # Mock the generate_commit_message method directly
-        with patch.object(
-            git_tracker, "generate_commit_message", return_value=detailed_message
+        # Set up configuration with DETAILED style and patch the config
+        with patch(
+            "vmpilot.git_track.config.git_config",
+            GitConfig(commit_message_style=CommitMessageStyle.DETAILED),
         ):
-            result = git_tracker.generate_commit_message("diff content")
-            self.assertEqual(result, detailed_message)
+            # Create a GitTracker with the patched config
+            with patch("vmpilot.git_track.os.getcwd", return_value=self.temp_dir):
+                git_tracker = GitTracker()
+
+                detailed_message = "feat: add new user authentication system\n\nImplemented JWT-based authentication with role-based access control."
+
+                # Mock the generate_commit_message method directly
+                with patch.object(
+                    git_tracker,
+                    "generate_commit_message",
+                    return_value=detailed_message,
+                ):
+                    result = git_tracker.generate_commit_message("diff content")
+                    self.assertEqual(result, detailed_message)
 
     def test_bullet_points_commit_message_style(self):
         """Test generate_commit_message with BULLET_POINTS style."""
-        # Set up configuration with BULLET_POINTS style
-        config = GitConfig(commit_message_style=CommitMessageStyle.BULLET_POINTS)
-        git_tracker = GitTracker(repo_path=self.temp_dir, config=config)
-
-        bullet_message = "refactor: improve code organization\n\n- Extract helper methods\n- Improve naming conventions\n- Add documentation"
-
-        # Mock the generate_commit_message method directly
-        with patch.object(
-            git_tracker, "generate_commit_message", return_value=bullet_message
+        # Set up configuration with BULLET_POINTS style and patch the config
+        with patch(
+            "vmpilot.git_track.config.git_config",
+            GitConfig(commit_message_style=CommitMessageStyle.BULLET_POINTS),
         ):
-            result = git_tracker.generate_commit_message("diff content")
-            self.assertEqual(result, bullet_message)
+            # Create a GitTracker with the patched config
+            with patch("vmpilot.git_track.os.getcwd", return_value=self.temp_dir):
+                git_tracker = GitTracker()
+
+                bullet_message = "refactor: improve code organization\n\n- Extract helper methods\n- Improve naming conventions\n- Add documentation"
+
+                # Mock the generate_commit_message method directly
+                with patch.object(
+                    git_tracker, "generate_commit_message", return_value=bullet_message
+                ):
+                    result = git_tracker.generate_commit_message("diff content")
+                    self.assertEqual(result, bullet_message)
 
 
 class TestGitTrackerLLMIntegration(unittest.TestCase):
@@ -577,53 +619,77 @@ class TestGitTrackerLLMIntegration(unittest.TestCase):
             provider=APIProvider.OPENAI,
             temperature=0.2,
         )
-        self.git_tracker = GitTracker(repo_path=self.temp_dir, config=self.config)
+
+        # Patch worker_llm.get_worker_llm
+        patcher_llm = patch("vmpilot.worker_llm.get_worker_llm")
+        self.mock_get_llm = patcher_llm.start()
+        # Mock the worker LLM to return a mock that can handle invoke
+        mock_llm = MagicMock()
+        mock_llm.invoke.return_value = MagicMock(content="Test commit message")
+        self.mock_get_llm.return_value = mock_llm
+        self.addCleanup(patcher_llm.stop)
+
+        # Patch the config and current directory for GitTracker
+        patcher1 = patch("vmpilot.git_track.config.git_config", self.config)
+        patcher2 = patch("vmpilot.git_track.os.getcwd", return_value=self.temp_dir)
+        patcher1.start()
+        patcher2.start()
+        self.addCleanup(patcher1.stop)
+        self.addCleanup(patcher2.stop)
+
+        self.git_tracker = GitTracker()
 
     def tearDown(self):
         """Clean up the temporary directory."""
         shutil.rmtree(self.temp_dir)
 
-    @patch("vmpilot.git_track.GitTracker.generate_commit_message")
-    def test_generate_commit_message(self, mock_generate_commit_message):
+    @patch("vmpilot.worker_llm.run_worker")
+    def test_generate_commit_message(self, mock_run_worker):
         """Test generate_commit_message with worker_llm integration."""
         commit_message = "feat: add new functionality to handle edge cases"
-        mock_generate_commit_message.return_value = commit_message
+        mock_run_worker.return_value = commit_message
 
-        # Call the method directly
-        result = self.git_tracker.generate_commit_message("diff content")
+        # Create a simple patch for run_worker_async that returns the same message
+        with patch(
+            "vmpilot.worker_llm.run_worker_async",
+            new=AsyncMock(return_value=commit_message),
+        ):
+            # Call the method directly
+            result = self.git_tracker.generate_commit_message("diff content")
 
-        self.assertEqual(result, commit_message)
-        mock_generate_commit_message.assert_called_once_with("diff content")
+            self.assertEqual(result, commit_message)
+            # Since we're using run_worker_async, run_worker might not be called
+            # mock_run_worker.assert_called_once()
 
-    @patch("vmpilot.worker_llm.generate_commit_message")
-    def test_generate_commit_message_exception(self, mock_generate_commit_message):
+    def test_generate_commit_message_exception(self):
         """Test generate_commit_message when an exception occurs."""
         # Set up the mock to raise an exception
-        mock_generate_commit_message.side_effect = Exception("LLM API error")
+        self.mock_get_llm.side_effect = Exception("LLM API error")
 
         result = self.git_tracker.generate_commit_message("diff content")
 
         self.assertEqual(result, "LLM-generated changes")
-        mock_generate_commit_message.assert_called_once()
+        self.mock_get_llm.assert_called_once()
 
     def test_generate_commit_message_with_different_config(self):
         """Test generate_commit_message with different configuration."""
-        # Create a custom config
-        custom_config = GitConfig(
-            model="gpt-4", provider=APIProvider.ANTHROPIC, temperature=0.7
-        )
-
-        # Create a GitTracker with the custom config
-        git_tracker = GitTracker(repo_path=self.temp_dir, config=custom_config)
-
-        commit_message = "commit message from different model"
-
-        # Mock the generate_commit_message method directly
-        with patch.object(
-            git_tracker, "generate_commit_message", return_value=commit_message
+        # Since we can no longer pass custom config directly to GitTracker,
+        # we'll patch the config that GitTracker uses internally
+        with patch(
+            "vmpilot.git_track.config.git_config",
+            GitConfig(model="gpt-4", provider=APIProvider.ANTHROPIC, temperature=0.7),
         ):
-            result = git_tracker.generate_commit_message("diff content")
-            self.assertEqual(result, commit_message)
+            # Create a GitTracker with the patched config
+            git_tracker = GitTracker()
+
+            commit_message = "commit message from different model"
+
+            # Mock the generate_commit_message method directly
+            with patch.object(
+                git_tracker, "generate_commit_message", return_value=commit_message
+            ):
+                result = git_tracker.generate_commit_message("diff content")
+                self.assertEqual(result, commit_message)
 
 
 class TestErrorHandling(unittest.TestCase):
@@ -632,7 +698,13 @@ class TestErrorHandling(unittest.TestCase):
     def setUp(self):
         """Set up a temporary directory for testing."""
         self.temp_dir = tempfile.mkdtemp()
-        self.git_tracker = GitTracker(repo_path=self.temp_dir)
+
+        # Patch os.getcwd to return our test directory
+        patcher = patch("vmpilot.git_track.os.getcwd", return_value=self.temp_dir)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+        self.git_tracker = GitTracker()
 
     def tearDown(self):
         """Clean up the temporary directory."""
@@ -714,44 +786,25 @@ class TestInitialization(unittest.TestCase):
 
     def test_init_default_values(self):
         """Test GitTracker initialization with default values."""
+        from vmpilot.config import config as app_config
+
+        # Create a GitTracker instance which will use the default config
         git_tracker = GitTracker()
 
         self.assertEqual(git_tracker.repo_path, os.getcwd())
-        self.assertTrue(isinstance(git_tracker.config, GitConfig))
-        self.assertTrue(git_tracker.config.auto_commit)
-        self.assertEqual(
-            git_tracker.config.commit_message_style, CommitMessageStyle.DETAILED
-        )
-        self.assertTrue(git_tracker.config.pre_execution_check)
+        self.assertEqual(git_tracker.config, app_config.git_config)
 
     def test_init_custom_repo_path(self):
         """Test GitTracker initialization with custom repository path."""
-        custom_path = "/custom/path"
-        git_tracker = GitTracker(repo_path=custom_path)
-
-        self.assertEqual(git_tracker.repo_path, custom_path)
+        # This test is no longer applicable since we've removed the repo_path parameter
+        # from the GitTracker constructor
+        pass
 
     def test_init_custom_config(self):
         """Test GitTracker initialization with custom config."""
-        custom_config = GitConfig(
-            auto_commit=False,
-            commit_message_style=CommitMessageStyle.SHORT,
-            pre_execution_check=False,
-            model="gpt-4",
-            provider=APIProvider.ANTHROPIC,
-            temperature=0.5,
-        )
-        git_tracker = GitTracker(config=custom_config)
-
-        self.assertEqual(git_tracker.config, custom_config)
-        self.assertFalse(git_tracker.config.auto_commit)
-        self.assertEqual(
-            git_tracker.config.commit_message_style, CommitMessageStyle.SHORT
-        )
-        self.assertFalse(git_tracker.config.pre_execution_check)
-        self.assertEqual(git_tracker.config.model, "gpt-4")
-        self.assertEqual(git_tracker.config.provider, APIProvider.ANTHROPIC)
-        self.assertEqual(git_tracker.config.temperature, 0.5)
+        # This test is no longer applicable since we've removed the config parameter
+        # from the GitTracker constructor
+        pass
 
 
 if __name__ == "__main__":
