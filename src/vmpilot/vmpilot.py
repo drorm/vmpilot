@@ -187,22 +187,13 @@ class Pipeline:
         # Only show models with valid API keys
         return [model for model in models if len(self._api_key) >= 32]
 
-    def get_or_generate_chat_id(self, messages, output_callback):
-        """Get an existing chat_id or generate a new one if needed."""
-        # Create a Chat object if we don't have one already
-        if not hasattr(self, "_chat"):
-            self._chat = Chat()
-
-        # Let the Chat object handle all initialization
-        chat_id = self._chat.initialize_chat(messages, output_callback)
-        return chat_id
-
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"Full body keys: {list(body.keys())}")
         logger.debug(f"Messages: {messages}")
+        logger.info(f"num messages: {len(messages)}")
 
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
@@ -294,6 +285,28 @@ class Pipeline:
                         logger.debug(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
 
+                # Extract chat_id from body if present
+                chat_id = getattr(self, "chat_id", None)
+
+                # It's a new Chat if we only have system and user messages
+                if not hasattr(self, "_chat") or (messages and len(messages) <= 2):
+                    self._chat = Chat(
+                        chat_id=chat_id,
+                        messages=messages,
+                        output_callback=output_callback,
+                    )
+
+                # Make sure we have the chat_id from the chat object
+                chat_id = self._chat.chat_id
+
+                """ Output callback to handle messages from the LLM """
+
+                def output_callback(content: Dict):
+                    logger.debug(f"Received content: {content}")
+                    if content["type"] == "text":
+                        logger.debug(f"Assistant: {content['text']}")
+                        output_queue.put(content["text"])
+
                 """ Output callback to handle tool messages: output from commands """
 
                 def tool_callback(result, tool_id):
@@ -323,12 +336,6 @@ class Pipeline:
                         else:
                             truncated_output += "\n"
                         output_queue.put(truncated_output)
-
-                # Get chat_id from body
-                chat_id = body.get("chat_id")
-
-                # Get or generate chat_id
-                chat_id = self.get_or_generate_chat_id(messages, output_callback)
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
 

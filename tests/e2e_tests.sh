@@ -100,7 +100,6 @@ done
 
 # Process results
 echo "All tests completed. Results:"
-echo "-------------------"
 
 success_count=0
 failure_count=0
@@ -118,10 +117,11 @@ for result_file in "$RESULTS_DIR"/*.result; do
     
     case "$status" in
         "PASS")
-            echo "✅ $test_name passed"
+            # Don't output individual pass messages
             ((success_count++))
             ;;
         "FAIL")
+            echo "-------------------"
             echo "❌ $test_name failed"
             echo "--- Log output ---"
             cat "$RESULTS_DIR/$test_name.log"
@@ -129,18 +129,19 @@ for result_file in "$RESULTS_DIR"/*.result; do
             ((failure_count++))
             ;;
         "NOTFOUND")
+            echo "-------------------"
             echo "❓ $test_name not found"
             ((not_found_count++))
             ;;
     esac
-    echo "-------------------"
 done
 
-# Summary
+# Summary - only show categories with non-zero counts
+echo "-------------------"
 echo "SUMMARY:"
-echo "✅ Passed: $success_count"
-echo "❌ Failed: $failure_count"
-echo "❓ Not found: $not_found_count"
+[[ $success_count -gt 0 ]] && echo "✅ Passed: $success_count"
+[[ $failure_count -gt 0 ]] && echo "❌ Failed: $failure_count"
+[[ $not_found_count -gt 0 ]] && echo "❓ Not found: $not_found_count"
 echo "Total: $((success_count + failure_count + not_found_count))"
 
 # Cleanup

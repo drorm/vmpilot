@@ -17,6 +17,7 @@ from langgraph.prebuilt.chat_agent_executor import AgentState
 
 from vmpilot.agent_logging import log_conversation_messages
 from vmpilot.agent_memory import (
+    clear_conversation_state,
     get_conversation_state,
     save_conversation_state,
     update_cache_info,
@@ -193,6 +194,7 @@ async def create_agent(
         )
     elif provider == APIProvider.OPENAI:
         # Only set temperature=1 for o3-mini model
+        provider_config = config.get_provider_config(APIProvider.OPENAI)
         model_temperature = 1 if model == "o3-mini" else temperature
         llm = ChatOpenAI(
             model=model,
@@ -320,10 +322,20 @@ async def process_messages(
     formatted_messages = []
     cache_info = {}
     if thread_id is not None:
-        # Retrieve previous conversation state
+        # Determine if this is a new chat session by checking the conversation state first
         previous_messages, previous_cache_info = get_conversation_state(thread_id)
-        if previous_messages:
-            logger.debug(
+
+        # If there are no previous messages OR this is explicitly a new chat (len <= 2)
+        # then we treat it as a new chat session
+        is_new_chat = (not previous_messages) or len(messages) <= 2
+
+        if is_new_chat:
+            # For new chats, clear any existing conversation state with this thread_id
+            clear_conversation_state(thread_id)
+            logger.info(f"Started new chat session with thread_id: {thread_id}")
+        else:
+            # This is a continuing chat, use the previous conversation state
+            logger.info(
                 f"Retrieved previous conversation state with {len(previous_messages)} messages for thread_id: {thread_id}"
             )
             formatted_messages.extend(previous_messages)
