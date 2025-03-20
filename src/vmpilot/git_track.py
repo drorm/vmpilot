@@ -417,7 +417,7 @@ class GitTracker:
     def pre_execution_check(self) -> Tuple[bool, str]:
         """Check if the repository is clean before execution.
 
-        If the repository is dirty, either abort or stash changes based on configuration.
+        If the repository is dirty, either stop or stash changes based on configuration.
 
         Returns:
             Tuple of (can_proceed, message) where can_proceed is True if execution can proceed
@@ -437,7 +437,7 @@ class GitTracker:
                     return (True, "Uncommitted changes have been stashed")
                 else:
                     return (False, "Failed to stash uncommitted changes")
-            else:  # Default is "abort"
+            else:  # Default is "stop"
                 return (
                     False,
                     "Repository has uncommitted changes. Please commit or stash them before proceeding.",

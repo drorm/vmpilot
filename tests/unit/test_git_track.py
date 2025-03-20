@@ -30,7 +30,7 @@ class TestGitConfig(unittest.TestCase):
         config = GitConfig()
         self.assertTrue(config.auto_commit)
         self.assertEqual(config.commit_message_style, CommitMessageStyle.DETAILED)
-        self.assertEqual(config.dirty_repo_action, "abort")
+        self.assertEqual(config.dirty_repo_action, "stop")
         self.assertEqual(config.model, "gpt-3.5-turbo")
         self.assertEqual(config.provider, APIProvider.OPENAI)
         self.assertEqual(config.temperature, 0.2)
@@ -67,7 +67,7 @@ class TestGitTracker(unittest.TestCase):
         self.config = GitConfig(
             auto_commit=True,
             commit_message_style=CommitMessageStyle.DETAILED,
-            dirty_repo_action="abort",
+            dirty_repo_action="stop",
         )
 
         # We'll patch the GitTracker to use our test directory and config

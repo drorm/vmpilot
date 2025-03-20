@@ -282,10 +282,20 @@ async def process_messages(
         user_message=user_message,
     )
 
-    # Log if Git repository has uncommitted changes
+    # Check Git repository status and handle dirty_repo_action
     if not exchange.check_git_status():
         logger.warning("Git repository has uncommitted changes before LLM operation")
-        # In a future version, we could add user prompting here to handle uncommitted changes
+
+        # Check if we should stop processing based on dirty_repo_action config
+        if config.git_config.dirty_repo_action.lower() == "stop":
+            # Return a message to the user instead of processing with the LLM
+            error_message = "Sorry, the git repository has unsaved changes and the config is set to: *dirty_repo_action = stop*. I cannot make any changes."
+            # Call output callback with the error message
+            if output_callback:
+                output_callback({"type": "text", "text": error_message})
+            # Return early with just the error message
+            return messages + [error_message]
+        # For other actions (stash), continue processing
 
     # Handle prompt caching for Anthropic provider
 

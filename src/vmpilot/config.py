@@ -139,8 +139,8 @@ class GitConfig(BaseModel):
         default=0.2, description="Temperature for commit message generation"
     )
     dirty_repo_action: str = Field(
-        default="abort",
-        description="What to do when repository is dirty (abort, stash)",
+        default="stop",
+        description="What to do when repository is dirty (stop, stash)",
     )
     commit_prefix: str = Field(
         default="[VMPilot]", description="Prefix for commit messages"
@@ -198,7 +198,7 @@ class ModelConfig(BaseModel):
                     provider=Provider(git_section.get("provider", fallback="openai")),
                     temperature=git_section.getfloat("temperature", fallback=0.2),
                     dirty_repo_action=git_section.get(
-                        "dirty_repo_action", fallback="abort"
+                        "dirty_repo_action", fallback="stop"
                     ),
                     commit_prefix=git_section.get(
                         "commit_prefix", fallback="[VMPilot]"

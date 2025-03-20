@@ -52,7 +52,9 @@ class Exchange:
 
         # Use provided git_enabled or fall back to config
         self.git_enabled = config.git_config.enabled
-        logger.info(f"Git tracking enabled: {self.git_enabled}, config.git_config: {config.git_config}")
+        logger.info(
+            f"Git tracking enabled: {self.git_enabled}, config.git_config: {config.git_config}"
+        )
 
         # Initialize Git tracker if enabled
         self.git_tracker = GitTracker() if self.git_enabled else None
@@ -73,11 +75,28 @@ class Exchange:
         status = self.git_tracker.get_repo_status()
         logger.info(f"Git repository status: {status.name}")
         if status == GitStatus.DIRTY:
-            # Just log for now, later could integrate with UI to prompt user
-            logger.warning(
-                "Git repository has uncommitted changes before LLM operation"
-            )
-            return False
+            # Check dirty_repo_action from config
+            dirty_action = config.git_config.dirty_repo_action.lower()
+
+            # For 'stop' mode, halt processing
+            if dirty_action == "stop":
+                logger.warning(
+                    "Git repository has uncommitted changes before LLM operation"
+                )
+                # Return False to indicate dirty repo
+                return False
+            # For future 'stash' implementation
+            elif dirty_action == "stash":
+                logger.warning(
+                    "Git repository has uncommitted changes. Stash functionality not yet implemented."
+                )
+                return False
+            else:
+                # Default behavior for unknown actions
+                logger.warning(
+                    f"Unknown dirty_repo_action '{dirty_action}'. Git repository has uncommitted changes."
+                )
+                return False
         return True
 
     def complete(

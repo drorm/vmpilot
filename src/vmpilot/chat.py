@@ -119,7 +119,7 @@ class Chat:
 
         # Generate a new chat_id
         new_chat_id = self._generate_chat_id()
-        logger.info(f"Generated new chat_id: {new_chat_id}")
+        logger.debug(f"Generated new chat_id: {new_chat_id}")
 
         # Announce chat ID if callback is provided
         if output_callback:
