@@ -85,12 +85,18 @@ class Exchange:
                 )
                 # Return False to indicate dirty repo
                 return False
-            # For future 'stash' implementation
             elif dirty_action == "stash":
-                logger.warning(
-                    "Git repository has uncommitted changes. Stash functionality not yet implemented."
+                # Stash uncommitted changes
+                logger.info("Attempting to stash uncommitted changes...")
+                stash_success = self.git_tracker.stash_changes(
+                    "VMPilot: Auto-stashed changes before LLM operation"
                 )
-                return False
+                if stash_success:
+                    logger.info("Successfully stashed uncommitted changes")
+                    return True
+                else:
+                    logger.warning("Failed to stash uncommitted changes")
+                    return False
             else:
                 # Default behavior for unknown actions
                 logger.warning(

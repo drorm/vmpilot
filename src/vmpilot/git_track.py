@@ -414,6 +414,32 @@ class GitTracker:
             logger.error(f"Failed to reset to previous commit: {e}")
             return False
 
+    def auto_stash_changes(self) -> Tuple[bool, str]:
+        """Automatically stash changes if the repository is dirty.
+
+        This is a higher-level method that checks if the repository is dirty
+        and stashes changes if needed, based on configuration.
+
+        Returns:
+            Tuple of (success, message) where success is True if stashing was
+            successful or not needed, and message is a status or error message.
+        """
+        status = self.get_repo_status()
+
+        if status == GitStatus.NOT_A_REPO:
+            return (True, "Not a Git repository")
+        elif status == GitStatus.CLEAN:
+            return (True, "Repository is clean")
+
+        # Repository is dirty, stash changes
+        stash_message = "VMPilot: Auto-stashed changes before LLM operation"
+        stash_success = self.stash_changes(stash_message)
+
+        if stash_success:
+            return (True, "Uncommitted changes have been stashed")
+        else:
+            return (False, "Failed to stash uncommitted changes")
+
     def pre_execution_check(self) -> Tuple[bool, str]:
         """Check if the repository is clean before execution.
 
@@ -432,11 +458,7 @@ class GitTracker:
         else:
             # Repository is dirty, handle according to configuration
             if self.config.dirty_repo_action == "stash":
-                stash_success = self.stash_changes()
-                if stash_success:
-                    return (True, "Uncommitted changes have been stashed")
-                else:
-                    return (False, "Failed to stash uncommitted changes")
+                return self.auto_stash_changes()
             else:  # Default is "stop"
                 return (
                     False,
