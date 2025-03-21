@@ -30,13 +30,16 @@ class Exchange:
         self,
         chat_id: str,
         user_message: Union[Dict, HumanMessage],
+        output_callback=None,
     ):
         """Initialize a new exchange.
 
         Args:
             chat_id: Identifier for the chat this exchange belongs to
             user_message: The user's message that initiated this exchange
+            output_callback: Optional callback for user messages
         """
+        self.output_callback = output_callback
         self.chat_id = chat_id
 
         # Handle different user message formats
@@ -90,6 +93,9 @@ class Exchange:
                 )
                 if stash_success:
                     logger.info("Successfully stashed uncommitted changes")
+                    if self.output_callback:
+                        stash_message = "I've stashed your uncommitted changes to ensure a clean working environment."
+                        self.output_callback({"type": "text", "text": stash_message})
                     return True
                 else:
                     logger.warning("Failed to stash uncommitted changes")

@@ -280,6 +280,7 @@ async def process_messages(
     exchange = Exchange(
         chat_id=thread_id,
         user_message=user_message,
+        output_callback=output_callback,
     )
 
     # Check Git repository status and handle dirty_repo_action
