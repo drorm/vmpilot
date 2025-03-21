@@ -232,6 +232,43 @@ class ModelConfig(BaseModel):
         """Get default model for specified provider"""
         return self.get_provider_config(provider).default_model
 
+    def get_api_key(self, provider: Optional[Provider] = None) -> str:
+        """Get API key for the specified provider.
+
+        Args:
+            provider: The provider to get the API key for. If None, uses the default provider.
+
+        Returns:
+            The API key as a string.
+
+        Raises:
+            ConfigError: If the API key cannot be found or accessed.
+        """
+        if provider is None:
+            provider = self.default_provider
+
+        provider_config = self.get_provider_config(provider)
+
+        # Try environment variable first
+        if provider_config.api_key_env and os.environ.get(provider_config.api_key_env):
+            return os.environ.get(provider_config.api_key_env, "")
+
+        # Then try key file
+        if provider_config.api_key_path:
+            key_path = os.path.expanduser(provider_config.api_key_path)
+            if os.path.exists(key_path):
+                try:
+                    with open(key_path, "r") as f:
+                        return f.read().strip()
+                except Exception as e:
+                    raise ConfigError(
+                        f"Failed to read API key from {key_path}: {str(e)}"
+                    )
+
+        raise ConfigError(
+            f"No API key found for provider {provider}. Set environment variable {provider_config.api_key_env} or create key file at {provider_config.api_key_path}"
+        )
+
 
 # Global configuration instance
 config = ModelConfig()

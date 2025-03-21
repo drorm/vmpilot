@@ -268,7 +268,7 @@ class GitTracker:
                 stderr=subprocess.PIPE,
                 text=True,
             )
-            logger.info(f"Committed changes: {result.stdout.strip()}")
+            logger.debug(f"Committed changes: {result.stdout.strip()}")
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to commit changes: {e}")
