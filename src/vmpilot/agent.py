@@ -573,7 +573,7 @@ async def process_messages(
 
             # Log exchange summary
             exchange_summary = exchange.get_exchange_summary()
-            logger.info(f"Exchange completed: {exchange_summary}")
+            logger.debug(f"Exchange completed: {exchange_summary}")
 
             # If changes were committed, log the commit message
             if exchange_summary.get("git_changes_committed"):

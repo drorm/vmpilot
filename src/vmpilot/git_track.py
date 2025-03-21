@@ -130,7 +130,7 @@ class GitTracker:
         """
         status = self.get_repo_status()
         if status != GitStatus.DIRTY and status != GitStatus.UNTRACKED_ONLY:
-            logger.info("No changes to stash")
+            logger.debug("No changes to stash")
             return False
 
         try:
@@ -145,7 +145,7 @@ class GitTracker:
 
             # Check if changes were actually stashed
             if "No local changes to save" in result.stdout:
-                logger.info("No changes to stash")
+                logger.debug("No changes to stash")
                 return False
 
             logger.info(f"Stashed changes: {result.stdout.strip()}")
@@ -164,7 +164,7 @@ class GitTracker:
             True if stash was popped, False otherwise.
         """
         if not self.has_stashed_changes():
-            logger.info("No stashed changes to pop")
+            logger.debug("No stashed changes to pop")
             return False
 
         try:
@@ -353,7 +353,7 @@ class GitTracker:
             and message is the commit message or error message.
         """
         if not self.config.auto_commit:
-            logger.info("Auto-commit is disabled")
+            logger.debug("Auto-commit is disabled")
             return (False, "Auto-commit is disabled")
 
         status = self.get_repo_status()

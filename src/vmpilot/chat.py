@@ -150,7 +150,7 @@ class Chat:
                     match = re.search(pattern, msg["content"])
                     if match:
                         project_dir = match.group(1)
-                        logger.info(f"Extracted project directory: {project_dir}")
+                        logger.debug(f"Extracted project directory: {project_dir}")
                         self.project_dir = project_dir
                         self._ensure_project_dir_exists()
                         return project_dir
@@ -163,7 +163,7 @@ class Chat:
         try:
             expanded_dir = os.path.expanduser(self.project_dir)
             os.chdir(expanded_dir)
-            logger.debug(f"Changed to project directory: {expanded_dir}")
+            logger.info(f"Changed to project directory: {expanded_dir}")
         except Exception as e:
             logger.error(
                 f"Failed to change to project directory {self.project_dir}: {e}"
