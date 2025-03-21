@@ -125,9 +125,33 @@ class TestGitTracker(unittest.TestCase):
     @patch("vmpilot.git_track.GitTracker.is_git_repo")
     @patch("subprocess.run")
     def test_get_repo_status_dirty(self, mock_run, mock_is_git_repo):
-        """Test get_repo_status when the repository is dirty."""
+        """Test get_repo_status when the repository is dirty with modified files."""
         mock_is_git_repo.return_value = True
         mock_run.return_value = MagicMock(stdout=" M file.txt", stderr="")
+        self.assertEqual(self.git_tracker.get_repo_status(), GitStatus.DIRTY)
+        mock_is_git_repo.assert_called_once()
+        mock_run.assert_called_once()
+
+    @patch("vmpilot.git_track.GitTracker.is_git_repo")
+    @patch("subprocess.run")
+    def test_get_repo_status_untracked_only(self, mock_run, mock_is_git_repo):
+        """Test get_repo_status when the repository has only untracked files."""
+        mock_is_git_repo.return_value = True
+        mock_run.return_value = MagicMock(
+            stdout="?? new_file.txt\n?? another_file.py", stderr=""
+        )
+        self.assertEqual(self.git_tracker.get_repo_status(), GitStatus.UNTRACKED_ONLY)
+        mock_is_git_repo.assert_called_once()
+        mock_run.assert_called_once()
+
+    @patch("vmpilot.git_track.GitTracker.is_git_repo")
+    @patch("subprocess.run")
+    def test_get_repo_status_mixed_changes(self, mock_run, mock_is_git_repo):
+        """Test get_repo_status when the repository has both modified and untracked files."""
+        mock_is_git_repo.return_value = True
+        mock_run.return_value = MagicMock(
+            stdout=" M file.txt\n?? new_file.txt", stderr=""
+        )
         self.assertEqual(self.git_tracker.get_repo_status(), GitStatus.DIRTY)
         mock_is_git_repo.assert_called_once()
         mock_run.assert_called_once()
@@ -495,6 +519,19 @@ class TestGitTracker(unittest.TestCase):
                 self.assertTrue(can_proceed)
                 self.assertEqual(message, "Uncommitted changes have been stashed")
 
+    def test_auto_stash_changes_untracked_only(self):
+        """Test auto_stash_changes when repository has only untracked files."""
+        # Mock the get_repo_status method to return UNTRACKED_ONLY
+        with patch.object(
+            self.git_tracker, "get_repo_status", return_value=GitStatus.UNTRACKED_ONLY
+        ):
+            success, message = self.git_tracker.auto_stash_changes()
+
+            self.assertTrue(success)
+            self.assertEqual(
+                message, "Repository has only untracked files (considered clean)"
+            )
+
     @patch("vmpilot.git_track.GitTracker.get_repo_status")
     def test_pre_execution_check_not_a_repo(self, mock_get_repo_status):
         """Test pre_execution_check when not in a Git repository."""
@@ -515,6 +552,19 @@ class TestGitTracker(unittest.TestCase):
 
         self.assertTrue(can_proceed)
         self.assertEqual(message, "Repository is clean")
+        mock_get_repo_status.assert_called_once()
+
+    @patch("vmpilot.git_track.GitTracker.get_repo_status")
+    def test_pre_execution_check_untracked_only(self, mock_get_repo_status):
+        """Test pre_execution_check when the repository has only untracked files."""
+        mock_get_repo_status.return_value = GitStatus.UNTRACKED_ONLY
+
+        can_proceed, message = self.git_tracker.pre_execution_check()
+
+        self.assertTrue(can_proceed)
+        self.assertEqual(
+            message, "Repository has only untracked files (considered clean)"
+        )
         mock_get_repo_status.assert_called_once()
 
     @patch("vmpilot.git_track.GitTracker.get_repo_status")
