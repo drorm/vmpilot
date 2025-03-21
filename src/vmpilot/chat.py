@@ -55,7 +55,7 @@ class Chat:
         self.change_to_project_dir()
 
         if self.chat_id:
-            logger.info(f"Using chat_id: {self.chat_id}")
+            logger.debug(f"Using chat_id: {self.chat_id}")
 
     def _generate_chat_id(self) -> str:
         """Generate a new random chat ID."""
@@ -112,7 +112,7 @@ class Chat:
                         parts = content_lines[0].split(self.CHAT_ID_DELIMITER, 1)
                         if len(parts) > 1:
                             extracted_id = parts[1].strip()
-                            logger.info(f"Extracted chat_id: {extracted_id}")
+                            logger.debug(f"Extracted chat_id: {extracted_id}")
                             return extracted_id
 
             logger.warning("Could not extract chat_id from messages")
@@ -163,7 +163,7 @@ class Chat:
         try:
             expanded_dir = os.path.expanduser(self.project_dir)
             os.chdir(expanded_dir)
-            logger.info(f"Changed to project directory: {expanded_dir}")
+            logger.debug(f"Changed to project directory: {expanded_dir}")
         except Exception as e:
             logger.error(
                 f"Failed to change to project directory {self.project_dir}: {e}"

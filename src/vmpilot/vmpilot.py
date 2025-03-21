@@ -193,7 +193,7 @@ class Pipeline:
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"Full body keys: {list(body.keys())}")
         logger.debug(f"Messages: {messages}")
-        logger.info(f"num messages: {len(messages)}")
+        logger.debug(f"num messages: {len(messages)}")
 
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):

@@ -52,7 +52,7 @@ class Exchange:
 
         # Use provided git_enabled or fall back to config
         self.git_enabled = config.git_config.enabled
-        logger.info(
+        logger.debug(
             f"Git tracking enabled: {self.git_enabled}, config.git_config: {config.git_config}"
         )
 
@@ -73,16 +73,13 @@ class Exchange:
             return True
 
         status = self.git_tracker.get_repo_status()
-        logger.info(f"Git repository status: {status.name}")
+        logger.debug(f"Git repository status: {status.name}")
         if status == GitStatus.DIRTY:
             # Check dirty_repo_action from config
             dirty_action = config.git_config.dirty_repo_action.lower()
 
             # For 'stop' mode, halt processing
             if dirty_action == "stop":
-                logger.warning(
-                    "Git repository has uncommitted changes before LLM operation"
-                )
                 # Return False to indicate dirty repo
                 return False
             elif dirty_action == "stash":
@@ -99,7 +96,7 @@ class Exchange:
                     return False
             else:
                 # Default behavior for unknown actions
-                logger.warning(
+                logger.debug(
                     f"Unknown dirty_repo_action '{dirty_action}'. Git repository has uncommitted changes."
                 )
                 return False

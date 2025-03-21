@@ -44,10 +44,18 @@ Please analyze the provided Git diff and generate an appropriate commit message.
 
 
 class GitStatus(Enum):
-    """Enum representing the status of the Git repository."""
+    """Enum representing the status of the Git repository.
+
+    Possible values:
+    - CLEAN: No changes (no modified, staged, or untracked files)
+    - DIRTY: Has modified or staged files that represent changes to existing content
+    - UNTRACKED_ONLY: Has only untracked files (new files), no modifications to existing content
+    - NOT_A_REPO: Not a Git repository
+    """
 
     CLEAN = "clean"
     DIRTY = "dirty"
+    UNTRACKED_ONLY = "untracked_only"
     NOT_A_REPO = "not_a_repo"
 
 
@@ -83,7 +91,8 @@ class GitTracker:
         """Get the status of the Git repository.
 
         Returns:
-            GitStatus enum indicating if the repo is clean, dirty, or not a repo.
+            GitStatus enum indicating if the repo is clean, dirty, has only untracked files,
+            or is not a repo.
         """
         if not self.is_git_repo():
             return GitStatus.NOT_A_REPO
@@ -97,7 +106,18 @@ class GitTracker:
             text=True,
         )
 
-        return GitStatus.CLEAN if not result.stdout.strip() else GitStatus.DIRTY
+        # If no output, the repo is clean
+        if not result.stdout.strip():
+            return GitStatus.CLEAN
+
+        # Check if all lines start with '?? ' (untracked files only)
+        lines = result.stdout.strip().split("\n")
+        all_untracked = all(line.startswith("?? ") for line in lines)
+
+        if all_untracked:
+            return GitStatus.UNTRACKED_ONLY
+        else:
+            return GitStatus.DIRTY
 
     def stash_changes(self, message: str = "User changes before LLM request") -> bool:
         """Stash uncommitted changes.
@@ -108,7 +128,8 @@ class GitTracker:
         Returns:
             True if changes were stashed, False otherwise.
         """
-        if self.get_repo_status() != GitStatus.DIRTY:
+        status = self.get_repo_status()
+        if status != GitStatus.DIRTY and status != GitStatus.UNTRACKED_ONLY:
             logger.info("No changes to stash")
             return False
 
@@ -222,7 +243,8 @@ class GitTracker:
         Returns:
             True if changes were committed, False otherwise.
         """
-        if self.get_repo_status() != GitStatus.DIRTY:
+        status = self.get_repo_status()
+        if status != GitStatus.DIRTY and status != GitStatus.UNTRACKED_ONLY:
             logger.info("No changes to commit")
             return False
 
@@ -334,7 +356,8 @@ class GitTracker:
             logger.info("Auto-commit is disabled")
             return (False, "Auto-commit is disabled")
 
-        if self.get_repo_status() != GitStatus.DIRTY:
+        status = self.get_repo_status()
+        if status != GitStatus.DIRTY and status != GitStatus.UNTRACKED_ONLY:
             return (False, "No changes to commit")
 
         try:
@@ -419,6 +442,7 @@ class GitTracker:
 
         This is a higher-level method that checks if the repository is dirty
         and stashes changes if needed, based on configuration.
+        Repositories with only untracked files are considered clean for operational purposes.
 
         Returns:
             Tuple of (success, message) where success is True if stashing was
@@ -430,6 +454,8 @@ class GitTracker:
             return (True, "Not a Git repository")
         elif status == GitStatus.CLEAN:
             return (True, "Repository is clean")
+        elif status == GitStatus.UNTRACKED_ONLY:
+            return (True, "Repository has only untracked files (considered clean)")
 
         # Repository is dirty, stash changes
         stash_message = "VMPilot: Auto-stashed changes before LLM operation"
@@ -444,6 +470,7 @@ class GitTracker:
         """Check if the repository is clean before execution.
 
         If the repository is dirty, either stop or stash changes based on configuration.
+        Repositories with only untracked files are considered clean for operational purposes.
 
         Returns:
             Tuple of (can_proceed, message) where can_proceed is True if execution can proceed
@@ -455,6 +482,8 @@ class GitTracker:
             return (True, "Not a Git repository")
         elif status == GitStatus.CLEAN:
             return (True, "Repository is clean")
+        elif status == GitStatus.UNTRACKED_ONLY:
+            return (True, "Repository has only untracked files (considered clean)")
         else:
             # Repository is dirty, handle according to configuration
             if self.config.dirty_repo_action == "stash":

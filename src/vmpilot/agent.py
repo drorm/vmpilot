@@ -284,16 +284,16 @@ async def process_messages(
 
     # Check Git repository status and handle dirty_repo_action
     if not exchange.check_git_status():
-        logger.warning("Git repository has uncommitted changes before LLM operation")
+        logger.debug("Git repository has uncommitted changes before LLM operation")
 
         # Check if we should stop processing based on dirty_repo_action config
         if config.git_config.dirty_repo_action.lower() == "stop":
             # Return a message to the user instead of processing with the LLM
-            error_message = "Sorry, the git repository has unsaved changes and the config is set to: *dirty_repo_action = stop*. I cannot make any changes."
+            error_message = "Sorry, the git repository has unsaved changes and the config is set to: *dirty_repo_action = stop*.\n I cannot make any changes."
             # Call output callback with the error message
             output_callback({"type": "text", "text": error_message})
             logger.warning(
-                "Git repository has uncommitted changes before LLM operation. Stop processing."
+                "Dirty repo and dirty_repo_action is set to stop. Stop processing."
             )
 
             # Return early with just the error message
