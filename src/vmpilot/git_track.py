@@ -229,7 +229,7 @@ class GitTracker:
             return ""
 
     def commit_changes(
-        self, message: str, author: str = "VMPilot <vmpilot@ai.assistant>"
+        self, message: str, author: str = None
     ) -> bool:
         """Commit uncommitted changes.
 
@@ -259,7 +259,10 @@ class GitTracker:
                 text=True,
             )
 
-            # Commit with specified author
+            # Commit with specified author or use the one from config
+            if author is None:
+                author = self.config.author
+            
             result = subprocess.run(
                 ["git", "commit", "--author", author, "-m", message],
                 cwd=self.repo_path,

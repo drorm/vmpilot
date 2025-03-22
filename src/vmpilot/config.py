@@ -142,6 +142,10 @@ class GitConfig(BaseModel):
         default="stop",
         description="What to do when repository is dirty (stop, stash)",
     )
+    author: str = Field(
+        default="VMPilot <vmpilot@example.com>",
+        description="Author name and email for Git commits",
+    )
     commit_prefix: str = Field(
         default="[VMPilot]", description="Prefix for commit messages"
     )
@@ -202,6 +206,9 @@ class ModelConfig(BaseModel):
                     ),
                     commit_prefix=git_section.get(
                         "commit_prefix", fallback="[VMPilot]"
+                    ),
+                    author=git_section.get(
+                        "author", fallback="VMPilot <vmpilot@example.com>"
                     ),
                 )
 

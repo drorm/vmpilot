@@ -69,6 +69,7 @@ The `config.ini` file is organized into the following sections:
 | provider | Provider for commit message generation (anthropic, openai) | anthropic |
 | temperature | Temperature for commit message generation (0.0-1.0) | 0.7 |
 | commit_prefix | Prefix added to all commit messages | [VMPilot] |
+| author | Author name and email for Git commits | VMPilot <vmpilot@example.com> |
 
 ## Example Configuration
 ```ini
@@ -103,6 +104,7 @@ model = claude-3-7-sonnet-latest
 provider = anthropic
 temperature = 0.7
 commit_prefix = [VMPilot]
+author = VMPilot <vmpilot@example.com>
 ```
 
 ## Environment Variables
