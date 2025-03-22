@@ -31,6 +31,7 @@ nav:
     - Tips: tips.md
     - CLI Interface: cli.md
     - DNS and SSL: dns_ssl_setup.md
+    - Git Tracking: git-tracking.md
     - Release Process: release-process.md
 
 markdown_extensions:
