@@ -2,12 +2,21 @@
 
 VMPilot includes built-in Git integration to track and manage changes made by the AI assistant. This feature ensures all modifications to your codebase are properly recorded, making it easier to review, revert, or understand changes.
 
+## Motivation
+
+Git tracking is optional but highly recommended when working with VMPilot. It provides several benefits:
+
+- **Transparency**: Understand what changes the AI assistant made to the codebase
+- **Safety**: Ensure changes are tracked and can be reverted if needed
+- **Documentation**: VMPilot automatically generates commit messages for each change
+
 ## How Git Tracking Works
 
 When enabled, VMPilot's Git tracking:
 
 1. Checks the status of your Git repository at the start of each exchange
-2. Tracks changes made during the assistant's operations
+2. Stashes or stops if the repository is dirty, has uncommitted changes
+3. Tracks changes made during VMPilot exchanges. An exchange is a request you make and the response and actions taken by VMPilot. At the end of each exchange:
 3. Automatically commits changes at the end of each exchange with AI-generated commit messages
 4. Provides warnings if the repository is in a dirty state before operations
 
