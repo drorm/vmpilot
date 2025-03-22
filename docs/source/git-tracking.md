@@ -1,6 +1,6 @@
 # Git Tracking
 
-VMPilot includes built-in Git integration to help track and manage changes made by the AI assistant. This feature ensures that all modifications to your codebase are properly recorded, making it easier to review, revert, or understand changes.
+VMPilot includes built-in Git integration to track and manage changes made by the AI assistant. This feature ensures all modifications to your codebase are properly recorded, making it easier to review, revert, or understand changes.
 
 ## How Git Tracking Works
 
@@ -11,81 +11,38 @@ When enabled, VMPilot's Git tracking:
 3. Automatically commits changes at the end of each exchange with AI-generated commit messages
 4. Provides warnings if the repository is in a dirty state before operations
 
-## Core Components
-
-### Exchange Class
-
-The `Exchange` class manages a single conversation exchange between the user and the assistant, handling Git operations at appropriate times:
-
-```python
-class Exchange:
-    """Represents a single exchange between user and LLM, with Git tracking."""
-    
-    def __init__(self, chat_id, user_message, git_enabled=True):
-        # Initialize exchange properties
-        # Check Git repo status
-    
-    def check_git_status(self):
-        """Check if Git repo is clean, warn if not."""
-        # Returns True if clean or Git disabled
-    
-    def complete(self, assistant_message, tool_calls=None):
-        """Complete the exchange with assistant response and handle Git commit."""
-        # Commit changes and save conversation state
-    
-    def commit_changes(self):
-        """Commit any changes made during this exchange."""
-        # Generate commit message and commit changes
-```
-
-### GitTracker Class
-
-The `GitTracker` class handles all Git-related operations:
-
-```python
-class GitTracker:
-    """Track and manage Git changes for LLM operations."""
-    
-    def __init__(self, repo_path=None):
-        # Initialize with repo path
-    
-    def get_repo_status(self):
-        """Check if repo is clean/dirty/not a repo."""
-        # Returns GitStatus enum value
-    
-    def get_diff(self):
-        """Get current diff for uncommitted changes."""
-        # Returns diff string
-    
-    def commit_changes(self, message, author="VMPilot <vmpilot@ai>"):
-        """Commit changes with given message."""
-        # Commits changes with provided message
-```
-
-### Commit Message Generation
-
-VMPilot uses a worker LLM to generate meaningful commit messages based on the diff:
-
-```python
-async def generate_commit_message(diff, model="gpt-3.5-turbo"):
-    """Generate a commit message using a worker LLM."""
-    # Uses an LLM to analyze the diff and generate a commit message
-```
-
 ## Configuration
 
-You can enable or disable Git tracking in your VMPilot configuration:
+Configure Git tracking in the `[git]` section of your `config.ini` file:
 
-```yaml
-git_tracking:
-  enabled: true
-  auto_commit: true
-  commit_author: "VMPilot <vmpilot@ai>"
+| Setting | Description | Default | Options |
+|---------|-------------|---------|---------|
+| enabled | Enable or disable Git tracking | true | true/false |
+| dirty_repo_action | Action to take when repository has uncommitted changes | stash | stop, stash |
+| auto_commit | Automatically commit changes after each exchange | true | true/false |
+| commit_message_style | Style of generated commit messages | bullet_points | short, detailed, bullet_points |
+| model | LLM model used for commit message generation | claude-3-7-sonnet-latest | (any supported model) |
+| provider | LLM provider for commit message generation | anthropic | anthropic, openai |
+| temperature | Temperature for commit message generation | 0.7 | 0.0-1.0 |
+| commit_prefix | Prefix added to all commit messages | [VMPilot] | (any text) |
+
+### Example Configuration
+
+```ini
+[git]
+enabled = true
+dirty_repo_action = stash
+auto_commit = true
+commit_message_style = bullet_points
+model = claude-3-7-sonnet-latest
+provider = anthropic
+temperature = 0.7
+commit_prefix = [VMPilot]
 ```
 
 ## Best Practices
 
-1. **Clean Repository**: Try to start with a clean repository before asking VMPilot to make changes
+1. **Clean Repository**: Start with a clean repository before asking VMPilot to make changes
 2. **Review Commits**: Always review the commits made by VMPilot to ensure they're appropriate
 3. **Branch Strategy**: Consider having VMPilot work in a dedicated branch for larger changes
 
