@@ -15,6 +15,7 @@ nav:
     - Installation: installation.md
     - Configuration: configuration.md
     - User Guide: user-guide.md
+    - Git Tracking: git-tracking.md
     - Examples:
         - Overview: examples/index.md
         - Hello World: examples/hello-world.md
@@ -31,7 +32,6 @@ nav:
     - Tips: tips.md
     - CLI Interface: cli.md
     - DNS and SSL: dns_ssl_setup.md
-    - Git Tracking: git-tracking.md
     - Release Process: release-process.md
 
 markdown_extensions:
