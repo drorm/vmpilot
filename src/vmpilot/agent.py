@@ -571,6 +571,13 @@ async def process_messages(
             # Complete the exchange with collected tool calls and commit any changes
             exchange.complete(assistant_message, collected_tool_calls)
 
+            # Save the full conversation state to ensure all messages are preserved
+            if thread_id is not None:
+                save_conversation_state(thread_id, response["messages"], cache_info)
+                logger.debug(
+                    f"Saved complete conversation state with {len(response['messages'])} messages for thread_id: {thread_id}"
+                )
+
             # Log exchange summary
             exchange_summary = exchange.get_exchange_summary()
             logger.debug(f"Exchange completed: {exchange_summary}")
@@ -594,6 +601,13 @@ async def process_messages(
                 else:
                     assistant_message = last_message
                 exchange.complete(assistant_message, collected_tool_calls)
+
+                # Save the full conversation state
+                if thread_id is not None:
+                    save_conversation_state(thread_id, response["messages"], cache_info)
+                    logger.debug(
+                        f"Saved complete conversation state with {len(response['messages'])} messages for thread_id: {thread_id}"
+                    )
             else:
                 # Fallback if no messages at all
                 exchange.complete(
