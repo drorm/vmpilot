@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.8">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.9">
     
     
       
@@ -26,7 +26,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.8608ea7d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.4af4bdda.min.css">
       
       
 
@@ -307,6 +307,27 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../git-tracking/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Git Tracking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -317,10 +338,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -332,8 +353,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Examples
           </label>
@@ -516,10 +537,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -531,8 +552,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             Plugins
           </label>
@@ -938,7 +959,35 @@
 - Verify each step before proceeding
 - Combine manual work with LLM assistance when needed</p>
 <h1 id="track-llm-changes-with-git">Track LLM changes with git</h1>
-<p>To track changes made by the LLM, if possible, use a clean git branch. That way, you can simply do a <code>git diff</code> to see the changes made by the LLM. </p>
+<p>To track changes made by the LLM, if possible, use a clean git branch. That way, you can simply do a <code>git diff</code> to see the changes made by the LLM.</p>
+<h2 id="multi-project-support">Multi-Project Support</h2>
+<p>The multi-project support feature simplifies working with multiple codebases:</p>
+<ol>
+<li>
+<p><strong>No need for manual project root specification</strong>:
+   Previously, you had to include phrases like "The root directory of this project is '/path/to/project'" in your prompts. Now simply add <code>$PROJECT_ROOT=/path/to/your/project</code> to your workspace system prompt once.</p>
+</li>
+<li>
+<p><strong>Workspace-specific project contexts</strong>:</p>
+</li>
+<li>Create separate workspaces for different projects</li>
+<li>Each workspace maintains its own project context</li>
+<li>
+<p>All operations (file editing, shell commands, git) automatically work in the correct directory</p>
+</li>
+<li>
+<p><strong>Set a default project</strong>:
+   Configure <code>default_project</code> in your <code>config.ini</code> file to provide a fallback when no project is specified.</p>
+</li>
+<li>
+<p><strong>Seamless project switching</strong>:
+   When switching between workspaces, VMPilot automatically changes to the appropriate project directory without any additional commands.</p>
+</li>
+<li>
+<p><strong>Improved plugin functionality</strong>:
+   Plugins like GitHub Issues will automatically operate in the correct repository context based on the current project directory.</p>
+</li>
+</ol>
 <h1 id="using-openwebui">Using OpenWebUI</h1>
 <h2 id="use-workspaces">Use Workspaces</h2>
 <p>Workspaces are powerful organizational tools that allow you to group related pipelines and prompts. Here are some example workspace categories:</p>

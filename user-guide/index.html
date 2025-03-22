@@ -14,11 +14,11 @@
         <link rel="prev" href="../configuration/">
       
       
-        <link rel="next" href="../examples/">
+        <link rel="next" href="../git-tracking/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.8">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.9">
     
     
       
@@ -26,7 +26,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.8608ea7d.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.4af4bdda.min.css">
       
       
 
@@ -405,6 +405,27 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../git-tracking/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Git Tracking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -415,10 +436,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -430,8 +451,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Examples
           </label>
@@ -614,10 +635,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -629,8 +650,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             Plugins
           </label>
@@ -920,14 +941,17 @@
 <h2 id="introduction">Introduction</h2>
 <p>VMpilot is a powerful tool that enables collaboration with Large Language Models (LLMs) in a virtual machine environment. While primarily designed for software development tasks, it can be utilized for any operation that benefits from LLM assistance in a VM context.</p>
 <h2 id="basic-usage">Basic Usage</h2>
-<p>VMPilot comes with three core tools out of the box:
-1. <strong>Shell Tool</strong>: Executes shell commands and scripts
-2. <strong>File Editing Tool</strong>: Modifies existing files
-3. <strong>File Creation Tool</strong>: Creates new files with specified content</p>
+<p>VMPilot comes with three core tools out of the box:</p>
+<ol>
+<li><strong>Shell Tool</strong>: Executes shell commands and scripts</li>
+<li><strong>File Editing Tool</strong>: Modifies existing files</li>
+<li><strong>File Creation Tool</strong>: Creates new files with specified content</li>
+</ol>
+<p>Obviously, using the shell tool, the LLM can do everything it needs to do. Editing files is hard for LLMS, so the file editing tool provides better structure for that. The file creation tool mostly provides good error reporting and structure for creating files.</p>
 <h3 id="security-note">Security Note</h3>
 <blockquote>
 <p>[!CAUTION]
-VMPilot operates with your user permissions. The LLM can execute any command available to your user account, including:
+VMPilot operates with the user permissions. The LLM can execute any command available to the user account, including:
 - Reading and writing files
 - Installing packages
 - Running system commands</p>
@@ -996,10 +1020,10 @@ VMPilot operates with your user permissions. The LLM can execute any command ava
 <h3 id="notes">Notes</h3>
 <ul>
 <li>
-<p>The LLM tends to be a bit verbose and has a bias towards action. It will, as is often the case with LLMs, try its best to answer your question, or perform the task you've asked it to do, rather than ask for clarification. You can change that by asking it to just discuss the task or ask for clarification.</p>
+<p>The LLM tends to be a bit verbose and has a bias towards action. It will, as is often the case with LLMs, try its best to answer your question, or perform the task you've asked it to do, rather than ask for clarification. You can change that by asking it to just discuss the task or ask for clarification. You can also, in your prompt, change its behavior.</p>
 </li>
 <li>
-<p>It can perform several operation to accomplish a task. In our case, it created the script, and ran it to verify that it works.</p>
+<p>It can perform several operations to accomplish a task. In our case, it created the script, and ran it to verify that it works.</p>
 </li>
 <li>
 <p>Outputs are fenced in the appropriate language for easy reading.</p>
@@ -1007,9 +1031,48 @@ VMPilot operates with your user permissions. The LLM can execute any command ava
 <li>
 <p>The LLM will often provide additional information about the task it performed, such as the location of the file it created, the contents of the file, and the output of any commands it ran.</p>
 </li>
+<li>
+<p>With the multi-project support feature, you no longer need to explicitly tell the LLM where your project is located in each prompt. Configure it once in your workspace system prompt with <code>$PROJECT_ROOT=/path/to/your/project</code> and VMPilot will automatically maintain the correct context.</p>
+</li>
 </ul>
 <h1 id="choosing-the-provider">Choosing the provider</h1>
 <p>We support multiple providers such as OpenAI and Anthropic. You can choose the provider you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.</p>
+<h1 id="working-on-a-single-project">Working on a Single Project</h1>
+<ol>
+<li><strong>Default Project Directory</strong>: Set in <code>config.ini</code> <code>default_project</code> setting under the <code>[general]</code> section. This is used when no specific project is identified in a workspace.</li>
+</ol>
+<h1 id="working-with-projects">Working with Projects</h1>
+<p>VMPilot now features robust project directory management that affects virtually all operations, including file editing, shell commands, Git operations, and plugin functionality.</p>
+<h2 id="project-directory-configuration">Project Directory Configuration</h2>
+<p>There are two ways to specify which project directory VMPilot should use:</p>
+<ol>
+<li>
+<p><strong>Default Project Directory</strong>: Set in <code>config.ini</code> using the <code>default_project</code> setting under the <code>[general]</code> section. This is used when no specific project is identified in a workspace.</p>
+</li>
+<li>
+<p><strong>Workspace-Specific Project Directory</strong>: Specify the project root in your workspace system prompt using:
+   <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1"></a>$PROJECT_ROOT=/path/to/your/project
+</code></pre></div></td></tr></table></div></p>
+</li>
+</ol>
+<h2 id="project-directory-detection">Project Directory Detection</h2>
+<p>VMPilot automatically detects and manages project directories:</p>
+<ol>
+<li>First, it checks the workspace system prompt for a project directory specification</li>
+<li>If not found, it falls back to the default project directory from config.ini</li>
+<li>VMPilot automatically changes to this directory when starting a conversation</li>
+<li>All file paths, shell commands, and operations are relative to this project directory</li>
+</ol>
+<h2 id="benefits-of-automatic-project-management">Benefits of Automatic Project Management</h2>
+<p>This feature eliminates the need to manually specify <code>"The root directory of this project is '/path/to/project'"</code> in your prompts. VMPilot now:</p>
+<ul>
+<li>Automatically changes to the correct directory for each workspace</li>
+<li>Maintains context when switching between projects</li>
+<li>Ensures file operations work correctly across different repositories</li>
+<li>Properly tracks Git changes in the correct repository</li>
+<li>Helps plugins operate in the right context</li>
+</ul>
+<p>When working with multiple projects, simply configure each workspace with its own <code>$PROJECT_ROOT</code> directive in the system prompt, and VMPilot will handle the rest.</p>
 <h1 id="additional-features">Additional Features</h1>
 <h2 id="plugins">Plugins</h2>
 <p>VMPilot supports various plugins to extend its functionality. See the <a href="../plugins/overview/">Plugins</a> documentation for details about available plugins and how to use them.</p>
