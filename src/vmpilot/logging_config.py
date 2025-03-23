@@ -2,12 +2,17 @@ import logging
 import os
 
 class StreamContentFilter(logging.Filter):
-    """Filter out stream_content log messages from the root logger."""
+    """Filter out stream-related log messages from the root logger."""
     
     def filter(self, record):
-        # Return False to filter out messages containing 'stream_content:Generator:'
-        if record.name == 'root' and 'stream_content:Generator:' in record.getMessage():
-            return False
+        if record.name == 'root':
+            message = record.getMessage()
+            # Filter out 'stream_content:Generator:' messages
+            if 'stream_content:Generator:' in message:
+                return False
+            # Filter out 'stream:true:<generator object Pipeline.pipe.<locals>.generate_responses' messages
+            if 'stream:true:<generator object Pipeline.pipe' in message:
+                return False
         return True
 
 def configure_logging():
