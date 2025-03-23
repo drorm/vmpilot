@@ -9,7 +9,7 @@ solution for various LLM-based tasks.
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from langchain_anthropic import ChatAnthropic
+from vmpilot.caching.chat_models import ChatAnthropic
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
