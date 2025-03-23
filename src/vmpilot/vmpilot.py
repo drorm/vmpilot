@@ -8,9 +8,26 @@ description: A pipeline that enables using an LLM to execute commands via LangCh
 environment_variables: ANTHROPIC_API_KEY
 """
 
-import asyncio
+# Configure logging early
 import logging
 import os
+
+# Configure root logger first
+log_level = os.environ.get('PYTHONLOGLEVEL', 'INFO')
+logging.basicConfig(
+    level=getattr(logging, log_level),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+# Set up module logger
+logger = logging.getLogger(__name__)
+logger.setLevel(getattr(logging, log_level))
+
+# Make sure the vmpilot logger is also properly configured
+vmpilot_logger = logging.getLogger("vmpilot")
+vmpilot_logger.setLevel(getattr(logging, log_level))
+
+import asyncio
 import queue
 import threading
 import traceback
@@ -19,6 +36,7 @@ from typing import Dict, Generator, Iterator, List, Optional, Union
 
 from pydantic import BaseModel
 
+# Now import other modules after logging is configured
 from vmpilot.chat import Chat
 
 # Import tool output truncation setting
@@ -32,21 +50,6 @@ from vmpilot.config import (
     config,
     parser,
 )
-
-# Set up logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# Create handlers
-stream_handler = logging.StreamHandler()
-
-# Create formatters and add it to handlers
-log_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-stream_handler.setFormatter(log_format)
-
-# Add handlers to the logger
-logger.addHandler(stream_handler)
-logger.propagate = False
 
 
 class Pipeline:
