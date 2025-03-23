@@ -112,16 +112,3 @@ Scannable version:
 
 Installation time: 10-15 minutes (varies with internet speed)"
 ```
-
-## Working with the Plugin
-
-When you need help with documentation, the plugin can guide you through:
-
-1. Determining the purpose of your documentation
-2. Structuring content effectively
-3. Applying plain language principles
-4. Ensuring factual accuracy
-5. Enhancing readability with proper formatting
-6. Working with the MkDocs system
-
-Simply ask for assistance with creating or improving documentation, and the plugin will provide guidance based on best practices for technical writing.
