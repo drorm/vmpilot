@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# Don't set the level here - it will inherit from the root logger
 
 
 class ConfigError(Exception):

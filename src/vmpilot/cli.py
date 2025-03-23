@@ -14,6 +14,11 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# Configure basic logging as early as possible
+log_level = os.environ.get('PYTHONLOGLEVEL', 'INFO')
+logging.basicConfig(level=getattr(logging, log_level))
+logging.getLogger("vmpilot").setLevel(getattr(logging, log_level))
+
 # Add parent directory to Python path when running as script
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
