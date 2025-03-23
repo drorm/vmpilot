@@ -344,22 +344,30 @@ class Pipeline:
                     try:
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
-                        
+
                         # Set exception handler for the loop to catch unhandled exceptions
                         def handle_exception(loop, context):
-                            exception = context.get('exception')
+                            exception = context.get("exception")
                             if exception:
-                                if "TCPTransport closed=True" in str(exception) or "unable to perform operation" in str(exception):
-                                    logger.info("Ignoring expected httpx connection cleanup exception. This is OK. For more info: https://github.com/drorm/vmpilot/issues/35")
+                                if "TCPTransport closed=True" in str(
+                                    exception
+                                ) or "unable to perform operation" in str(exception):
+                                    logger.info(
+                                        "Ignoring expected httpx connection cleanup exception. This is OK. For more info: https://github.com/drorm/vmpilot/issues/35"
+                                    )
                                 else:
                                     message = f"Caught asyncio exception: {exception}"
                                     logger.error(message)
-                                    logger.error("".join(traceback.format_tb(exception.__traceback__)))
+                                    logger.error(
+                                        "".join(
+                                            traceback.format_tb(exception.__traceback__)
+                                        )
+                                    )
                             else:
                                 logger.error(f"Asyncio error: {context['message']}")
-                        
+
                         loop.set_exception_handler(handle_exception)
-                        
+
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(
@@ -389,11 +397,13 @@ class Pipeline:
                                 pending = asyncio.all_tasks(loop)
                                 for task in pending:
                                     task.cancel()
-                                
+
                                 # Allow tasks to respond to cancellation
                                 if pending:
-                                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-                                
+                                    loop.run_until_complete(
+                                        asyncio.gather(*pending, return_exceptions=True)
+                                    )
+
                                 loop.close()
                             except Exception as e:
                                 logger.warning(f"Error during loop cleanup: {e}")
