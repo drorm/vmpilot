@@ -228,9 +228,7 @@ class GitTracker:
             logger.error(f"Failed to get diff: {e}")
             return ""
 
-    def commit_changes(
-        self, message: str, author: str = None
-    ) -> bool:
+    def commit_changes(self, message: str, author: str = None) -> bool:
         """Commit uncommitted changes.
 
         This method stages all changes in the working directory using 'git add .'
@@ -262,7 +260,7 @@ class GitTracker:
             # Commit with specified author or use the one from config
             if author is None:
                 author = self.config.author
-            
+
             result = subprocess.run(
                 ["git", "commit", "--author", author, "-m", message],
                 cwd=self.repo_path,
