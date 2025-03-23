@@ -9,11 +9,11 @@ solution for various LLM-based tasks.
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from vmpilot.caching.chat_models import ChatAnthropic
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
