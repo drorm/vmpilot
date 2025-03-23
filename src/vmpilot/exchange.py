@@ -158,7 +158,9 @@ class Exchange:
             # Use GitTracker's auto_commit_changes which handles commit message generation
             success, commit_msg = self.git_tracker.auto_commit_changes()
             if success:
-                logger.info(f"Committed LLM-generated changes: {commit_msg}")
+                # log the first line of the commit message
+                first_line = commit_msg.split("\n")[0]
+                logger.info(f"Committed LLM-generated changes: {first_line}")
                 return True
             else:
                 logger.warning(f"Failed to commit changes: {commit_msg}")
