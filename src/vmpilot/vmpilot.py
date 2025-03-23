@@ -14,6 +14,7 @@ import os
 
 # Import and use custom logging configuration
 from vmpilot.logging_config import configure_logging
+
 configure_logging()
 
 # Set up module logger
