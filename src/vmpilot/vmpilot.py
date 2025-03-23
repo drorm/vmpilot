@@ -13,10 +13,10 @@ import logging
 import os
 
 # Configure root logger first
-log_level = os.environ.get('PYTHONLOGLEVEL', 'INFO')
+log_level = os.environ.get("PYTHONLOGLEVEL", "INFO")
 logging.basicConfig(
     level=getattr(logging, log_level),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
 # Set up module logger

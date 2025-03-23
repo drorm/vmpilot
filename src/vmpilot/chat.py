@@ -163,7 +163,7 @@ class Chat:
         try:
             expanded_dir = os.path.expanduser(self.project_dir)
             current_dir = os.getcwd()
-            
+
             # Only change directory and log if we're not already in the target directory
             if os.path.normpath(current_dir) != os.path.normpath(expanded_dir):
                 os.chdir(expanded_dir)

@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 # Configure basic logging as early as possible
-log_level = os.environ.get('PYTHONLOGLEVEL', 'INFO')
+log_level = os.environ.get("PYTHONLOGLEVEL", "INFO")
 logging.basicConfig(level=getattr(logging, log_level))
 logging.getLogger("vmpilot").setLevel(getattr(logging, log_level))
 
