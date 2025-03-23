@@ -349,11 +349,11 @@ class Pipeline:
                         def handle_exception(loop, context):
                             exception = context.get('exception')
                             if exception:
-                                message = f"Caught asyncio exception: {exception}"
-                                logger.error(message)
                                 if "TCPTransport closed=True" in str(exception) or "unable to perform operation" in str(exception):
-                                    logger.warning("Ignoring httpx connection cleanup exception")
+                                    logger.info("Ignoring expected httpx connection cleanup exception. This is OK. For more info: https://github.com/drorm/vmpilot/issues/35")
                                 else:
+                                    message = f"Caught asyncio exception: {exception}"
+                                    logger.error(message)
                                     logger.error("".join(traceback.format_tb(exception.__traceback__)))
                             else:
                                 logger.error(f"Asyncio error: {context['message']}")
