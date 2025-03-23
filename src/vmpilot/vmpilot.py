@@ -12,20 +12,12 @@ environment_variables: ANTHROPIC_API_KEY
 import logging
 import os
 
-# Configure root logger first
-log_level = os.environ.get("PYTHONLOGLEVEL", "INFO")
-logging.basicConfig(
-    level=getattr(logging, log_level),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+# Import and use custom logging configuration
+from vmpilot.logging_config import configure_logging
+configure_logging()
 
 # Set up module logger
 logger = logging.getLogger(__name__)
-logger.setLevel(getattr(logging, log_level))
-
-# Make sure the vmpilot logger is also properly configured
-vmpilot_logger = logging.getLogger("vmpilot")
-vmpilot_logger.setLevel(getattr(logging, log_level))
 
 import asyncio
 import queue
