@@ -121,6 +121,8 @@ VMPilot supports various plugins to extend its functionality. See the [Plugins](
 Some key plugins include:
 
 - [GitHub Issues](plugins/github.md) - Manage GitHub issues directly from VMPilot
+- [Documentation](plugins/documentation.md) - Create clear, concise, and user-friendly documentation
+- [Unit Testing](plugins/unit_testing.md) - Create comprehensive unit tests for VMPilot components
 - Code Map - Generate code documentation automatically. This is a work in progress.
 
 ## Tips and Best Practices

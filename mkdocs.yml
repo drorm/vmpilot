@@ -28,6 +28,7 @@ nav:
         - Overview: plugins/overview.md
         - GitHub Plugin: plugins/github.md
         - Unit Testing Plugin: plugins/unit_testing.md
+        - Documentation Plugin: plugins/documentation.md
     - VMPilot Prompting: prompting.md
     - Tips: tips.md
     - CLI Interface: cli.md
