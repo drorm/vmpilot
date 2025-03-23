@@ -7,12 +7,14 @@ VMPilot is a chat-based AI development agent that operates directly in your virt
 ## Key Features
 
 🔹 **Full System Access**
+
 - Operates directly within your virtual machine environment
 - Executes and chains system commands intelligently
 - Manages files, services, and system operations
 - Understands your entire development environment
 
 🔹 **End-to-End Development Support**
+
 - Works directly in your development environment
 - Writes and modifies code based on your requirements
 - Reads and analyzes test outputs to guide fixes
@@ -20,11 +22,13 @@ VMPilot is a chat-based AI development agent that operates directly in your virt
 - Understands project context and maintains consistency
 
 🔹 **Extensible Plugin Architecture**
+
 - Built-in GitHub integration for issues and code management
 - Plugin system ready for custom workflow extensions
 - Future plugins planned for documentation and testing
 
 🔹 **Multiple Interfaces & OpenWebUI Integration**
+
 - Powerful CLI for terminal-based workflows
 - Rich web interface with advanced features:
   - Multi-modal conversation view with code highlighting
