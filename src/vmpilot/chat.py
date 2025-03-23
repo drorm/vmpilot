@@ -162,8 +162,12 @@ class Chat:
         """Change to the project directory."""
         try:
             expanded_dir = os.path.expanduser(self.project_dir)
-            os.chdir(expanded_dir)
-            logger.info(f"Changed to project directory: {expanded_dir}")
+            current_dir = os.getcwd()
+            
+            # Only change directory and log if we're not already in the target directory
+            if os.path.normpath(current_dir) != os.path.normpath(expanded_dir):
+                os.chdir(expanded_dir)
+                logger.info(f"Changed to project directory: {expanded_dir}")
         except Exception as e:
             logger.error(
                 f"Failed to change to project directory {self.project_dir}: {e}"
