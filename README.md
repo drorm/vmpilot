@@ -76,3 +76,15 @@ VMPilot follows a simplified Git Flow branching strategy:
 - Feature branches - Individual features branched from `dev`
 
 All development work happens in feature branches, which are merged into `dev` via pull requests.
+
+### Development Setup
+
+#### Git Hooks
+
+We use Git hooks to ensure code quality. To set up the pre-commit hook that runs linting checks:
+
+```bash
+./.git-hooks/setup.sh
+```
+
+This will install a pre-commit hook that runs formatting checks with black and isort before each commit.
