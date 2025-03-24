@@ -34,6 +34,19 @@ body:
     validations:
       required: false
   - type: textarea
+    id: relevant_files
+    attributes:
+      label: Relevant Files
+      description: List the files that might need to be modified or are relevant to this feature request. This helps in planning the implementation.
+      placeholder: |
+        E.g.:
+        - src/vmpilot/agent.py
+        - src/vmpilot/tools/shelltool.py
+        - docs/user_guide.md
+    validations:
+      required: false
+
+  - type: textarea
     id: additional_context
     attributes:
       label: Additional Context

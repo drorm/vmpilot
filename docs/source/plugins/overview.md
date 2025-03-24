@@ -38,6 +38,9 @@ directory: github\_issues
 
 directory: documentation
 - Provides guidance for creating clear, concise, and user-friendly documentation
+- Helps users work with the MkDocs documentation system used by VMPilot
+- Offers best practices for technical writing and content structure
+- Assists with formatting for readability and proper Markdown usage
 
 # Unit Testing
 

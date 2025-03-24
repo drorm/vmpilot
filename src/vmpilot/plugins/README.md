@@ -1,5 +1,7 @@
 # Available plugins
 
+Alls plugins as well as the main README.md are located in $PROJECT_ROOT/src/vmpilot/plugins.
+
 # Github
 
 directory: github\_issues

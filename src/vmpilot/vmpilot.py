@@ -8,9 +8,19 @@ description: A pipeline that enables using an LLM to execute commands via LangCh
 environment_variables: ANTHROPIC_API_KEY
 """
 
-import asyncio
+# Configure logging early
 import logging
 import os
+
+# Import and use custom logging configuration
+from vmpilot.logging_config import configure_logging
+
+configure_logging()
+
+# Set up module logger
+logger = logging.getLogger(__name__)
+
+import asyncio
 import queue
 import threading
 import traceback
@@ -18,6 +28,9 @@ from datetime import datetime
 from typing import Dict, Generator, Iterator, List, Optional, Union
 
 from pydantic import BaseModel
+
+# Now import other modules after logging is configured
+from vmpilot.chat import Chat
 
 # Import tool output truncation setting
 from vmpilot.config import (
@@ -30,21 +43,6 @@ from vmpilot.config import (
     config,
     parser,
 )
-
-# Set up logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# Create handlers
-stream_handler = logging.StreamHandler()
-
-# Create formatters and add it to handlers
-log_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-stream_handler.setFormatter(log_format)
-
-# Add handlers to the logger
-logger.addHandler(stream_handler)
-logger.propagate = False
 
 
 class Pipeline:
@@ -185,55 +183,13 @@ class Pipeline:
         # Only show models with valid API keys
         return [model for model in models if len(self._api_key) >= 32]
 
-    def get_or_generate_chat_id(self, messages, output_callback):
-        """Get an existing chat_id or generate a new one if needed."""
-        CHAT_ID_PREFIX = "Chat id"
-        CHAT_ID_DELIMITER = ":"
-        chat_id = None
-
-        if chat_id is None:
-            if len(messages) <= 2:  # one system message and one user message
-                import secrets
-                import string
-
-                chat_id = "".join(
-                    secrets.choice(string.ascii_letters + string.digits)
-                    for _ in range(8)
-                )
-                output_callback(
-                    {
-                        "type": "text",
-                        "text": f"{CHAT_ID_PREFIX} {CHAT_ID_DELIMITER}{chat_id}\n\n",
-                    }
-                )
-                logger.debug(f"Generated new chat_id: {chat_id}")
-            else:
-                # Find the first assistant message
-                for msg in messages:
-                    if msg["role"] == "assistant" and isinstance(msg["content"], str):
-                        content_lines = msg["content"].split("\n")
-                        if content_lines and content_lines[0].startswith(
-                            CHAT_ID_PREFIX
-                        ):
-                            # Extract chat_id from the first line
-                            chat_id = (
-                                content_lines[0].split(CHAT_ID_DELIMITER, 1)[1].strip()
-                                if ":" in content_lines[0]
-                                else content_lines[0]
-                            )
-                            logger.debug(
-                                f"Retrieved chat_id from message history: {chat_id}"
-                            )
-                            break
-        logger.info(f"chat_id: {chat_id}")
-        return chat_id
-
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"Full body keys: {list(body.keys())}")
         logger.debug(f"Messages: {messages}")
+        logger.debug(f"num messages: {len(messages)}")
 
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
@@ -325,6 +281,28 @@ class Pipeline:
                         logger.debug(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
 
+                # Extract chat_id from body if present
+                chat_id = getattr(self, "chat_id", None)
+
+                # It's a new Chat if we only have system and user messages
+                if not hasattr(self, "_chat") or (messages and len(messages) <= 2):
+                    self._chat = Chat(
+                        chat_id=chat_id,
+                        messages=messages,
+                        output_callback=output_callback,
+                    )
+
+                # Make sure we have the chat_id from the chat object
+                chat_id = self._chat.chat_id
+
+                """ Output callback to handle messages from the LLM """
+
+                def output_callback(content: Dict):
+                    logger.debug(f"Received content: {content}")
+                    if content["type"] == "text":
+                        logger.debug(f"Assistant: {content['text']}")
+                        output_queue.put(content["text"])
+
                 """ Output callback to handle tool messages: output from commands """
 
                 def tool_callback(result, tool_id):
@@ -355,18 +333,37 @@ class Pipeline:
                             truncated_output += "\n"
                         output_queue.put(truncated_output)
 
-                # Get chat_id from body
-                chat_id = body.get("chat_id")
-
-                # Get or generate chat_id
-                chat_id = self.get_or_generate_chat_id(messages, output_callback)
-
                 """ Run the sampling loop in a separate thread while waiting for responses """
 
                 def run_loop():
+                    loop = None
                     try:
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
+
+                        # Set exception handler for the loop to catch unhandled exceptions
+                        def handle_exception(loop, context):
+                            exception = context.get("exception")
+                            if exception:
+                                if "TCPTransport closed=True" in str(
+                                    exception
+                                ) or "unable to perform operation" in str(exception):
+                                    logger.info(
+                                        "Ignoring expected httpx connection cleanup exception. This is OK. For more info: https://github.com/drorm/vmpilot/issues/35"
+                                    )
+                                else:
+                                    message = f"Caught asyncio exception: {exception}"
+                                    logger.error(message)
+                                    logger.error(
+                                        "".join(
+                                            traceback.format_tb(exception.__traceback__)
+                                        )
+                                    )
+                            else:
+                                logger.error(f"Asyncio error: {context['message']}")
+
+                        loop.set_exception_handler(handle_exception)
+
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(
@@ -389,7 +386,23 @@ class Pipeline:
                         logger.error("".join(traceback.format_tb(e.__traceback__)))
                     finally:
                         loop_done.set()
-                        loop.close()
+                        # Safely close the loop
+                        if loop:
+                            try:
+                                # Cancel all running tasks
+                                pending = asyncio.all_tasks(loop)
+                                for task in pending:
+                                    task.cancel()
+
+                                # Allow tasks to respond to cancellation
+                                if pending:
+                                    loop.run_until_complete(
+                                        asyncio.gather(*pending, return_exceptions=True)
+                                    )
+
+                                loop.close()
+                            except Exception as e:
+                                logger.warning(f"Error during loop cleanup: {e}")
 
                 # Start the sampling loop in a separate thread
                 thread = threading.Thread(target=run_loop)

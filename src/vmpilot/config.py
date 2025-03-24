@@ -7,20 +7,28 @@ import logging
 import os
 import sys
 from configparser import ConfigParser
-from enum import StrEnum
+from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# Don't set the level here - it will inherit from the root logger
 
 
 class ConfigError(Exception):
     """Configuration related errors"""
 
     pass
+
+
+class CommitMessageStyle(str, Enum):
+    """Enum for Git commit message styles."""
+
+    SHORT = "short"
+    DETAILED = "detailed"
+    BULLET_POINTS = "bullet_points"
 
 
 def find_config_file() -> Path:
@@ -113,11 +121,42 @@ class ProviderConfig(BaseModel):
     )
 
 
+class GitConfig(BaseModel):
+    """Git tracking configuration"""
+
+    enabled: bool = Field(default=False, description="Enable Git tracking")
+    auto_commit: bool = Field(default=True, description="Auto-commit changes")
+    commit_message_style: CommitMessageStyle = Field(
+        default=CommitMessageStyle.DETAILED, description="Commit message style"
+    )
+    model: str = Field(
+        default="gpt-3.5-turbo", description="Model for commit message generation"
+    )
+    provider: Provider = Field(
+        default=Provider.OPENAI, description="Provider for commit message generation"
+    )
+    temperature: float = Field(
+        default=0.2, description="Temperature for commit message generation"
+    )
+    dirty_repo_action: str = Field(
+        default="stop",
+        description="What to do when repository is dirty (stop, stash)",
+    )
+    author: str = Field(
+        default="VMPilot <vmpilot@example.com>",
+        description="Author name and email for Git commits",
+    )
+    commit_prefix: str = Field(
+        default="[VMPilot]", description="Prefix for commit messages"
+    )
+
+
 class ModelConfig(BaseModel):
     """Global model configuration"""
 
     providers: Dict[Provider, ProviderConfig] = Field(default_factory=dict)
     default_provider: Provider
+    git_config: GitConfig = Field(default_factory=GitConfig)
 
     def __init__(self):
         try:
@@ -149,15 +188,43 @@ class ModelConfig(BaseModel):
                         recursion_limit=recursion_limit,
                     )
 
+            # Initialize Git configuration
+            git_config = None
+            if parser.has_section("git"):
+                git_section = parser["git"]
+                git_config = GitConfig(
+                    enabled=git_section.getboolean("enabled", fallback=False),
+                    auto_commit=git_section.getboolean("auto_commit", fallback=True),
+                    commit_message_style=CommitMessageStyle(
+                        git_section.get("commit_message_style", fallback="detailed")
+                    ),
+                    model=git_section.get("model", fallback="gpt-3.5-turbo"),
+                    provider=Provider(git_section.get("provider", fallback="openai")),
+                    temperature=git_section.getfloat("temperature", fallback=0.2),
+                    dirty_repo_action=git_section.get(
+                        "dirty_repo_action", fallback="stop"
+                    ),
+                    commit_prefix=git_section.get(
+                        "commit_prefix", fallback="[VMPilot]"
+                    ),
+                    author=git_section.get(
+                        "author", fallback="VMPilot <vmpilot@example.com>"
+                    ),
+                )
+
             super().__init__(
-                providers=providers, default_provider=Provider(default_provider)
+                providers=providers,
+                default_provider=Provider(default_provider),
+                git_config=git_config or GitConfig(),
             )
 
         except Exception as e:
             logger.error(f"Failed to initialize model config: {str(e)}")
             # Initialize with empty/default values
             super().__init__(
-                providers={}, default_provider=Provider.ANTHROPIC  # Set a default
+                providers={},
+                default_provider=Provider.ANTHROPIC,  # Set a default
+                git_config=GitConfig(),
             )
 
     def get_provider_config(
@@ -172,6 +239,43 @@ class ModelConfig(BaseModel):
         """Get default model for specified provider"""
         return self.get_provider_config(provider).default_model
 
+    def get_api_key(self, provider: Optional[Provider] = None) -> str:
+        """Get API key for the specified provider.
+
+        Args:
+            provider: The provider to get the API key for. If None, uses the default provider.
+
+        Returns:
+            The API key as a string.
+
+        Raises:
+            ConfigError: If the API key cannot be found or accessed.
+        """
+        if provider is None:
+            provider = self.default_provider
+
+        provider_config = self.get_provider_config(provider)
+
+        # Try environment variable first
+        if provider_config.api_key_env and os.environ.get(provider_config.api_key_env):
+            return os.environ.get(provider_config.api_key_env, "")
+
+        # Then try key file
+        if provider_config.api_key_path:
+            key_path = os.path.expanduser(provider_config.api_key_path)
+            if os.path.exists(key_path):
+                try:
+                    with open(key_path, "r") as f:
+                        return f.read().strip()
+                except Exception as e:
+                    raise ConfigError(
+                        f"Failed to read API key from {key_path}: {str(e)}"
+                    )
+
+        raise ConfigError(
+            f"No API key found for provider {provider}. Set environment variable {provider_config.api_key_env} or create key file at {provider_config.api_key_path}"
+        )
+
 
 # Global configuration instance
 config = ModelConfig()
@@ -179,6 +283,9 @@ config = ModelConfig()
 # General configuration
 DEFAULT_PROVIDER = parser.get("general", "default_provider")
 TOOL_OUTPUT_LINES = parser.getint("general", "tool_output_lines")
+DEFAULT_PROJECT = os.path.expanduser(
+    parser.get("general", "default_project", fallback="~/vmpilot")
+)
 
 # Inference parameters
 TEMPERATURE = parser.getfloat("inference", "temperature")

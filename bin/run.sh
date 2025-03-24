@@ -22,5 +22,8 @@ ln -s "$ROOT_DIR/src/vmpilot/vmpilot.py"
 
 cd ..
 
+# Set logging level for better visibility
+export PYTHONLOGLEVEL=INFO
+
 # Start the application
 "./dev.sh"

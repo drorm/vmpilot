@@ -17,14 +17,16 @@ from langgraph.prebuilt.chat_agent_executor import AgentState
 
 from vmpilot.agent_logging import log_conversation_messages
 from vmpilot.agent_memory import (
+    clear_conversation_state,
     get_conversation_state,
     save_conversation_state,
     update_cache_info,
 )
 from vmpilot.caching.chat_models import ChatAnthropic
-from vmpilot.config import MAX_TOKENS, TEMPERATURE
+from vmpilot.config import MAX_TOKENS, TEMPERATURE, GitConfig
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
+from vmpilot.exchange import Exchange
 from vmpilot.prompt import SYSTEM_PROMPT
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
@@ -192,6 +194,7 @@ async def create_agent(
         )
     elif provider == APIProvider.OPENAI:
         # Only set temperature=1 for o3-mini model
+        provider_config = config.get_provider_config(APIProvider.OPENAI)
         model_temperature = 1 if model == "o3-mini" else temperature
         llm = ChatOpenAI(
             model=model,
@@ -232,6 +235,25 @@ async def process_messages(
     recursion_limit: int = None,  # Maximum number of steps to run in the request
     thread_id: str = None,  # Chat ID for conversation state management
 ) -> List[dict]:
+    """Process messages through the agent and handle outputs.
+
+    Args:
+        model: The LLM model to use
+        provider: The API provider (OpenAI/Anthropic)
+        system_prompt_suffix: Additional text to append to the system prompt
+        messages: List of messages to process
+        output_callback: Function to call with output chunks
+        tool_output_callback: Function to call with tool outputs
+        api_key: API key for the provider
+        max_tokens: Maximum tokens to generate
+        temperature: Temperature for generation
+        disable_logging: Whether to disable detailed logging
+        recursion_limit: Maximum number of steps to run in the request
+        thread_id: Chat ID for conversation state management
+
+    Returns:
+        List of processed messages
+    """
     logger.debug(
         f"------------- Processing new message: model={model}, provider={provider} --------------- "
     )
@@ -253,6 +275,31 @@ async def process_messages(
     # Set prompt suffix and provider
     prompt_suffix.set(system_prompt_suffix)
     current_provider.set(provider)
+    # Create an Exchange object to track this user-LLM interaction with Git tracking
+    user_message = messages[-1] if messages else {"role": "user", "content": ""}
+    exchange = Exchange(
+        chat_id=thread_id,
+        user_message=user_message,
+        output_callback=output_callback,
+    )
+
+    # Check Git repository status and handle dirty_repo_action
+    if not exchange.check_git_status():
+        logger.debug("Git repository has uncommitted changes before LLM operation")
+
+        # Check if we should stop processing based on dirty_repo_action config
+        if config.git_config.dirty_repo_action.lower() == "stop":
+            # Return a message to the user instead of processing with the LLM
+            error_message = "Sorry, the git repository has unsaved changes and the config is set to: *dirty_repo_action = stop*.\n I cannot make any changes."
+            # Call output callback with the error message
+            output_callback({"type": "text", "text": error_message})
+            logger.warning(
+                "Dirty repo and dirty_repo_action is set to stop. Stop processing."
+            )
+
+            # Return early with just the error message
+            return messages + [error_message]
+        # For other actions (stash), continue processing
 
     # Handle prompt caching for Anthropic provider
 
@@ -281,10 +328,20 @@ async def process_messages(
     formatted_messages = []
     cache_info = {}
     if thread_id is not None:
-        # Retrieve previous conversation state
+        # Determine if this is a new chat session by checking the conversation state first
         previous_messages, previous_cache_info = get_conversation_state(thread_id)
-        if previous_messages:
-            logger.debug(
+
+        # If there are no previous messages OR this is explicitly a new chat (len <= 2)
+        # then we treat it as a new chat session
+        is_new_chat = (not previous_messages) or len(messages) <= 2
+
+        if is_new_chat:
+            # For new chats, clear any existing conversation state with this thread_id
+            clear_conversation_state(thread_id)
+            logger.info(f"Started new chat session with thread_id: {thread_id}")
+        else:
+            # This is a continuing chat, use the previous conversation state
+            logger.info(
                 f"Retrieved previous conversation state with {len(previous_messages)} messages for thread_id: {thread_id}"
             )
             formatted_messages.extend(previous_messages)
@@ -365,9 +422,11 @@ async def process_messages(
 
     # Store the latest response for saving the conversation state later
     response = {"messages": formatted_messages}
+    # Track tool calls for the Exchange
+    collected_tool_calls = []
 
     async def send_request():
-        nonlocal response
+        nonlocal response, collected_tool_calls
         try:
             async for agent_response in agent.astream(
                 {"messages": formatted_messages},
@@ -405,6 +464,11 @@ async def process_messages(
                             # Handle tool message responses
                             tool_result = {"output": message.content, "error": None}
                             tool_output_callback(tool_result, message.name)
+
+                            # Track tool call for Exchange
+                            collected_tool_calls.append(
+                                {"name": message.name, "content": message.content}
+                            )
 
                         elif isinstance(message, AIMessage):
                             """Handle AI message responses"""
@@ -445,6 +509,14 @@ async def process_messages(
                                                 tool_output_callback(
                                                     tool_result, item["name"]
                                                 )
+
+                                                # Track tool call for Exchange
+                                                collected_tool_calls.append(
+                                                    {
+                                                        "name": item["name"],
+                                                        "content": item["output"],
+                                                    }
+                                                )
                                     else:
                                         logger.warning(
                                             f"Unknown content item type: {type(item)}"
@@ -462,7 +534,7 @@ async def process_messages(
             error_message = str(e)
             message = ""
             if "Recursion limit" in error_message and "reached" in error_message:
-                message = f" I've done {recursion_limit} steps in a row. Let me know if you'd like me to continue. "
+                message = f" I've done {recursion_limit} steps in a row. Type *continue* if you'd like me to keep going."
                 logger.info(message)
             # Handle specific tool_use/tool_result error
             elif (
@@ -477,19 +549,72 @@ async def process_messages(
                 logger.error("".join(traceback.format_tb(e.__traceback__)))
                 logger.error(f"messages: {formatted_messages}")
                 message = f"Error in agent stream: {str(e)}"
+
+            # Complete the Exchange with error information
+            error_content = f"Error occurred: {message}"
+            exchange.complete(AIMessage(content=error_content), collected_tool_calls)
+
             output_callback({"type": "text", "text": f"{message}"})
 
     # Run the stream processor
     await send_request()
 
-    # Save the conversation state for future requests
-    if thread_id is not None and formatted_messages:
-        # Get the final state after processing
-        # We need to save the full conversation state including the response from the LLM
-        final_messages = response.get("messages", formatted_messages)
-        save_conversation_state(thread_id, final_messages)
-        logger.debug(
-            f"Saved conversation state with {len(final_messages)} messages for thread_id: {thread_id}"
-        )
+    # Complete the Exchange with the assistant's response and tool calls
+    if response and "messages" in response:
+        # Get the assistant's response message (last AI message)
+        assistant_messages = [
+            msg for msg in response["messages"] if isinstance(msg, AIMessage)
+        ]
+        if assistant_messages:
+            assistant_message = assistant_messages[-1]
+
+            # Complete the exchange with collected tool calls and commit any changes
+            exchange.complete(assistant_message, collected_tool_calls)
+
+            # Save the full conversation state to ensure all messages are preserved
+            if thread_id is not None:
+                save_conversation_state(thread_id, response["messages"], cache_info)
+                logger.debug(
+                    f"Saved complete conversation state with {len(response['messages'])} messages for thread_id: {thread_id}"
+                )
+
+            # Log exchange summary
+            exchange_summary = exchange.get_exchange_summary()
+            logger.debug(f"Exchange completed: {exchange_summary}")
+
+            # If changes were committed, log the commit message
+            if exchange_summary.get("git_changes_committed"):
+                logger.info("Git changes committed successfully")
+        else:
+            # If no AI messages found but we have a response, use the last message
+            last_message = response["messages"][-1] if response["messages"] else None
+            if last_message:
+                # Convert to AIMessage if it's not already
+                if not isinstance(last_message, AIMessage):
+                    assistant_message = AIMessage(
+                        content=(
+                            str(last_message.content)
+                            if hasattr(last_message, "content")
+                            else ""
+                        )
+                    )
+                else:
+                    assistant_message = last_message
+                exchange.complete(assistant_message, collected_tool_calls)
+
+                # Save the full conversation state
+                if thread_id is not None:
+                    save_conversation_state(thread_id, response["messages"], cache_info)
+                    logger.debug(
+                        f"Saved complete conversation state with {len(response['messages'])} messages for thread_id: {thread_id}"
+                    )
+            else:
+                # Fallback if no messages at all
+                exchange.complete(
+                    AIMessage(content="No response generated"), collected_tool_calls
+                )
+    else:
+        # In case of error or no response, still try to save what we have
+        exchange.complete(AIMessage(content="Error occurred during processing"), [])
 
     return messages

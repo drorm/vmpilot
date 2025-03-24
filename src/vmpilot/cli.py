@@ -14,19 +14,27 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# Configure basic logging as early as possible
+log_level = os.environ.get("PYTHONLOGLEVEL", "INFO")
+logging.basicConfig(level=getattr(logging, log_level))
+logging.getLogger("vmpilot").setLevel(getattr(logging, log_level))
+
 # Add parent directory to Python path when running as script
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from .vmpilot import Pipeline  # Try relative import first
+    from vmpilot.chat import Chat
+    from vmpilot.vmpilot import Pipeline
 except ImportError:
-    from vmpilot import Pipeline  # Fallback to direct import
+    # Fallback to relative imports if the module is part of a package
+    from .chat import Chat
+    from .vmpilot import Pipeline
 
 
 def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
     """Create a mock body for pipeline calls"""
-    from vmpilot.config import MAX_TOKENS, TOOL_OUTPUT_LINES
+    from vmpilot.config import MAX_TOKENS, TOOL_OUTPUT_LINES, config
 
     return {
         "temperature": temperature,
@@ -64,6 +72,15 @@ async def main(
     # Create pipeline with configuration
     pipeline = Pipeline()
 
+    # Create a Chat object for this session
+    chat = Chat(chat_id=chat_id)
+
+    # Change to the project directory when starting a new chat
+    if not chat_id:
+        chat.change_to_project_dir()
+        if debug:
+            logging.debug(f"Changed to project directory: {chat.project_dir}")
+
     # Set chat ID for conversation persistence if provided
     if chat_id:
         pipeline.chat_id = chat_id
@@ -71,11 +88,14 @@ async def main(
             logging.debug(f"Using chat context with ID: {chat_id}")
 
     # Create pipeline call parameters
-    body = create_mock_body(temperature, debug)
+    body = create_mock_body(temperature=temperature, debug=debug)
     messages = create_mock_messages(command)
 
     # Set provider before executing pipeline
     pipeline.set_provider(provider)
+
+    # Update configuration
+    pipeline.valves._sync_with_config()
 
     # Execute pipeline with configuration
     result = pipeline.pipe(
@@ -124,7 +144,7 @@ async def main(
 
 
 if __name__ == "__main__":
-    from vmpilot.config import Provider, config
+    from vmpilot.config import CommitMessageStyle, Provider, config
 
     parser = argparse.ArgumentParser(
         description="VMPilot CLI",
@@ -178,6 +198,20 @@ if __name__ == "__main__":
         help="Enable chat mode to maintain conversation context. Optional: provide a specific chat ID.",
     )
 
+    # Git tracking options (use defaults from config)
+    parser.add_argument(
+        "--git",
+        action="store_true",
+        dest="git_override",
+        help="Override: Enable Git tracking for LLM-generated changes",
+    )
+    parser.add_argument(
+        "--no-git",
+        action="store_false",
+        dest="git_override",
+        help="Override: Disable Git tracking for LLM-generated changes",
+    )
+
     args = parser.parse_args()
 
     # Configure logging based on debug flag
@@ -187,6 +221,13 @@ if __name__ == "__main__":
     else:
         logging.basicConfig(level=logging.INFO)
         logging.getLogger("vmpilot").setLevel(logging.INFO)
+
+    # Override Git configuration from command line if specified
+    if hasattr(args, "git_override") and args.git_override is not None:
+        config.git_config.enabled = args.git_override
+        logging.info(
+            f"Git tracking {'enabled' if args.git_override else 'disabled'} via command line"
+        )
 
     # Check if file input is provided
     if args.file:

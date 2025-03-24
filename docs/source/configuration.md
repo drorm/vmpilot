@@ -36,6 +36,7 @@ The `config.ini` file is organized into the following sections:
 | Setting | Description | Default |
 |---------|-------------|---------|
 | default_provider | Primary LLM provider (anthropic/openai) | anthropic |
+| default_project | Default project directory for git operations and file access | ~/vmpilot |
 | tool_output_lines | Number of lines shown in tool output | 15 |
 
 ### Model Settings [model]
@@ -57,6 +58,19 @@ The `config.ini` file is organized into the following sections:
 | api_key_env | API key environment variable | ANTHROPIC_API_KEY |
 | beta_flags | Optional beta features (key:value pairs) | feature1:on,feature2:off |
 
+### Git Settings [git]
+| Setting | Description | Default |
+|---------|-------------|---------|
+| enabled | Enable or disable Git tracking | true |
+| dirty_repo_action | Action when repository has uncommitted changes (stop, stash) | stash |
+| auto_commit | Automatically commit changes after each exchange | true |
+| commit_message_style | Style of generated commit messages (short, detailed, bullet_points) | bullet_points |
+| model | Model used for commit message generation | claude-3-7-sonnet-latest |
+| provider | Provider for commit message generation (anthropic, openai) | anthropic |
+| temperature | Temperature for commit message generation (0.0-1.0) | 0.7 |
+| commit_prefix | Prefix added to all commit messages | [VMPilot] |
+| author | Author name and email for Git commits | VMPilot <vmpilot@example.com> |
+
 ## Example Configuration
 ```ini
 [general]
@@ -71,14 +85,26 @@ temperature = 0.7
 max_tokens = 2000
 
 [anthropic]
-default_model = claude-2
-api_key_path = ~/.anthropic_key
+default_model = claude-3-7-sonnet-latest
+api_key_path = ~/.anthropic/api_key
 api_key_env = ANTHROPIC_API_KEY
+beta_flags = computer-use-2024-10-22:true
 
 [openai]
-default_model = gpt-4
-api_key_path = ~/.openai_key
+default_model = o3-mini
+api_key_path = ~/.openai
 api_key_env = OPENAI_API_KEY
+
+[git]
+enabled = true
+dirty_repo_action = stash
+auto_commit = true
+commit_message_style = bullet_points
+model = claude-3-7-sonnet-latest
+provider = anthropic
+temperature = 0.7
+commit_prefix = [VMPilot]
+author = VMPilot <vmpilot@example.com>
 ```
 
 ## Environment Variables
