@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3] - 2025-03-24
+
+### Added
+
+- #30: [Feature] Track LLM changes in git (@dror-llm)
+- #37: [Sub-task] Implement git_track.py module (@dror-llm)
+- #38: [Sub-task] Implement Worker LLM  (@dror-llm)
+- #39: [Feature] Multi-Project Support (@dror-llm)
+- #9: Improve GitHub Issue Creation Process in LLM Instructions (@dror-llm)
+
 ## [0.2] - 2025-03-15
 
 ### Added
