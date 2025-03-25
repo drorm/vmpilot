@@ -1045,7 +1045,7 @@ VMPilot operates with the user permissions. The LLM can execute any command avai
 <p>The LLM tends to be a bit verbose and has a bias towards action. It will, as is often the case with LLMs, try its best to answer your question, or perform the task you've asked it to do, rather than ask for clarification. You can change that by asking it to just discuss the task or ask for clarification. You can also, in your prompt, change its behavior.</p>
 </li>
 <li>
-<p>It can perform several operations to accomplish a task. In our case, it created the script, and ran it to verify that it works.</p>
+<p>It typically performs several operations to accomplish a task. In our case, it created the script, and ran it to verify that it works.</p>
 </li>
 <li>
 <p>Outputs are fenced in the appropriate language for easy reading.</p>
@@ -1058,13 +1058,10 @@ VMPilot operates with the user permissions. The LLM can execute any command avai
 </li>
 </ul>
 <h1 id="choosing-the-provider">Choosing the provider</h1>
-<p>We support multiple providers such as OpenAI and Anthropic. You can choose the provider you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.</p>
-<h1 id="working-on-a-single-project">Working on a Single Project</h1>
-<ol>
-<li><strong>Default Project Directory</strong>: Set in <code>config.ini</code> <code>default_project</code> setting under the <code>[general]</code> section. This is used when no specific project is identified in a workspace.</li>
-</ol>
-<h1 id="working-with-projects">Working with Projects</h1>
-<p>VMPilot now features robust project directory management that affects virtually all operations, including file editing, shell commands, Git operations, and plugin functionality.</p>
+<p>We support Anthropic primarily, but you can also try OpenAI. You choose the provider you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.</p>
+<h1 id="working-on-a-project">Working on a Project</h1>
+<p>VMPilot is designed to work with projects and git repos. A project is a directory containing all the files and resources for your project, typically a git repository. VMPilot can work with multiple projects simultaneously, allowing you to switch between them easily.</p>
+<p><strong>VMPilot automatically performs a 'cd' to the project directory when starting a chat</strong>, ensuring all file paths, shell commands, and operations are relative to the project directory.</p>
 <h2 id="project-directory-configuration">Project Directory Configuration</h2>
 <p>There are two ways to specify which project directory VMPilot should use:</p>
 <ol>
@@ -1077,24 +1074,6 @@ VMPilot operates with the user permissions. The LLM can execute any command avai
 </code></pre></div></td></tr></table></div></p>
 </li>
 </ol>
-<h2 id="project-directory-detection">Project Directory Detection</h2>
-<p>VMPilot automatically detects and manages project directories:</p>
-<ol>
-<li>First, it checks the workspace system prompt for a project directory specification</li>
-<li>If not found, it falls back to the default project directory from config.ini</li>
-<li>VMPilot automatically changes to this directory when starting a conversation</li>
-<li>All file paths, shell commands, and operations are relative to this project directory</li>
-</ol>
-<h2 id="benefits-of-automatic-project-management">Benefits of Automatic Project Management</h2>
-<p>This feature eliminates the need to manually specify <code>"The root directory of this project is '/path/to/project'"</code> in your prompts. VMPilot now:</p>
-<ul>
-<li>Automatically changes to the correct directory for each workspace</li>
-<li>Maintains context when switching between projects</li>
-<li>Ensures file operations work correctly across different repositories</li>
-<li>Properly tracks Git changes in the correct repository</li>
-<li>Helps plugins operate in the right context</li>
-</ul>
-<p>When working with multiple projects, simply configure each workspace with its own <code>$PROJECT_ROOT</code> directive in the system prompt, and VMPilot will handle the rest.</p>
 <h1 id="additional-features">Additional Features</h1>
 <h2 id="plugins">Plugins</h2>
 <p>VMPilot supports various plugins to extend its functionality. See the <a href="../plugins/overview/">Plugins</a> documentation for details about available plugins and how to use them.</p>

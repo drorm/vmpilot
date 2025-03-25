@@ -978,10 +978,8 @@
 <p>When enabled, VMPilot's Git tracking:</p>
 <ol>
 <li>Checks the status of your Git repository at the start of each exchange</li>
-<li>Stashes or stops if the repository is dirty, has uncommitted changes</li>
-<li>Tracks changes made during VMPilot exchanges. An exchange is a request you make and the response and actions taken by VMPilot. At the end of each exchange:</li>
-<li>Automatically commits changes at the end of each exchange with AI-generated commit messages</li>
-<li>Provides warnings if the repository is in a dirty state before operations</li>
+<li>Stashes or stops if the repository is dirty, has uncommitted changes. You can configure the behavior in the <code>dirty_repo_action</code> setting</li>
+<li>Tracks changes made during VMPilot exchanges. An exchange is a request you make and the response and actions taken by VMPilot. At the end of each exchange VMPilot will commit the changes to the repository</li>
 </ol>
 <h2 id="configuration">Configuration</h2>
 <p>Configure Git tracking in the <code>[git]</code> section of your <code>config.ini</code> file:</p>
