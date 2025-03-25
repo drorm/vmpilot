@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2025-03-25
+
+### Added
+
+- #48 [Feature] Refactor project directory handling and improve error reporting 
+
 ## [0.3] - 2025-03-24
 
 ### Added

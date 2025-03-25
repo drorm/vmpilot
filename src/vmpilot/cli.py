@@ -19,6 +19,10 @@ log_level = os.environ.get("PYTHONLOGLEVEL", "INFO")
 logging.basicConfig(level=getattr(logging, log_level))
 logging.getLogger("vmpilot").setLevel(getattr(logging, log_level))
 
+# Explicitly silence specific loggers that might be noisy in CLI mode
+for logger_name in ["vmpilot.exchange", "vmpilot.agent", "vmpilot.agent_logging"]:
+    logging.getLogger(logger_name).setLevel(logging.WARNING)
+
 # Add parent directory to Python path when running as script
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -153,7 +157,9 @@ if __name__ == "__main__":
         "  cli.sh -c 'list python files'               # Start a chat session\n"
         "  cli.sh -c 'tell me about those files'       # Continue the chat session\n"
         "  cli.sh -f commands.txt                      # Execute commands from a file one line at the time\n"
-        "  cli.sh -f commands.txt -c                   # Execute commands from a file one line at the time with chat context",
+        "  cli.sh -f commands.txt -c                   # Execute commands from a file one line at the time with chat context\n"
+        "  cli.sh -v 'list all python files'           # Execute with verbose logging\n"
+        "  cli.sh -d 'list all python files'           # Execute with debug logging",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -188,7 +194,13 @@ if __name__ == "__main__":
         "-d",
         "--debug",
         action="store_true",
-        help="Enable debug mode",
+        help="Enable debug mode with detailed logging",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output with INFO level logging",
     )
     parser.add_argument(
         "-c",
@@ -214,13 +226,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Configure logging based on debug flag
+    # Configure logging based on debug and verbose flags
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
         logging.getLogger("vmpilot").setLevel(logging.DEBUG)
-    else:
+    elif args.verbose:
         logging.basicConfig(level=logging.INFO)
         logging.getLogger("vmpilot").setLevel(logging.INFO)
+    else:
+        logging.basicConfig(level=logging.WARNING)
+        logging.getLogger("vmpilot").setLevel(logging.WARNING)
 
     # Override Git configuration from command line if specified
     if hasattr(args, "git_override") and args.git_override is not None:
