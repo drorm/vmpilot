@@ -14,9 +14,9 @@ fi
 export OPENAI_API_KEY=`cat ~/.openai`
 cd "$SCRIPT_DIR/.."
 
-# Set Python logging level to INFO before running the CLI
-# This ensures log messages from imports are captured
+# Set Python logging level to WARN before running the CLI
+# This reduces verbosity in the CLI output
 export PYTHONPATH="$(pwd)"
-export PYTHONLOGLEVEL=INFO
+export PYTHONLOGLEVEL=WARN
 python3 src/vmpilot/cli.py "$@"
 echo
