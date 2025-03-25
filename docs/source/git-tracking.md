@@ -15,10 +15,8 @@ Git tracking is optional but highly recommended when working with VMPilot. It pr
 When enabled, VMPilot's Git tracking:
 
 1. Checks the status of your Git repository at the start of each exchange
-2. Stashes or stops if the repository is dirty, has uncommitted changes
-3. Tracks changes made during VMPilot exchanges. An exchange is a request you make and the response and actions taken by VMPilot. At the end of each exchange:
-3. Automatically commits changes at the end of each exchange with AI-generated commit messages
-4. Provides warnings if the repository is in a dirty state before operations
+2. Stashes or stops if the repository is dirty, has uncommitted changes. You can configure the behavior in the `dirty_repo_action` setting
+3. Tracks changes made during VMPilot exchanges. An exchange is a request you make and the response and actions taken by VMPilot. At the end of each exchange VMPilot will commit the changes to the repository
 
 ## Configuration
 
