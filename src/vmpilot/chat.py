@@ -148,17 +148,29 @@ class Chat:
         return None
 
     def change_to_project_dir(self):
-        """Ensure the project directory exists, creating it if necessary."""
-        project_path = Path(os.path.expanduser(self.project_dir))
-        if not project_path.exists():
+        """Ensure the project directory exists and is a directory before changing to it."""
+        expanded_dir = os.path.expanduser(self.project_dir)
+
+        # Check if directory exists
+        if not os.path.exists(expanded_dir):
             error = f"Project directory {self.project_dir} does not exist. See https://vmpdocs.a1.lingastic.org/user-guide/?h=project+directory#project-directory-configuration "
+            logger.error(error)
             raise Exception(error)
 
-        """Change to the project directory."""
+        # Check if it's a directory
+        if not os.path.isdir(expanded_dir):
+            error_msg = f"Failed to change to project directory {self.project_dir}: Not a directory"
+            logger.error(error_msg)
+            raise Exception(error_msg)
+
+        # Try to change to the directory
         try:
-            expanded_dir = os.path.expanduser(self.project_dir)
             os.chdir(expanded_dir)
             logger.info(f"Changed to project directory: {expanded_dir}")
+        except PermissionError as e:
+            error_msg = f"Failed to change to project directory {self.project_dir}: Permission denied"
+            logger.error(error_msg)
+            raise Exception(error_msg)
         except Exception as e:
             error_msg = f"Failed to change to project directory {self.project_dir}: {e}"
             logger.error(error_msg)

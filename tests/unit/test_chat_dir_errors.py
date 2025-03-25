@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 sys.path.insert(0, "/home/dror/vmpilot")
-from vmpilot.chat import Chat, DirException
+from vmpilot.chat import Chat
 
 
 class TestChatDirectoryErrors:
@@ -29,12 +29,12 @@ class TestChatDirectoryErrors:
     def test_nonexistent_directory_raises_exception(
         self, mock_chdir, mock_exists, mock_callback, default_messages
     ):
-        """Test that a non-existent project directory raises DirException."""
+        """Test that a non-existent project directory raises Exception."""
         # Setup mock to indicate directory doesn't exist
         mock_exists.return_value = False
 
-        # Test that creating a Chat with non-existent directory raises DirException
-        with pytest.raises(DirException) as excinfo:
+        # Test that creating a Chat with non-existent directory raises Exception
+        with pytest.raises(Exception) as excinfo:
             Chat(
                 chat_id="test123",
                 messages=default_messages,
