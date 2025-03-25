@@ -281,20 +281,6 @@ class Pipeline:
                         logger.debug(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
 
-                # Extract chat_id from body if present
-                chat_id = getattr(self, "chat_id", None)
-
-                # It's a new Chat if we only have system and user messages
-                if not hasattr(self, "_chat") or (messages and len(messages) <= 2):
-                    self._chat = Chat(
-                        chat_id=chat_id,
-                        messages=messages,
-                        output_callback=output_callback,
-                    )
-
-                # Make sure we have the chat_id from the chat object
-                chat_id = self._chat.chat_id
-
                 """ Output callback to handle messages from the LLM """
 
                 def output_callback(content: Dict):
@@ -332,6 +318,25 @@ class Pipeline:
                         else:
                             truncated_output += "\n"
                         output_queue.put(truncated_output)
+
+                # Extract chat_id from body if present
+                chat_id = getattr(self, "chat_id", None)
+
+                # It's a new Chat if we only have system and user messages
+                if not hasattr(self, "_chat") or (messages and len(messages) <= 2):
+                    try:
+                        self._chat = Chat(
+                            chat_id=chat_id,
+                            messages=messages,
+                            output_callback=output_callback,
+                        )
+                    except Exception as e:
+                        logger.warning(f"Error creating chat: {e}")
+                        yield f"{e}"
+                        return
+
+                # Make sure we have the chat_id from the chat object
+                chat_id = self._chat.chat_id
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
 
@@ -382,7 +387,7 @@ class Pipeline:
                             )
                         )
                     except Exception as e:
-                        logger.error(f"Error in sampling loop: {e}")
+                        logger.error(f"Error: {e}")
                         logger.error("".join(traceback.format_tb(e.__traceback__)))
                     finally:
                         loop_done.set()

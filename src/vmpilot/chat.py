@@ -48,9 +48,6 @@ class Chat:
         # Get or generate chat_id
         self.chat_id = self._get_or_generate_chat_id(chat_id, messages, output_callback)
 
-        # Ensure project directory exists
-        self._ensure_project_dir_exists()
-
         # Change to project directory for new chats
         self.change_to_project_dir()
 
@@ -69,13 +66,6 @@ class Chat:
             secrets.choice(string.ascii_letters + string.digits) for _ in range(8)
         )
         return f"{timestamp}{random_part}"
-
-    def _ensure_project_dir_exists(self):
-        """Ensure the project directory exists, creating it if necessary."""
-        project_path = Path(os.path.expanduser(self.project_dir))
-        if not project_path.exists():
-            logger.warning(f"Project directory {self.project_dir} does not exist")
-            # We don't create it as it might be a typo or misconfiguration
 
     def _get_or_generate_chat_id(
         self,
@@ -152,23 +142,24 @@ class Chat:
                         project_dir = match.group(1)
                         logger.debug(f"Extracted project directory: {project_dir}")
                         self.project_dir = project_dir
-                        self._ensure_project_dir_exists()
                         return project_dir
 
         # No project directory found in system message
         return None
 
     def change_to_project_dir(self):
+        """Ensure the project directory exists, creating it if necessary."""
+        project_path = Path(os.path.expanduser(self.project_dir))
+        if not project_path.exists():
+            error = f"Project directory {self.project_dir} does not exist. See https://vmpdocs.a1.lingastic.org/user-guide/?h=project+directory#project-directory-configuration "
+            raise Exception(error)
+
         """Change to the project directory."""
         try:
             expanded_dir = os.path.expanduser(self.project_dir)
-            current_dir = os.getcwd()
-
-            # Only change directory and log if we're not already in the target directory
-            if os.path.normpath(current_dir) != os.path.normpath(expanded_dir):
-                os.chdir(expanded_dir)
-                logger.info(f"Changed to project directory: {expanded_dir}")
+            os.chdir(expanded_dir)
+            logger.info(f"Changed to project directory: {expanded_dir}")
         except Exception as e:
-            logger.error(
-                f"Failed to change to project directory {self.project_dir}: {e}"
-            )
+            error_msg = f"Failed to change to project directory {self.project_dir}: {e}"
+            logger.error(error_msg)
+            raise Exception(error_msg)
