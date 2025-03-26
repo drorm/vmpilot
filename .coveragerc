@@ -1,0 +1,44 @@
+[run]
+source = src/vmpilot
+omit = 
+    # Exclude test files
+    */tests/*
+    # Exclude any __init__.py files
+    */__init__.py
+    # Exclude any generated files
+    */generated/*
+
+[report]
+# Exclude lines from coverage report
+exclude_lines =
+    # Skip any pragma comments
+    pragma: no cover
+    # Skip defensive assertion code
+    raise NotImplementedError
+    # Skip abstract methods
+    @(abc\.)?abstractmethod
+    # Skip pass-only code
+    pass
+    # Skip type checking branches
+    if TYPE_CHECKING:
+    # Skip debug-only code
+    def __repr__
+    if self\.debug
+    # Skip unreachable exception handlers
+    except ImportError:
+
+# Show line numbers of missing lines
+show_missing = True
+
+# Fail if coverage is below defined threshold
+fail_under = 70
+
+[html]
+# Directory for HTML report
+directory = htmlcov
+# Title for HTML report
+title = VMPilot Coverage Report
+
+[xml]
+# Output file for XML report (for CI integration)
+output = coverage.xml
