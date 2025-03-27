@@ -228,6 +228,7 @@ class TestConfigurationStructure:
             "model",
             "inference",
             "anthropic",
+            "pricing",
             "openai",
             "pipeline",
             "git",
