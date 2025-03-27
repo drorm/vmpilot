@@ -4,7 +4,7 @@
 
 ## Overview
 
-The coverage plugin helps you:
+The coverage plugin helps the LLM:
 
 1. Find which parts of your code don't have tests (low coverage areas)
 2. Create "component maps" that explain how to test those areas
@@ -15,7 +15,7 @@ The project target is **70% code coverage**.
 ## Simple Workflow
 
 ```
-Run coverage → Find low-coverage modules → Generate component maps → Write tests → Repeat
+Run coverage → Find low-coverage modules → Generate component maps (LLM-automated) → Write tests → Repeat
 ```
 
 ## How to Use It
@@ -34,18 +34,33 @@ This command runs pytest with coverage and identifies files below the 70% thresh
 make -f src/vmpilot/plugins/coverage/Makefile low-coverage-testmaps
 ```
 
-This generates structured test guidance documents for each low-coverage file, saved to `.vmpilot/testmap/`.
+This generates structured test guidance document templates for each low-coverage file, saved to `.vmpilot/testmap/`.
 
-### 3. Write Tests Based on Component Maps
+### 3. Generate Detailed Component Maps
 
-Each component map provides:
+To generate a component map for any file in the project:
+
+```bash
+# Example: Generate component map for a specific file
+make -f src/vmpilot/plugins/coverage/Makefile component-map FILE=src/vmpilot/tools/create_file.py
+```
+
+The LLM will analyze the file and automatically create a detailed component map in `.vmpilot/testmap/` with:
+- Module purpose and functionality
+- Required mocking strategy
+- Priority functions to test
+- Integration points with other modules
+
+### 4. Write Tests Based on Component Maps
+
+After completing the component maps, use them as guidance to write tests. Each completed component map should provide:
 - Module purpose and functionality
 - Required mocking strategy
 - Priority functions to test
 - Uncovered code lines
 - Testing approach recommendations
 
-### 4. Check Your Progress
+### 5. Check Your Progress
 
 ```bash
 make -f src/vmpilot/plugins/coverage/Makefile coverage
@@ -57,16 +72,6 @@ make -f src/vmpilot/plugins/coverage/Makefile coverage
 - Prioritize critical modules like `agent.py`
 - Use component maps to understand module relationships
 - Target the 70% threshold rather than 100% coverage
-
-## Troubleshooting
-
-If component maps aren't generating properly:
-1. Verify pytest and coverage are installed
-2. Check that vmpilot-cli or llm tool is available
-3. Try running the analyzer directly:
-   ```bash
-   python src/vmpilot/plugins/coverage/analyze_file.py src/vmpilot/agent.py
-   ```
 
 ## Documentation Files
 
