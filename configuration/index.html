@@ -369,6 +369,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pricing-settings-pricing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pricing Settings [pricing]
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#model-settings-model" class="md-nav__link">
     <span class="md-ellipsis">
       Model Settings [model]
@@ -996,6 +1005,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pricing-settings-pricing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pricing Settings [pricing]
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#model-settings-model" class="md-nav__link">
     <span class="md-ellipsis">
       Model Settings [model]
@@ -1122,8 +1140,48 @@
 <td>Number of lines shown in tool output</td>
 <td>15</td>
 </tr>
+<tr>
+<td>pricing_display</td>
+<td>Controls how pricing information is displayed (disabled, total_only, or detailed)</td>
+<td>detailed</td>
+</tr>
 </tbody>
 </table>
+<h3 id="pricing-settings-pricing">Pricing Settings [pricing]</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>claude_input_price</td>
+<td>Claude 3.7 Sonnet input cost per million tokens (MTok)</td>
+<td>3.00</td>
+</tr>
+<tr>
+<td>claude_output_price</td>
+<td>Claude 3.7 Sonnet output cost per million tokens (MTok)</td>
+<td>15.00</td>
+</tr>
+<tr>
+<td>claude_cache_creation_price</td>
+<td>Claude 3.7 Sonnet cache creation cost per million tokens (MTok)</td>
+<td>3.75</td>
+</tr>
+<tr>
+<td>claude_cache_read_price</td>
+<td>Claude 3.7 Sonnet cache read cost per million tokens (MTok)</td>
+<td>0.30</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note:</strong> The pricing values should be updated if Claude's pricing model changes. These values reflect the pricing as of March 2025.</p>
+</blockquote>
 <h3 id="model-settings-model">Model Settings [model]</h3>
 <table>
 <thead>
@@ -1284,38 +1342,54 @@
 <span class="normal"><a href="#__codelineno-2-29">29</a></span>
 <span class="normal"><a href="#__codelineno-2-30">30</a></span>
 <span class="normal"><a href="#__codelineno-2-31">31</a></span>
-<span class="normal"><a href="#__codelineno-2-32">32</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="k">[general]</span>
+<span class="normal"><a href="#__codelineno-2-32">32</a></span>
+<span class="normal"><a href="#__codelineno-2-33">33</a></span>
+<span class="normal"><a href="#__codelineno-2-34">34</a></span>
+<span class="normal"><a href="#__codelineno-2-35">35</a></span>
+<span class="normal"><a href="#__codelineno-2-36">36</a></span>
+<span class="normal"><a href="#__codelineno-2-37">37</a></span>
+<span class="normal"><a href="#__codelineno-2-38">38</a></span>
+<span class="normal"><a href="#__codelineno-2-39">39</a></span>
+<span class="normal"><a href="#__codelineno-2-40">40</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="k">[general]</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="na">default_provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">anthropic</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="na">tool_output_lines</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="k">[model]</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6"></a><span class="na">recursion_limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">25</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7"></a>
-<a id="__codelineno-2-8" name="__codelineno-2-8"></a><span class="k">[inference]</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9"></a><span class="na">temperature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.7</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10"></a><span class="na">max_tokens</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2000</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11"></a>
-<a id="__codelineno-2-12" name="__codelineno-2-12"></a><span class="k">[anthropic]</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13"></a><span class="na">default_model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">claude-3-7-sonnet-latest</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14"></a><span class="na">api_key_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.anthropic/api_key</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15"></a><span class="na">api_key_env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">ANTHROPIC_API_KEY</span>
-<a id="__codelineno-2-16" name="__codelineno-2-16"></a><span class="na">beta_flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">computer-use-2024-10-22:true</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17"></a>
-<a id="__codelineno-2-18" name="__codelineno-2-18"></a><span class="k">[openai]</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19"></a><span class="na">default_model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">o3-mini</span>
-<a id="__codelineno-2-20" name="__codelineno-2-20"></a><span class="na">api_key_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.openai</span>
-<a id="__codelineno-2-21" name="__codelineno-2-21"></a><span class="na">api_key_env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">OPENAI_API_KEY</span>
-<a id="__codelineno-2-22" name="__codelineno-2-22"></a>
-<a id="__codelineno-2-23" name="__codelineno-2-23"></a><span class="k">[git]</span>
-<a id="__codelineno-2-24" name="__codelineno-2-24"></a><span class="na">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
-<a id="__codelineno-2-25" name="__codelineno-2-25"></a><span class="na">dirty_repo_action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">stash</span>
-<a id="__codelineno-2-26" name="__codelineno-2-26"></a><span class="na">auto_commit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
-<a id="__codelineno-2-27" name="__codelineno-2-27"></a><span class="na">commit_message_style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">bullet_points</span>
-<a id="__codelineno-2-28" name="__codelineno-2-28"></a><span class="na">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">claude-3-7-sonnet-latest</span>
-<a id="__codelineno-2-29" name="__codelineno-2-29"></a><span class="na">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">anthropic</span>
-<a id="__codelineno-2-30" name="__codelineno-2-30"></a><span class="na">temperature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.7</span>
-<a id="__codelineno-2-31" name="__codelineno-2-31"></a><span class="na">commit_prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">[VMPilot]</span>
-<a id="__codelineno-2-32" name="__codelineno-2-32"></a><span class="na">author</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">VMPilot &lt;vmpilot@example.com&gt;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="na">pricing_display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">detailed</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6"></a><span class="k">[pricing]</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7"></a><span class="c1"># Pricing information for Claude 3.7 Sonnet (per million tokens - MTok)</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8"></a><span class="na">claude_input_price</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3.00</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9"></a><span class="na">claude_output_price</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15.00</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10"></a><span class="na">claude_cache_creation_price</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3.75</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11"></a><span class="na">claude_cache_read_price</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.30</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12"></a>
+<a id="__codelineno-2-13" name="__codelineno-2-13"></a><span class="k">[model]</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14"></a><span class="na">recursion_limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">25</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15"></a>
+<a id="__codelineno-2-16" name="__codelineno-2-16"></a><span class="k">[inference]</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17"></a><span class="na">temperature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.7</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18"></a><span class="na">max_tokens</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2000</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19"></a>
+<a id="__codelineno-2-20" name="__codelineno-2-20"></a><span class="k">[anthropic]</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21"></a><span class="na">default_model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">claude-3-7-sonnet-latest</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22"></a><span class="na">api_key_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.anthropic/api_key</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23"></a><span class="na">api_key_env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">ANTHROPIC_API_KEY</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24"></a><span class="na">beta_flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">computer-use-2024-10-22:true</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25"></a>
+<a id="__codelineno-2-26" name="__codelineno-2-26"></a><span class="k">[openai]</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27"></a><span class="na">default_model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">o3-mini</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28"></a><span class="na">api_key_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.openai</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29"></a><span class="na">api_key_env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">OPENAI_API_KEY</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30"></a>
+<a id="__codelineno-2-31" name="__codelineno-2-31"></a><span class="k">[git]</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32"></a><span class="na">enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33"></a><span class="na">dirty_repo_action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">stash</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34"></a><span class="na">auto_commit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35"></a><span class="na">commit_message_style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">bullet_points</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36"></a><span class="na">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">claude-3-7-sonnet-latest</span>
+<a id="__codelineno-2-37" name="__codelineno-2-37"></a><span class="na">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">anthropic</span>
+<a id="__codelineno-2-38" name="__codelineno-2-38"></a><span class="na">temperature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.7</span>
+<a id="__codelineno-2-39" name="__codelineno-2-39"></a><span class="na">commit_prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">[VMPilot]</span>
+<a id="__codelineno-2-40" name="__codelineno-2-40"></a><span class="na">author</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">VMPilot &lt;vmpilot@example.com&gt;</span>
 </code></pre></div></td></tr></table></div>
 <h2 id="environment-variables">Environment Variables</h2>
 <ul>
