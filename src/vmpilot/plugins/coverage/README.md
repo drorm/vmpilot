@@ -1,72 +1,99 @@
-# Coverage Plugin for VMPilot - LLM Instructions
+# VMPilot Coverage Plugin
 
-This file contains instructions for LLMs to analyze and improve test coverage in the VMPilot codebase. The detailed coverage guidelines are in [code_coverage.md](./code_coverage.md), which you should reference for comprehensive information.
+LLMs should also read guidelines in ./LLM.md.
 
-## Primary Coverage Commands
+The coverage plugin helps you:
 
-```bash
-# Basic coverage analysis
-python -m pytest --cov=src/vmpilot tests/unit/
+1. Find which parts of your code don't have tests (low coverage areas)
+2. Create "component maps" that explain how to test those areas
+3. Track improvements in test coverage over time
 
-# Coverage for specific modules
-python -m pytest --cov=src/vmpilot/tools tests/unit/
+## Simple Workflow
 
-# Coverage with line numbers of missing code
-python -m pytest --cov=src/vmpilot --cov-report=term-missing tests/unit/
-
-# Focus on uncovered lines only
-python -m pytest --cov=src/vmpilot --cov-report=term-missing:skip-covered tests/unit/
-
-# Clean previous data and run coverage
-coverage erase && python -m pytest --cov=src/vmpilot tests/unit/
+```
+Run coverage → Find low-coverage modules → Generate component maps → Write tests → Repeat
 ```
 
-## LLM-Driven Coverage Improvement Workflow
+## How to Use It
 
-As an LLM, follow this process to improve test coverage:
+### 1. Find Low-Coverage Areas
 
-1. **Analyze Current Coverage**
+```bash
+make -f src/vmpilot/plugins/coverage/Makefile find-low-coverage
+```
+
+This command:
+- Runs pytest with coverage on your code
+- Creates a report showing which files have less than 70% test coverage
+- Lists these files so you know where to focus
+
+### 2. Generate Component Maps
+
+```bash
+make -f src/vmpilot/plugins/coverage/Makefile low-coverage-testmaps
+```
+
+This command:
+- Takes each low-coverage file
+- Analyzes it (imports, functions, coverage)
+- Uses the LLM to create a "component map" that explains how to test it
+- Saves these maps in `.vmpilot/testmap/` with the same directory structure as your code
+
+### 3. Write Tests Based on Component Maps
+
+Each component map contains:
+- What the file does
+- What dependencies need to be mocked
+- Which functions need testing
+- What lines aren't covered
+- Strategies for writing effective tests
+
+Use these maps as a guide when writing new tests.
+
+### 4. Check Your Progress
+
+```bash
+make -f src/vmpilot/plugins/coverage/Makefile coverage
+```
+
+This shows your current coverage so you can track improvements.
+
+## Behind the Scenes
+
+Here's what happens when you generate component maps:
+
+1. A Python script (`analyze_file.py`) extracts information from your code:
+   - Imports and dependencies
+   - Function definitions
+   - Documentation
+   - Coverage statistics
+
+2. This information is passed to the LLM, which creates a structured component map
+
+3. The component map is saved in the `.vmpilot/testmap/` directory
+
+## Tips
+
+- Focus on files with 0% coverage first
+- Pay special attention to critical modules like `agent.py`
+- Use the component maps to understand dependencies between modules
+- Don't aim for 100% coverage everywhere - 70% is the target threshold
+
+## Troubleshooting
+
+If component maps aren't generating properly:
+1. Make sure pytest and coverage are installed
+2. Check that the LLM tool (vmpilot-cli or llm) is available
+3. Try running the analyzer script directly:
    ```bash
-   python -m pytest --cov=src/vmpilot --cov-report=term-missing tests/unit/
+   python src/vmpilot/plugins/coverage/analyze_file.py src/vmpilot/agent.py
    ```
 
-2. **Identify Low Coverage Modules**
-   - Focus on modules with <70% coverage
-   - Prioritize modules with 0% coverage
-   - Look for critical modules like agent.py, exchange.py
+## The Files That Make This Work
 
-3. **Create Component Maps**
-   - For each low-coverage module, create a test-focused component map
-   - Use the template in `test_template.md`
-   - Save to `.vmpilot/testmap/<module_path>.md`
+- `Makefile`: Runs the commands and coordinates the process
+- `analyze_file.py`: Extracts information from your code
+- `test_template.md`: Template for component maps
+- `code_coverage.md`: Detailed coverage guidelines
 
-4. **Generate Tests**
-   - Based on component maps, create targeted tests
-   - Focus on uncovered lines identified in step 1
-   - Use appropriate mocking as specified in component maps
-
-5. **Verify Improvements**
-   ```bash
-   python -m pytest --cov=src/vmpilot/tools --cov-report=term-missing tests/unit/
-   ```
-
-6. **Iterate** until coverage meets or exceeds threshold (70%)
-
-## Plugin Files
-
-- `code_coverage.md` - Comprehensive coverage guidelines and commands
-- `test_prompt.md` - Specific instructions for creating test-focused component maps
-- `test_template.md` - Template for creating component maps
-- `example_output/` - Example component maps for reference
-
-## Component Mapping Details
-
-When creating component maps, include:
-
-1. **Dependencies** - Both imports and imported-by relationships
-2. **Mocking Strategy** - What to mock when testing this component
-3. **Critical Functions** - Functions that need priority testing
-4. **Testing Gaps** - Current coverage percentage and uncovered lines
-5. **Test Implementation Strategy** - Approach for writing effective tests
-
-Reference the examples in `example_output/` for the expected format and level of detail.
+That's it! The plugin might seem complex under the hood, but using it is straightforward with these make commands.
