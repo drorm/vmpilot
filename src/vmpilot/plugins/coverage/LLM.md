@@ -1,72 +1,49 @@
-# Coverage Plugin for VMPilot - LLM Instructions
+# Coverage Plugin for VMPilot - LLM Workflow Guide
 
-This file contains instructions for LLMs to analyze and improve test coverage in the VMPilot codebase. The detailed coverage guidelines are in [code_coverage.md](./code_coverage.md), which you should reference for comprehensive information.
+This guide provides focused instructions for LLMs to help improve test coverage in the VMPilot codebase. For complete coverage documentation, see [code_coverage.md](./code_coverage.md).
 
-## Primary Coverage Commands
+## Quick Reference Commands
 
 ```bash
 # Basic coverage analysis
 python -m pytest --cov=src/vmpilot tests/unit/
 
-# Coverage for specific modules
+# Focus on specific modules
 python -m pytest --cov=src/vmpilot/tools tests/unit/
 
-# Coverage with line numbers of missing code
+# Show missing line numbers
 python -m pytest --cov=src/vmpilot --cov-report=term-missing tests/unit/
 
-# Focus on uncovered lines only
+# Show only uncovered lines
 python -m pytest --cov=src/vmpilot --cov-report=term-missing:skip-covered tests/unit/
-
-# Clean previous data and run coverage
-coverage erase && python -m pytest --cov=src/vmpilot tests/unit/
 ```
 
-## LLM-Driven Coverage Improvement Workflow
+## LLM Coverage Improvement Process
 
-As an LLM, follow this process to improve test coverage:
+Follow this structured approach when asked to improve test coverage:
 
-1. **Analyze Current Coverage**
-   ```bash
-   python -m pytest --cov=src/vmpilot --cov-report=term-missing tests/unit/
-   ```
+1. **Analyze Current Coverage** to identify gaps
+2. **Prioritize Modules** with <70% coverage, especially those with 0% coverage or critical functionality (agent.py, exchange.py)
+3. **Create Component Maps** using the template in `test_template.md` and save to `.vmpilot/testmap/<module_path>.md`
+4. **Generate Tests** targeting uncovered lines with appropriate mocking
+5. **Verify Improvements** by re-running coverage analysis
+6. **Iterate** until coverage threshold (70%) is met
 
-2. **Identify Low Coverage Modules**
-   - Focus on modules with <70% coverage
-   - Prioritize modules with 0% coverage
-   - Look for critical modules like agent.py, exchange.py
+## Component Maps Structure
 
-3. **Create Component Maps**
-   - For each low-coverage module, create a test-focused component map
-   - Use the template in `test_template.md`
-   - Save to `.vmpilot/testmap/<module_path>.md`
+Include these essential elements in each component map:
 
-4. **Generate Tests**
-   - Based on component maps, create targeted tests
-   - Focus on uncovered lines identified in step 1
-   - Use appropriate mocking as specified in component maps
+- **Dependencies** (imports and imported-by relationships)
+- **Mocking Strategy** for effective testing
+- **Critical Functions** requiring priority testing
+- **Testing Gaps** (coverage percentage and uncovered lines)
+- **Test Implementation Strategy**
 
-5. **Verify Improvements**
-   ```bash
-   python -m pytest --cov=src/vmpilot/tools --cov-report=term-missing tests/unit/
-   ```
+For examples, refer to `example_output/` directory.
 
-6. **Iterate** until coverage meets or exceeds threshold (70%)
+## Related Files
 
-## Plugin Files
-
-- `code_coverage.md` - Comprehensive coverage guidelines and commands
-- `test_prompt.md` - Specific instructions for creating test-focused component maps
-- `test_template.md` - Template for creating component maps
-- `example_output/` - Example component maps for reference
-
-## Component Mapping Details
-
-When creating component maps, include:
-
-1. **Dependencies** - Both imports and imported-by relationships
-2. **Mocking Strategy** - What to mock when testing this component
-3. **Critical Functions** - Functions that need priority testing
-4. **Testing Gaps** - Current coverage percentage and uncovered lines
-5. **Test Implementation Strategy** - Approach for writing effective tests
-
-Reference the examples in `example_output/` for the expected format and level of detail.
+- `README.md` - User-facing plugin documentation
+- `code_coverage.md` - Comprehensive coverage guidelines
+- `test_template.md` - Template for component maps
+- `Makefile` - Automation commands for coverage workflows
