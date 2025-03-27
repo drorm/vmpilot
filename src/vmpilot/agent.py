@@ -29,6 +29,7 @@ from vmpilot.config import config
 from vmpilot.exchange import Exchange
 from vmpilot.prompt import SYSTEM_PROMPT
 from vmpilot.setup_shell import SetupShellTool
+from vmpilot.usage import Usage
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
 
@@ -282,6 +283,9 @@ async def process_messages(
         user_message=user_message,
         output_callback=output_callback,
     )
+    
+    # Initialize usage tracking for this exchange
+    usage = Usage()
 
     # Check Git repository status and handle dirty_repo_action
     if not exchange.check_git_status():
@@ -295,6 +299,11 @@ async def process_messages(
             output_callback({"type": "text", "text": error_message})
             logger.warning(
                 "Dirty repo and dirty_repo_action is set to stop. Stop processing."
+            )
+            
+            # Log empty usage since we're exiting early
+            logger.info(
+                "TOTAL_TOKEN_USAGE: {'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'input_tokens': 0, 'output_tokens': 0}"
             )
 
             # Return early with just the error message
@@ -448,6 +457,9 @@ async def process_messages(
                         # Log message receipt and usage for all message types
                         log_message_received(message)
                         log_token_usage(message, "info")
+                        
+                        # Add tokens to usage tracker
+                        usage.add_tokens(message)
 
                         from langchain_core.messages import (
                             AIMessage,
@@ -616,5 +628,15 @@ async def process_messages(
     else:
         # In case of error or no response, still try to save what we have
         exchange.complete(AIMessage(content="Error occurred during processing"), [])
+    
+    # Log the total token usage for this exchange
+    total_usage = usage.get_totals()
+    logger.info(
+        "TOTAL_TOKEN_USAGE: {'cache_creation_input_tokens': %d, 'cache_read_input_tokens': %d, 'input_tokens': %d, 'output_tokens': %d}",
+        total_usage["cache_creation_input_tokens"],
+        total_usage["cache_read_input_tokens"],
+        total_usage["input_tokens"],
+        total_usage["output_tokens"],
+    )
 
     return messages
