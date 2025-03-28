@@ -31,6 +31,14 @@ class CommitMessageStyle(str, Enum):
     BULLET_POINTS = "bullet_points"
 
 
+class PricingDisplay(str, Enum):
+    """Enum for pricing display options."""
+
+    DISABLED = "disabled"
+    TOTAL_ONLY = "total_only"
+    DETAILED = "detailed"
+
+
 def find_config_file() -> Path:
     """Find the configuration file in multiple possible locations"""
     # Try environment variable first
@@ -107,6 +115,16 @@ class Provider(StrEnum):
 
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
+    GOOGLE = "google"
+
+
+class ModelPricing(BaseModel):
+    """Model pricing information."""
+
+    input_price: float = 0.0
+    output_price: float = 0.0
+    cache_creation_price: float = 0.0
+    cache_read_price: float = 0.0
 
 
 class ProviderConfig(BaseModel):
@@ -157,6 +175,8 @@ class ModelConfig(BaseModel):
     providers: Dict[Provider, ProviderConfig] = Field(default_factory=dict)
     default_provider: Provider
     git_config: GitConfig = Field(default_factory=GitConfig)
+    pricing: Dict[Provider, ModelPricing] = Field(default_factory=dict)
+    pricing_display: PricingDisplay = Field(default=PricingDisplay.DETAILED)
 
     def __init__(self):
         try:
@@ -212,10 +232,54 @@ class ModelConfig(BaseModel):
                     ),
                 )
 
+            # Initialize pricing information
+            pricing = {}
+            if parser.has_section("pricing"):
+                pricing_section = parser["pricing"]
+
+                # Claude pricing
+                claude_pricing = ModelPricing(
+                    input_price=pricing_section.getfloat(
+                        "claude_input_price", fallback=3.00
+                    ),
+                    output_price=pricing_section.getfloat(
+                        "claude_output_price", fallback=15.00
+                    ),
+                    cache_creation_price=pricing_section.getfloat(
+                        "claude_cache_creation_price", fallback=3.75
+                    ),
+                    cache_read_price=pricing_section.getfloat(
+                        "claude_cache_read_price", fallback=0.30
+                    ),
+                )
+                pricing[Provider.ANTHROPIC] = claude_pricing
+
+                # Log the loaded pricing information
+                logger.debug(
+                    f"Loaded Claude pricing: input={claude_pricing.input_price}, output={claude_pricing.output_price}, "
+                    f"cache_creation={claude_pricing.cache_creation_price}, cache_read={claude_pricing.cache_read_price}"
+                )
+
+                # Add OpenAI pricing if/when available
+
+            # Get pricing display option from config
+            pricing_display_str = parser.get(
+                "general", "pricing_display", fallback="detailed"
+            )
+            try:
+                pricing_display = PricingDisplay(pricing_display_str.lower())
+            except ValueError:
+                pricing_display = PricingDisplay.DETAILED
+                logger.warning(
+                    f"Invalid pricing_display value: {pricing_display_str}. Using 'detailed' instead."
+                )
+
             super().__init__(
                 providers=providers,
                 default_provider=Provider(default_provider),
                 git_config=git_config or GitConfig(),
+                pricing=pricing,
+                pricing_display=pricing_display,
             )
 
         except Exception as e:
@@ -225,6 +289,8 @@ class ModelConfig(BaseModel):
                 providers={},
                 default_provider=Provider.ANTHROPIC,  # Set a default
                 git_config=GitConfig(),
+                pricing={},  # Empty pricing dictionary
+                pricing_display=PricingDisplay.DETAILED,  # Default to detailed display
             )
 
     def get_provider_config(
@@ -275,6 +341,32 @@ class ModelConfig(BaseModel):
         raise ConfigError(
             f"No API key found for provider {provider}. Set environment variable {provider_config.api_key_env} or create key file at {provider_config.api_key_path}"
         )
+
+    def get_pricing(self, provider: Optional[Provider] = None) -> ModelPricing:
+        """Get pricing information for the specified provider.
+
+        Args:
+            provider: Provider to get pricing for, or None for default provider
+
+        Returns:
+            ModelPricing object with pricing information
+        """
+        if provider is None:
+            provider = self.default_provider
+
+        if provider in self.pricing:
+            return self.pricing[provider]
+
+        # Return empty pricing if not found
+        return ModelPricing()
+
+    def get_pricing_display(self) -> PricingDisplay:
+        """Get the current pricing display setting.
+
+        Returns:
+            PricingDisplay enum indicating how pricing information should be displayed
+        """
+        return self.pricing_display
 
 
 # Global configuration instance

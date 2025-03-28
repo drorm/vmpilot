@@ -10,6 +10,7 @@ from contextvars import ContextVar
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
@@ -31,6 +32,7 @@ from vmpilot.prompt import SYSTEM_PROMPT
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
+from vmpilot.usage import Usage
 
 # Configure logging
 from .agent_logging import (
@@ -203,6 +205,20 @@ async def create_agent(
             openai_api_key=api_key,
             timeout=30,
         )
+    elif provider == APIProvider.GOOGLE:
+        # Create the Google AI LLM
+        try:
+
+            llm = ChatGoogleGenerativeAI(
+                model=model,
+                temperature=temperature,
+                max_output_tokens=max_tokens,
+                google_api_key=api_key,
+                request_timeout=30,
+            )
+        except Exception as e:
+            logging.error(f"Error creating Google AI LLM: {str(e)}")
+            raise
 
     # Set up tools with LLM for fencing capability
     tools = setup_tools(llm=llm)
@@ -283,6 +299,9 @@ async def process_messages(
         output_callback=output_callback,
     )
 
+    # Initialize usage tracking for this exchange with the current provider
+    usage = Usage(provider=config.default_provider)
+
     # Check Git repository status and handle dirty_repo_action
     if not exchange.check_git_status():
         logger.debug("Git repository has uncommitted changes before LLM operation")
@@ -297,6 +316,11 @@ async def process_messages(
                 "Dirty repo and dirty_repo_action is set to stop. Stop processing."
             )
 
+            # Log empty usage since we're exiting early
+            logger.info(
+                "TOTAL_TOKEN_USAGE: {'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'input_tokens': 0, 'output_tokens': 0}"
+            )
+
             # Return early with just the error message
             return messages + [error_message]
         # For other actions (stash), continue processing
@@ -309,7 +333,8 @@ async def process_messages(
         model, api_key, provider, system_prompt_suffix, temperature, max_tokens
     )
 
-    if provider == APIProvider.OPENAI:
+    # for openai and google preprend the system prompt
+    if provider == APIProvider.GOOGLE or provider == APIProvider.OPENAI:
         # Prepend system prompt to messages for OpenAI
         system_prompt = SYSTEM_PROMPT + (
             "\n\n" + system_prompt_suffix if system_prompt_suffix else ""
@@ -448,6 +473,9 @@ async def process_messages(
                         # Log message receipt and usage for all message types
                         log_message_received(message)
                         log_token_usage(message, "info")
+
+                        # Add tokens to usage tracker
+                        usage.add_tokens(message)
 
                         from langchain_core.messages import (
                             AIMessage,
@@ -616,5 +644,15 @@ async def process_messages(
     else:
         # In case of error or no response, still try to save what we have
         exchange.complete(AIMessage(content="Error occurred during processing"), [])
+
+    # Log the total token usage and cost for this exchange
+    total_usage, cost = usage.get_cost_summary()
+
+    # Get cost message from usage module - it will handle display settings internally
+    cost_message = usage.get_cost_message()
+    if cost_message:  # Only output if there's a message to display
+        logger.debug(cost_message)
+        # append cost message to the Messages
+        output_callback({"type": "text", "text": cost_message})
 
     return messages

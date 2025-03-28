@@ -38,6 +38,17 @@ The `config.ini` file is organized into the following sections:
 | default_provider | Primary LLM provider (anthropic/openai) | anthropic |
 | default_project | Default project directory for git operations and file access | ~/vmpilot |
 | tool_output_lines | Number of lines shown in tool output | 15 |
+| pricing_display | Controls how pricing information is displayed (disabled, total_only, or detailed) | detailed |
+
+### Pricing Settings [pricing]
+| Setting | Description | Default |
+|---------|-------------|---------|
+| claude_input_price | Claude 3.7 Sonnet input cost per million tokens (MTok) | 3.00 |
+| claude_output_price | Claude 3.7 Sonnet output cost per million tokens (MTok) | 15.00 |
+| claude_cache_creation_price | Claude 3.7 Sonnet cache creation cost per million tokens (MTok) | 3.75 |
+| claude_cache_read_price | Claude 3.7 Sonnet cache read cost per million tokens (MTok) | 0.30 |
+
+> **Note:** The pricing values should be updated if Claude's pricing model changes. These values reflect the pricing as of March 2025.
 
 ### Model Settings [model]
 | Setting | Description | Default |
@@ -76,6 +87,14 @@ The `config.ini` file is organized into the following sections:
 [general]
 default_provider = anthropic
 tool_output_lines = 15
+pricing_display = detailed
+
+[pricing]
+# Pricing information for Claude 3.7 Sonnet (per million tokens - MTok)
+claude_input_price = 3.00
+claude_output_price = 15.00
+claude_cache_creation_price = 3.75
+claude_cache_read_price = 0.30
 
 [model]
 recursion_limit = 25
