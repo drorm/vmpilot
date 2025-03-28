@@ -26,7 +26,11 @@ def test_default_config_loading():
         assert parser.has_section(section)
 
     # Verify some key settings
-    assert parser.get("general", "default_provider") in ["anthropic", "openai", "google"]
+    assert parser.get("general", "default_provider") in [
+        "anthropic",
+        "openai",
+        "google",
+    ]
     assert parser.getint("general", "tool_output_lines") > 0
 
 

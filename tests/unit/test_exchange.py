@@ -2,7 +2,6 @@ import time
 from datetime import datetime, timedelta
 
 import pytest
-
 from langchain_core.messages import AIMessage, HumanMessage
 
 from vmpilot import exchange
@@ -14,15 +13,18 @@ class DummyStatus:
     def __init__(self, name):
         self.name = name
 
+
 # Define DummyGitStatus constants as instances of DummyStatus
 class DummyGitStatus:
-    DIRTY = DummyStatus('dirty')
-    CLEAN = DummyStatus('clean')
+    DIRTY = DummyStatus("dirty")
+    CLEAN = DummyStatus("clean")
 
 
 # Dummy GitTracker
 class DummyGitTracker:
-    def __init__(self, status=DummyGitStatus.CLEAN, stash_success=True, auto_commit_success=True):
+    def __init__(
+        self, status=DummyGitStatus.CLEAN, stash_success=True, auto_commit_success=True
+    ):
         self._status = status
         self.stash_success = stash_success
         self.auto_commit_success = auto_commit_success
@@ -47,6 +49,7 @@ class DummyGitTracker:
 # Dummy save function
 saved_states = {}
 
+
 def dummy_save_conversation_state(chat_id, messages, extra):
     saved_states[chat_id] = (messages, extra)
 
@@ -54,17 +57,21 @@ def dummy_save_conversation_state(chat_id, messages, extra):
 @pytest.fixture(autouse=True)
 def patch_dependencies(monkeypatch):
     # Patch config.git_config and config
-    dummy_git_config = type('DummyGitConfig', (), {})()
+    dummy_git_config = type("DummyGitConfig", (), {})()
     dummy_git_config.enabled = True
-    dummy_git_config.dirty_repo_action = 'stop'
-    monkeypatch.setattr(exchange, 'config', type('DummyConfig', (), {'git_config': dummy_git_config}))
+    dummy_git_config.dirty_repo_action = "stop"
+    monkeypatch.setattr(
+        exchange, "config", type("DummyConfig", (), {"git_config": dummy_git_config})
+    )
 
     # Patch GitTracker and GitStatus in exchange module
-    monkeypatch.setattr(exchange, 'GitTracker', lambda: DummyGitTracker())
-    monkeypatch.setattr(exchange, 'GitStatus', DummyGitStatus)
+    monkeypatch.setattr(exchange, "GitTracker", lambda: DummyGitTracker())
+    monkeypatch.setattr(exchange, "GitStatus", DummyGitStatus)
 
     # Patch save_conversation_state
-    monkeypatch.setattr(exchange, 'save_conversation_state', dummy_save_conversation_state)
+    monkeypatch.setattr(
+        exchange, "save_conversation_state", dummy_save_conversation_state
+    )
 
     # Clear saved_states before each test
     saved_states.clear()
@@ -89,9 +96,9 @@ def test_init_with_human_message():
 def test_check_git_status_clean(monkeypatch):
     # Setup: git enabled, repo status is CLEAN
     dummy_tracker = DummyGitTracker(status=DummyGitStatus.CLEAN)
-    monkeypatch.setattr(exchange, 'GitTracker', lambda: dummy_tracker)
+    monkeypatch.setattr(exchange, "GitTracker", lambda: dummy_tracker)
     # Also set dirty_repo_action irrelevant for clean state
-    exchange.config.git_config.dirty_repo_action = 'stop'
+    exchange.config.git_config.dirty_repo_action = "stop"
 
     ex = Exchange("chat_clean", {"content": "Test"})
     # Explicitly test check_git_status
@@ -102,8 +109,8 @@ def test_check_git_status_clean(monkeypatch):
 def test_check_git_status_dirty_stop(monkeypatch):
     # Setup: git enabled, repo status is DIRTY and action is 'stop'
     dummy_tracker = DummyGitTracker(status=DummyGitStatus.DIRTY)
-    monkeypatch.setattr(exchange, 'GitTracker', lambda: dummy_tracker)
-    exchange.config.git_config.dirty_repo_action = 'stop'
+    monkeypatch.setattr(exchange, "GitTracker", lambda: dummy_tracker)
+    exchange.config.git_config.dirty_repo_action = "stop"
 
     ex = Exchange("chat_dirty_stop", {"content": "Test"})
     result = ex.check_git_status()
@@ -113,15 +120,18 @@ def test_check_git_status_dirty_stop(monkeypatch):
 def test_check_git_status_dirty_stash_success(monkeypatch):
     # Setup: git enabled, repo status is DIRTY and action is 'stash', stash successful
     dummy_tracker = DummyGitTracker(status=DummyGitStatus.DIRTY, stash_success=True)
-    monkeypatch.setattr(exchange, 'GitTracker', lambda: dummy_tracker)
-    exchange.config.git_config.dirty_repo_action = 'stash'
+    monkeypatch.setattr(exchange, "GitTracker", lambda: dummy_tracker)
+    exchange.config.git_config.dirty_repo_action = "stash"
 
     callback_called = False
+
     def dummy_callback(message):
         nonlocal callback_called
         callback_called = True
 
-    ex = Exchange("chat_dirty_stash", {"content": "Test"}, output_callback=dummy_callback)
+    ex = Exchange(
+        "chat_dirty_stash", {"content": "Test"}, output_callback=dummy_callback
+    )
     result = ex.check_git_status()
     assert result is True
     assert dummy_tracker.stash_called is True
@@ -132,8 +142,8 @@ def test_check_git_status_dirty_stash_success(monkeypatch):
 def test_check_git_status_dirty_stash_failure(monkeypatch):
     # Setup: git enabled, repo status is DIRTY, action is 'stash', but stash fails
     dummy_tracker = DummyGitTracker(status=DummyGitStatus.DIRTY, stash_success=False)
-    monkeypatch.setattr(exchange, 'GitTracker', lambda: dummy_tracker)
-    exchange.config.git_config.dirty_repo_action = 'stash'
+    monkeypatch.setattr(exchange, "GitTracker", lambda: dummy_tracker)
+    exchange.config.git_config.dirty_repo_action = "stash"
 
     ex = Exchange("chat_dirty_stash_fail", {"content": "Test"})
     result = ex.check_git_status()
@@ -143,7 +153,7 @@ def test_check_git_status_dirty_stash_failure(monkeypatch):
 def test_complete_sets_assistant_and_tool_calls(monkeypatch):
     # Setup a dummy tracker to simulate a clean repo (so commit_changes won't commit)
     dummy_tracker = DummyGitTracker(status=DummyGitStatus.CLEAN)
-    monkeypatch.setattr(exchange, 'GitTracker', lambda: dummy_tracker)
+    monkeypatch.setattr(exchange, "GitTracker", lambda: dummy_tracker)
 
     ex = Exchange("chat_complete", {"content": "User message"})
     assistant = {"content": "Assistant reply"}
@@ -171,8 +181,10 @@ def test_commit_changes_not_enabled(monkeypatch):
 
 
 def test_commit_changes_dirty_auto_commit_success(monkeypatch):
-    dummy_tracker = DummyGitTracker(status=DummyGitStatus.DIRTY, auto_commit_success=True)
-    monkeypatch.setattr(exchange, 'GitTracker', lambda: dummy_tracker)
+    dummy_tracker = DummyGitTracker(
+        status=DummyGitStatus.DIRTY, auto_commit_success=True
+    )
+    monkeypatch.setattr(exchange, "GitTracker", lambda: dummy_tracker)
 
     ex = Exchange("chat_commit_success", {"content": "Test"})
     result = ex.commit_changes()
@@ -181,8 +193,10 @@ def test_commit_changes_dirty_auto_commit_success(monkeypatch):
 
 
 def test_commit_changes_dirty_auto_commit_failure(monkeypatch):
-    dummy_tracker = DummyGitTracker(status=DummyGitStatus.DIRTY, auto_commit_success=False)
-    monkeypatch.setattr(exchange, 'GitTracker', lambda: dummy_tracker)
+    dummy_tracker = DummyGitTracker(
+        status=DummyGitStatus.DIRTY, auto_commit_success=False
+    )
+    monkeypatch.setattr(exchange, "GitTracker", lambda: dummy_tracker)
 
     ex = Exchange("chat_commit_fail", {"content": "Test"})
     result = ex.commit_changes()
@@ -219,19 +233,21 @@ def test_get_duration(monkeypatch):
 
 def test_get_tool_call_count():
     ex = Exchange("chat_tool_calls", {"content": "Test"})
-    ex.tool_calls = ['tool1', 'tool2', 'tool3']
+    ex.tool_calls = ["tool1", "tool2", "tool3"]
     count = ex.get_tool_call_count()
     assert count == 3
 
 
 def test_get_exchange_summary(monkeypatch):
     # Test summary includes git commit result
-    dummy_tracker = DummyGitTracker(status=DummyGitStatus.DIRTY, auto_commit_success=True)
-    monkeypatch.setattr(exchange, 'GitTracker', lambda: dummy_tracker)
-    exchange.config.git_config.dirty_repo_action = 'stop'
+    dummy_tracker = DummyGitTracker(
+        status=DummyGitStatus.DIRTY, auto_commit_success=True
+    )
+    monkeypatch.setattr(exchange, "GitTracker", lambda: dummy_tracker)
+    exchange.config.git_config.dirty_repo_action = "stop"
     ex = Exchange("chat_summary", {"content": "Test"})
     # Complete the exchange to set completed_at
-    ex.complete({"content": "Assistant"}, tool_calls=['tool1'])
+    ex.complete({"content": "Assistant"}, tool_calls=["tool1"])
     summary = ex.get_exchange_summary()
     assert summary["chat_id"] == "chat_summary"
     assert summary["completed_at"] is not None
@@ -245,7 +261,7 @@ def test_commit_changes_exception(monkeypatch):
         raise Exception("Commit error")
 
     ex = Exchange("chat_exception", {"content": "Test"})
-    monkeypatch.setattr(ex, 'commit_changes', failing_commit_changes)
+    monkeypatch.setattr(ex, "commit_changes", failing_commit_changes)
     # This should not raise despite exception in commit_changes
     ex.complete({"content": "Assistant after exception"})
     # Check that assistant_message is set regardless of commit failure
