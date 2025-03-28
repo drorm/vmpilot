@@ -4,25 +4,14 @@
 
 This plugin provides guidance for improving and maintaining code coverage in the VMPilot project through LLM-assisted test generation. The LLM (that's me!) can analyze code, identify untested areas, and generate appropriate unit tests to improve coverage.
 
-## Basic Coverage Commands
-
-From the root of the project, run the following commands to generate coverage reports:
-```bash
-# Run coverage for all modules
-python -m pytest --cov=src/vmpilot --cov-report=term-missing tests/unit/
-
-# Run coverage for a specific module
-python -m pytest --cov=src/vmpilot/tools/edit_tool.py --cov-report=term-missing tests/unit/
-
-# Run coverage and show only uncovered lines
-python -m pytest --cov=src/vmpilot --cov-report=term-missing:skip-covered tests/unit/
-```
-
 ## LLM-Driven Interactive Workflow
 
-As your AI assistant, I'll follow these steps when asked to handle code coverage tasks:
+IMPORTANT: Only generate tests after the user has reviewed the coverage results and agreed to proceed.
+
+Follow these steps when asked to handle code coverage tasks:
 
 1. **Run coverage analysis and show results**
+From the root of the project, run the following commands to generate coverage reports
    ```bash
    python -m pytest --cov=src/vmpilot --cov-report=term-missing tests/unit/
    ```
@@ -33,7 +22,7 @@ As your AI assistant, I'll follow these steps when asked to handle code coverage
    2. Focus on specific files
    3. Adjust the threshold"
 
-3. **Process according to your response**
+3. **Process according to users' response**
    - For all files: I'll prioritize by lowest coverage first
    - For specific files: I'll focus only on mentioned files
    - For threshold adjustment: I'll run with new threshold

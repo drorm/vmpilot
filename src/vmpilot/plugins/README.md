@@ -18,3 +18,9 @@ directory: documentation
 directory: unit_testing
 - Provides guidance for creating comprehensive unit tests for VMPilot components
 - Includes test templates and best practices for effective test implementation
+
+# Coverage Analysis
+
+directory: coverage
+- Provides guidance for running coverage analysis on VMPilot components and generating test cases
+- Includes shell scripts for running coverage analysis
