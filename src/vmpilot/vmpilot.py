@@ -130,9 +130,9 @@ class Pipeline:
             try:
                 Pipeline._provider = self.provider
                 if self.provider == Provider.ANTHROPIC:
-                    Pipeline._api_key = self._anthropic_api_key
+                    Pipeline._api_key = self.anthropic_api_key
                 elif self.provider == Provider.OPENAI:
-                    Pipeline._api_key = self._openai_api_key
+                    Pipeline._api_key = self.openai_api_key
                 elif self.provider == Provider.GOOGLE:
                     Pipeline._api_key = self.google_api_key
                 else:
@@ -152,6 +152,9 @@ class Pipeline:
             ),
             openai_api_key=os.getenv(
                 "OPENAI_API_KEY", "To use OpenAI, enter your API key here"
+            ),
+            google_api_key=os.getenv(
+                "GOOGLE_API_KEY", "To use Google, enter your API key here"
             ),
             provider=Provider(DEFAULT_PROVIDER),
         )
