@@ -6,7 +6,6 @@ import logging
 import os
 import pathlib
 import traceback
-import traceback
 from contextvars import ContextVar
 from typing import Any, Callable, Dict, List, Optional
 
@@ -27,9 +26,6 @@ from vmpilot.agent_memory import (
 from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE, GitConfig
 from vmpilot.config import Provider as APIProvider
-
-# Log APIProvider enum values for debugging
-logging.info(f"APIProvider enum values in agent.py: {[p.value for p in APIProvider]}")
 from vmpilot.config import config
 from vmpilot.exchange import Exchange
 from vmpilot.prompt import SYSTEM_PROMPT
@@ -212,12 +208,7 @@ async def create_agent(
     elif provider == APIProvider.GOOGLE:
         # Create the Google AI LLM
         try:
-            from langchain_google_genai import GoogleGenerativeAIClient
 
-            logging.info(f"Creating Google AI LLM with model: {model}")
-            logging.info(f"Google API key starts with: {api_key[:6] if api_key else 'None'}")
-            
-            GoogleGenerativeAIClient.register_provider()
             llm = ChatGoogleGenerativeAI(
                 model=model,
                 temperature=temperature,
@@ -225,10 +216,8 @@ async def create_agent(
                 google_api_key=api_key,
                 request_timeout=30,
             )
-            logging.info("Successfully created Google AI LLM")
         except Exception as e:
             logging.error(f"Error creating Google AI LLM: {str(e)}")
-            logging.error(traceback.format_exc())
             raise
 
     # Set up tools with LLM for fencing capability
@@ -344,7 +333,8 @@ async def process_messages(
         model, api_key, provider, system_prompt_suffix, temperature, max_tokens
     )
 
-    if provider == APIProvider.OPENAI:
+    # for openai and google preprend the system prompt
+    if provider == APIProvider.GOOGLE or provider == APIProvider.OPENAI:
         # Prepend system prompt to messages for OpenAI
         system_prompt = SYSTEM_PROMPT + (
             "\n\n" + system_prompt_suffix if system_prompt_suffix else ""

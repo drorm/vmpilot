@@ -11,7 +11,6 @@ environment_variables: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
 # Configure logging early
 import logging
 import os
-import traceback
 
 # Import and use custom logging configuration
 from vmpilot.logging_config import configure_logging
@@ -45,24 +44,17 @@ from vmpilot.config import (
     parser,
 )
 
-# Log Provider enum values for debugging
-logger.info(f"Provider enum values in vmpilot.py: {[p.value for p in Provider]}")
-
 
 class Pipeline:
     # Provider management at Pipeline level
     _provider: Provider = Provider(DEFAULT_PROVIDER)
     _api_key: str = ""  # Set based on active provider
-    
-    # Log static variables
-    logger.info(f"Initial Pipeline._provider: {_provider}")
-    logger.info(f"Initial Pipeline._api_key: {'Set' if _api_key else 'Not set'}")
 
     class Valves(BaseModel):
         # Private storage for properties
-        _anthropic_api_key: str = ""
-        _openai_api_key: str = ""
-        _google_api_key: str = ""
+        anthropic_api_key: str = ""
+        openai_api_key: str = ""
+        google_api_key: str = ""
         _provider: Provider = Provider(DEFAULT_PROVIDER)
 
         # Model configuration (inherited from config)
@@ -81,33 +73,33 @@ class Pipeline:
         # Property for anthropic_api_key with setter that updates state
         @property
         def anthropic_api_key(self) -> str:
-            return self._anthropic_api_key
+            return self.anthropic_api_key
 
         @anthropic_api_key.setter
         def anthropic_api_key(self, value: str):
-            self._anthropic_api_key = value
+            self.anthropic_api_key = value
             if self.provider == Provider.ANTHROPIC:
                 self._update_api_key()
 
         # Property for openai_api_key with setter that updates state
         @property
         def openai_api_key(self) -> str:
-            return self._openai_api_key
+            return self.openai_api_key
 
         @openai_api_key.setter
         def openai_api_key(self, value: str):
-            self._openai_api_key = value
+            self.openai_api_key = value
             if self.provider == Provider.OPENAI:
                 self._update_api_key()
 
         # Property for google_api_key with setter that updates state
         @property
         def google_api_key(self) -> str:
-            return self._google_api_key
+            return self.google_api_key
 
         @google_api_key.setter
         def google_api_key(self, value: str):
-            self._google_api_key = value
+            self.google_api_key = value
             if self.provider == Provider.GOOGLE:
                 self._update_api_key()
 
@@ -136,22 +128,17 @@ class Pipeline:
         def _update_api_key(self):
             """Update API key based on current provider"""
             try:
-                logger.info(f"Updating API key for provider: {self.provider}")
                 Pipeline._provider = self.provider
                 if self.provider == Provider.ANTHROPIC:
                     Pipeline._api_key = self._anthropic_api_key
-                    logger.info(f"Set Anthropic API key: {self._anthropic_api_key[:6]}...")
                 elif self.provider == Provider.OPENAI:
                     Pipeline._api_key = self._openai_api_key
-                    logger.info(f"Set OpenAI API key: {self._openai_api_key[:6]}...")
                 elif self.provider == Provider.GOOGLE:
-                    logger.info(f"Setting Google API key: {self._google_api_key[:6]}...")
-                    Pipeline._api_key = self._google_api_key
+                    Pipeline._api_key = self.google_api_key
                 else:
                     logger.error(f"Unknown provider: {self.provider}")
             except Exception as e:
                 logger.error(f"Error updating API key: {str(e)}")
-                logger.error(traceback.format_exc())
 
     def __init__(self):
         self.name = parser.get("pipeline", "name")
@@ -165,9 +152,6 @@ class Pipeline:
             ),
             openai_api_key=os.getenv(
                 "OPENAI_API_KEY", "To use OpenAI, enter your API key here"
-            ),
-            google_api_key=os.getenv(
-                "GOOGLE_API_KEY", "To use Google AI, enter your API key here"
             ),
             provider=Provider(DEFAULT_PROVIDER),
         )
@@ -188,20 +172,11 @@ class Pipeline:
     def set_provider(self, provider: str):
         """Set the provider and update configuration"""
         try:
-            logger.info(f"Setting provider to: {provider}")
-            provider_lower = provider.lower()
-            logger.info(f"Available providers: {[p.value for p in Provider]}")
-            if provider_lower not in [p.value for p in Provider]:
-                raise ValueError(f"Provider {provider} not in available providers")
-            
-            self.valves.provider = Provider(provider_lower)
+            self.valves.provider = Provider(provider.lower())
             self.valves.model = ""  # Reset model to use provider default
             self.valves._sync_with_config()
-            logger.info(f"Provider set to: {self.valves.provider}")
-        except Exception as e:
-            logger.error(f"Error in set_provider: {str(e)}")
-            logger.error(traceback.format_exc())
-            raise ValueError(f"Invalid provider: {provider} - {str(e)}")
+        except ValueError as e:
+            raise ValueError(f"Invalid provider: {provider}")
 
     def set_model(self, model: str):
         """Set the model and validate against current provider"""
@@ -237,7 +212,6 @@ class Pipeline:
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
-        logger.info(f"Model ID: {model_id}")
         logger.debug(f"Full body keys: {list(body.keys())}")
         logger.debug(f"Messages: {messages}")
         logger.debug(f"num messages: {len(messages)}")
@@ -272,12 +246,9 @@ class Pipeline:
         try:
             # Set provider or model based on model_id
             try:
-                logger.info(f"Processing model_id: {model_id}")
                 if model_id and model_id.lower() in [p.value for p in Provider]:
-                    logger.info(f"Setting provider to: {model_id}")
                     self.set_provider(model_id)
                 elif model_id:
-                    logger.info(f"Setting model to: {model_id}")
                     self.set_model(model_id)
             except ValueError as e:
                 error_msg = str(e)
@@ -286,7 +257,6 @@ class Pipeline:
 
         except Exception as e:
             error_msg = f"Error updating provider: {str(e)}"
-            logger.error(f"Exception details: {traceback.format_exc()}")
             logger.error(error_msg)
             return error_msg
 
@@ -424,7 +394,6 @@ class Pipeline:
 
                         loop.set_exception_handler(handle_exception)
 
-                        logger.info(f"Provider: {self.valves.provider}")
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(

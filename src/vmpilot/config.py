@@ -115,6 +115,7 @@ class Provider(StrEnum):
 
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
+    GOOGLE = "google"
 
 
 class ModelPricing(BaseModel):
