@@ -5,7 +5,7 @@ date: 2024-12-02
 version: 0.2
 license: MIT
 description: A pipeline that enables using an LLM to execute commands via LangChain
-environment_variables: ANTHROPIC_API_KEY
+environment_variables: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
 """
 
 # Configure logging early
@@ -52,8 +52,9 @@ class Pipeline:
 
     class Valves(BaseModel):
         # Private storage for properties
-        anthropic_api_key: str = ""
-        openai_api_key: str = ""
+        _anthropic_api_key: str = ""
+        _openai_api_key: str = ""
+        _google_api_key: str = ""
         _provider: Provider = Provider(DEFAULT_PROVIDER)
 
         # Model configuration (inherited from config)
@@ -72,23 +73,34 @@ class Pipeline:
         # Property for anthropic_api_key with setter that updates state
         @property
         def anthropic_api_key(self) -> str:
-            return self.anthropic_api_key
+            return self._anthropic_api_key
 
         @anthropic_api_key.setter
         def anthropic_api_key(self, value: str):
-            self.anthropic_api_key = value
+            self._anthropic_api_key = value
             if self.provider == Provider.ANTHROPIC:
                 self._update_api_key()
 
         # Property for openai_api_key with setter that updates state
         @property
         def openai_api_key(self) -> str:
-            return self.openai_api_key
+            return self._openai_api_key
 
         @openai_api_key.setter
         def openai_api_key(self, value: str):
-            self.openai_api_key = value
+            self._openai_api_key = value
             if self.provider == Provider.OPENAI:
+                self._update_api_key()
+
+        # Property for google_api_key with setter that updates state
+        @property
+        def google_api_key(self) -> str:
+            return self._google_api_key
+
+        @google_api_key.setter
+        def google_api_key(self, value: str):
+            self._google_api_key = value
+            if self.provider == Provider.GOOGLE:
                 self._update_api_key()
 
         def __init__(self, **data):
@@ -98,6 +110,8 @@ class Pipeline:
                 self.anthropic_api_key = data["anthropic_api_key"]
             if "openai_api_key" in data:
                 self.openai_api_key = data["openai_api_key"]
+            if "google_api_key" in data:
+                self.google_api_key = data["google_api_key"]
             if "provider" in data:
                 self._provider = data["provider"]
             self._sync_with_config()
@@ -114,11 +128,12 @@ class Pipeline:
         def _update_api_key(self):
             """Update API key based on current provider"""
             Pipeline._provider = self.provider
-            Pipeline._api_key = (
-                self.anthropic_api_key
-                if self.provider == Provider.ANTHROPIC
-                else self.openai_api_key
-            )
+            if self.provider == Provider.ANTHROPIC:
+                Pipeline._api_key = self._anthropic_api_key
+            elif self.provider == Provider.OPENAI:
+                Pipeline._api_key = self._openai_api_key
+            elif self.provider == Provider.GOOGLE:
+                Pipeline._api_key = self._google_api_key
 
     def __init__(self):
         self.name = parser.get("pipeline", "name")
@@ -132,6 +147,9 @@ class Pipeline:
             ),
             openai_api_key=os.getenv(
                 "OPENAI_API_KEY", "To use OpenAI, enter your API key here"
+            ),
+            google_api_key=os.getenv(
+                "GOOGLE_API_KEY", "To use Google AI, enter your API key here"
             ),
             provider=Provider(DEFAULT_PROVIDER),
         )
@@ -178,6 +196,11 @@ class Pipeline:
                 "name": "OpenAI (GPT-4o)",
                 "description": "Execute commands using OpenAI's GPT-4o model",
             },
+            {
+                "id": "google",
+                "name": "Google AI",
+                "description": "Execute commands using Google AI",
+            },
         ]
 
         # Only show models with valid API keys
@@ -186,6 +209,7 @@ class Pipeline:
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
+        logger.info(f"Model ID: {model_id}")
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"Full body keys: {list(body.keys())}")
         logger.debug(f"Messages: {messages}")
@@ -369,6 +393,7 @@ class Pipeline:
 
                         loop.set_exception_handler(handle_exception)
 
+                        logger.info(f"Provider: {self.valves.provider}")
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(
