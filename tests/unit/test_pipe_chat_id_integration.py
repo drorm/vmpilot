@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from vmpilot.vmpilot import Pipeline
+from vmpilot.config import Provider
 
 sys.path.insert(0, "/home/dror/vmpilot")
 from tests.unit.patched_pipe import patch_for_test
@@ -81,8 +82,16 @@ class TestPipeChatIDIntegration:
     def pipeline(self):
         """Create a Pipeline instance with mocked API key for testing."""
         pipeline = Pipeline()
-        # Mock API key to avoid actual API calls
-        pipeline._api_key = "mock_api_key_at_least_32_characters_long"
+        # Mock API key to avoid actual API calls based on the current provider
+        # Use the valves object which has the provider attribute
+        if pipeline.valves.provider == Provider.ANTHROPIC:
+            pipeline.valves.anthropic_api_key = "mock_api_key_at_least_32_characters_long"
+        elif pipeline.valves.provider == Provider.OPENAI:
+            pipeline.valves.openai_api_key = "mock_api_key_at_least_32_characters_long"
+        elif pipeline.valves.provider == Provider.GOOGLE:
+            pipeline.valves.google_api_key = "mock_api_key_at_least_32_characters_long"
+        # Set class-level API key for backward compatibility
+        Pipeline._api_key = "mock_api_key_at_least_32_characters_long"
         yield pipeline
 
         # Cleanup after test
