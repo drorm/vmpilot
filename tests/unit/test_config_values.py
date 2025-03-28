@@ -20,7 +20,7 @@ class TestGeneralSection:
 
     def test_default_provider_valid_values(self, config):
         """Test that default_provider is one of the allowed values."""
-        allowed_providers = {"anthropic", "openai"}
+        allowed_providers = {"anthropic", "openai", "google"}
         assert (
             config["general"]["default_provider"] in allowed_providers
         ), f"default_provider must be one of {allowed_providers}"
@@ -232,6 +232,7 @@ class TestConfigurationStructure:
             "openai",
             "pipeline",
             "git",
+            "google",  # Add google as an allowed section
         }
         for section in config.sections():
             assert section in allowed_sections, f"Unexpected section '{section}' found"
