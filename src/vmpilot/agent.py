@@ -6,11 +6,13 @@ import logging
 import os
 import pathlib
 import traceback
+import traceback
 from contextvars import ContextVar
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
@@ -25,6 +27,9 @@ from vmpilot.agent_memory import (
 from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE, GitConfig
 from vmpilot.config import Provider as APIProvider
+
+# Log APIProvider enum values for debugging
+logging.info(f"APIProvider enum values in agent.py: {[p.value for p in APIProvider]}")
 from vmpilot.config import config
 from vmpilot.exchange import Exchange
 from vmpilot.prompt import SYSTEM_PROMPT
@@ -204,6 +209,27 @@ async def create_agent(
             openai_api_key=api_key,
             timeout=30,
         )
+    elif provider == APIProvider.GOOGLE:
+        # Create the Google AI LLM
+        try:
+            from langchain_google_genai import GoogleGenerativeAIClient
+
+            logging.info(f"Creating Google AI LLM with model: {model}")
+            logging.info(f"Google API key starts with: {api_key[:6] if api_key else 'None'}")
+            
+            GoogleGenerativeAIClient.register_provider()
+            llm = ChatGoogleGenerativeAI(
+                model=model,
+                temperature=temperature,
+                max_output_tokens=max_tokens,
+                google_api_key=api_key,
+                request_timeout=30,
+            )
+            logging.info("Successfully created Google AI LLM")
+        except Exception as e:
+            logging.error(f"Error creating Google AI LLM: {str(e)}")
+            logging.error(traceback.format_exc())
+            raise
 
     # Set up tools with LLM for fencing capability
     tools = setup_tools(llm=llm)
