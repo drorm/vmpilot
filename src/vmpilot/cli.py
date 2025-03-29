@@ -3,6 +3,7 @@
 CLI interface for interacting with vmpilot from the cli using LangChain
 Usage: ./cli.py "your command here"
        ./cli.py -f input_file.txt (processes commands from a file)
+       ./cli.py --coverage "your command here" (run with code coverage)
 """
 
 import argparse
@@ -13,6 +14,14 @@ import sys
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
+
+# Import coverage (conditionally used with --coverage flag)
+try:
+    import coverage
+
+    COVERAGE_AVAILABLE = True
+except ImportError:
+    COVERAGE_AVAILABLE = False
 
 # Configure basic logging as early as possible
 log_level = os.environ.get("PYTHONLOGLEVEL", "INFO")
@@ -159,7 +168,8 @@ if __name__ == "__main__":
         "  cli.sh -f commands.txt                      # Execute commands from a file one line at the time\n"
         "  cli.sh -f commands.txt -c                   # Execute commands from a file one line at the time with chat context\n"
         "  cli.sh -v 'list all python files'           # Execute with verbose logging\n"
-        "  cli.sh -d 'list all python files'           # Execute with debug logging",
+        "  cli.sh -d 'list all python files'           # Execute with debug logging\n"
+        "  cli.sh --coverage 'list all python files'   # Execute with code coverage analysis",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -203,6 +213,11 @@ if __name__ == "__main__":
         help="Enable verbose output with INFO level logging",
     )
     parser.add_argument(
+        "--coverage",
+        action="store_true",
+        help="Enable code coverage analysis",
+    )
+    parser.add_argument(
         "-c",
         "--chat",
         nargs="?",
@@ -225,6 +240,19 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    # Check for coverage flag and initialize if available
+    cov = None
+    if args.coverage:
+        if COVERAGE_AVAILABLE:
+            # generate a short unique suffix without using uuid
+            suffix = str(hash(os.times()))
+            cov = coverage.Coverage(data_suffix=suffix)
+            cov.start()
+        else:
+            print(
+                "Warning: Coverage module not available. Install with 'pip install coverage'"
+            )
 
     # Configure logging based on debug and verbose flags
     if args.debug:
@@ -272,6 +300,12 @@ if __name__ == "__main__":
                     asyncio.run(
                         main(line, args.temperature, args.provider, args.debug, chat_id)
                     )
+
+            # Stop coverage and save data if enabled
+            # Always append the coverage data
+            if args.coverage and cov:
+                cov.stop()
+                cov.save()
         except FileNotFoundError:
             print(f"Error: File not found: {args.file}", file=sys.stderr)
             sys.exit(1)
@@ -280,8 +314,17 @@ if __name__ == "__main__":
             sys.exit(1)
     elif args.command:
         # Regular command execution
-        asyncio.run(
-            main(args.command, args.temperature, args.provider, args.debug, args.chat)
-        )
+        try:
+            asyncio.run(
+                main(
+                    args.command, args.temperature, args.provider, args.debug, args.chat
+                )
+            )
+        finally:
+            # Stop coverage and save data if enabled
+            # Always append the coverage data
+            if args.coverage and cov:
+                cov.stop()
+                cov.save()
     else:
         parser.error("Either a command or an input file (-f/--file) must be specified")
