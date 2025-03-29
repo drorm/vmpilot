@@ -16,5 +16,6 @@ directory: documentation
 # Testing
 
 directory: testing
-- Provides guidance for creating comprehensive tests for VMPilot 
-- This includes unit tests, end-to-end tests, and coverage analysis
+- Provides guidance for the VMPilot testing ecosystem as part of the CI/CD workflow
+- Testing is an integral part of development, not an optional activity
+- Includes unit tests, end-to-end tests, and coverage analysis requirements

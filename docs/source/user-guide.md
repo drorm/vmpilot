@@ -99,7 +99,7 @@ Some key plugins include:
 
 - [GitHub Issues](plugins/github.md) - Manage GitHub issues directly from VMPilot
 - [Documentation](plugins/documentation.md) - Create clear, concise, and user-friendly documentation
-- [Unit Testing](plugins/unit_testing.md) - Create comprehensive unit tests for VMPilot components
+- [Testing](plugins/testing.md) - Create comprehensive tests for VMPilot components (unit tests, end-to-end tests, coverage analysis)
 - Code Map - Generate code documentation automatically. This is a work in progress.
 
 ## Tips and Best Practices

@@ -61,36 +61,38 @@ cd ~/vmpilot/tests
 ./tests/coverage.sh -f 80
 ```
 
-## LLM Testing Assistance
+## Testing as Part of CI/CD Workflow
 
-As an LLM, I can help with three primary testing tasks:
+Testing is an integral part of the VMPilot development workflow and CI/CD pipeline, not just an optional activity. The following practices should be followed:
 
-### 1. Creating Unit Tests
+### 1. Creating Unit Tests for New Features
 
-When asked to create unit tests, I will:
+Whenever a new feature is developed:
 
-- Analyze the component to identify test cases
-- Plan tests for normal operation, edge cases, and error conditions
-- Implement tests following project conventions
-- Verify tests pass and provide adequate coverage
+- Tests must be created alongside the feature implementation
+- Tests should cover normal operation, edge cases, and error conditions
+- Tests must follow project conventions and patterns
+- Tests should pass and provide adequate coverage before the feature is considered complete
 
-### 2. Creating End-to-End Tests
+### 2. Creating End-to-End Tests for New Workflows
 
-When asked to create e2e tests, I will:
+For features that introduce new user-facing workflows:
 
-- Create shell scripts in the tests/scripts directory
-- Ensure scripts use the TEST_DIR environment variable
-- Implement proper test validation and error handling
-- Follow the e2e testing patterns established in existing scripts
+- E2E tests must be created in the tests/scripts directory
+- Tests should use the TEST_DIR environment variable for isolation
+- Tests must include proper validation and error handling
+- Tests should follow established e2e testing patterns
 
-### 3. Improving Code Coverage
+### 3. Coverage Analysis for Quality Control
 
-When asked to improve code coverage, I will:
+Before merging any feature:
 
-- Run the coverage script to identify gaps
-- Focus on files below the threshold
-- Generate appropriate tests (unit or e2e) targeting uncovered lines
-- Verify improvements by re-running coverage analysis
+- Coverage analysis must be run to identify testing gaps
+- Any files below the threshold must be addressed
+- Additional tests (unit or e2e) should be created for uncovered lines
+- Coverage improvements should be verified by re-running analysis
+
+These practices ensure consistent quality and reliability across the codebase and are enforced through the CI/CD pipeline.
 
 ## Test Structure and Patterns
 

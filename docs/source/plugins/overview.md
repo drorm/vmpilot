@@ -42,11 +42,12 @@ directory: documentation
 - Offers best practices for technical writing and content structure
 - Assists with formatting for readability and proper Markdown usage
 
-# Unit Testing
+# Testing
 
-directory: unit_testing
-- Provides guidance for creating comprehensive unit tests for VMPilot components
-- Includes test templates and best practices for effective test implementation
+directory: testing
+- Provides guidance for the VMPilot testing ecosystem as part of the CI/CD workflow
+- Includes unit tests, end-to-end tests, and coverage analysis requirements
+- Testing is an integral part of development, not an optional activity
 ```
 
 ## Managing Plugins
