@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# Get the git root directory
-GIT_ROOT=$(git rev-parse --show-toplevel)
+echo "Pre-commit hook is running!"
 
-# Execute the lint.sh script
-"$GIT_ROOT/sh/lint.sh"
+# Use direct path to the lint.sh script
+/home/dror/vmpilot/sh/lint.sh
 
 # Exit with the same status as the lint script
 exit $?
