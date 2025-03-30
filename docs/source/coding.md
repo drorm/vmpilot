@@ -52,6 +52,16 @@ Skipped 1 files
 ✅ All linting checks passed!
 ```
 
+#### Running Linting Manually
+
+You can also run the linting checks manually without committing:
+
+```bash
+./sh/lint.sh
+```
+
+This is useful for checking your code during development or before initiating a commit.
+
 ### Code Formatting Tools
 
 #### Black
