@@ -249,7 +249,6 @@ async def process_messages(
     temperature: float = TEMPERATURE,
     disable_logging: bool = False,
     recursion_limit: int = None,  # Maximum number of steps to run in the request
-    thread_id: str = None,  # DEPRECATED: Chat ID for conversation state management
 ) -> List[dict]:
     """Process messages through the agent and handle outputs.
 
@@ -265,7 +264,6 @@ async def process_messages(
         temperature: Temperature for generation
         disable_logging: Whether to disable detailed logging
         recursion_limit: Maximum number of steps to run in the request
-        thread_id: DEPRECATED - Previously used for chat ID, now handled internally by the Chat class
 
     Returns:
         List of processed messages
@@ -290,19 +288,19 @@ async def process_messages(
 
     # Create or retrieve Chat object to handle conversation state
     from .chat import Chat
-    
+
     # Create Chat object to manage conversation state
     try:
-        chat = Chat(chat_id=thread_id, messages=messages, output_callback=output_callback)
+        chat = Chat(messages=messages, output_callback=output_callback)
         logger.debug(f"Using chat_id: {chat.chat_id}")
     except Exception as e:
         logger.error(f"Error creating Chat object: {e}")
         raise
-    
+
     # Set prompt suffix and provider
     prompt_suffix.set(system_prompt_suffix)
     current_provider.set(provider)
-    
+
     # Create an Exchange object to track this user-LLM interaction with Git tracking
     user_message = messages[-1] if messages else {"role": "user", "content": ""}
     exchange = Exchange(
@@ -361,18 +359,17 @@ async def process_messages(
 
     logger.debug("DEBUG: Agent created successfully")
 
-
     # Check if we have a previous conversation state for this chat session
     formatted_messages = []
     cache_info = {}
 
     # Determine if this is a new chat session by checking the conversation state
     previous_messages, previous_cache_info = get_conversation_state(chat.chat_id)
-    
+
     # If there are no previous messages OR this is explicitly a new chat (len <= 2)
     # then we treat it as a new chat session
     is_new_chat = (not previous_messages) or len(messages) <= 2
-    
+
     if is_new_chat:
         # For new chats, clear any existing conversation state
         clear_conversation_state(chat.chat_id)

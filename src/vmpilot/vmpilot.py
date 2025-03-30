@@ -392,7 +392,6 @@ class Pipeline:
                                 temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
-                                # thread_id is now managed internally by agent.py
                             )
                         )
                     except Exception as e:
