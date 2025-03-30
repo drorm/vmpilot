@@ -79,26 +79,16 @@ async def main(
     temperature: float,
     provider: str,
     debug: bool,
-    chat_id: Optional[str] = None,
 ):
     """Main CLI execution flow"""
     # Create pipeline with configuration
     pipeline = Pipeline()
 
-    # Create a Chat object for this session
-    chat = Chat(chat_id=chat_id)
+    # Create a Chat object for this session - chat_id is determined internally
+    chat = Chat()
 
-    # Change to the project directory when starting a new chat
-    if not chat_id:
-        chat.change_to_project_dir()
-        if debug:
-            logging.debug(f"Changed to project directory: {chat.project_dir}")
-
-    # Set chat ID for conversation persistence if provided
-    if chat_id:
-        pipeline.chat_id = chat_id
-        if debug:
-            logging.debug(f"Using chat context with ID: {chat_id}")
+    # Change to the project directory
+    chat.change_to_project_dir()
 
     # Create pipeline call parameters
     body = create_mock_body(temperature=temperature, debug=debug)
@@ -220,9 +210,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "-c",
         "--chat",
-        nargs="?",
-        const=str(uuid.uuid4()),  # Generate a random ID if flag is used without value
-        help="Enable chat mode to maintain conversation context. Optional: provide a specific chat ID.",
+        action="store_true",
+        help="Enable chat mode to maintain conversation context between commands.",
     )
 
     # Git tracking options (use defaults from config)
@@ -274,20 +263,13 @@ if __name__ == "__main__":
 
     # Check if file input is provided
     if args.file:
-        # Generate a random chat ID if chat mode is enabled without a specific ID
-        chat_id = (
-            args.chat
-            if args.chat
-            else str(uuid.uuid4()) if args.chat is not None else None
-        )
-
         # Convert to absolute path if it's a relative path
         file_path = os.path.abspath(args.file)
 
         try:
             print(f"Processing commands from file: {args.file}")
-            if chat_id:
-                print(f"Using chat ID: {chat_id}")
+            if args.chat:
+                print("Chat not currently supported.")
 
             with open(file_path, "r") as f:
                 for line_num, line in enumerate(f, 1):
@@ -297,9 +279,7 @@ if __name__ == "__main__":
                         continue
 
                     print(f"\n--- Executing command (line {line_num}): {line} ---")
-                    asyncio.run(
-                        main(line, args.temperature, args.provider, args.debug, chat_id)
-                    )
+                    asyncio.run(main(line, args.temperature, args.provider, args.debug))
 
             # Stop coverage and save data if enabled
             # Always append the coverage data
@@ -315,11 +295,7 @@ if __name__ == "__main__":
     elif args.command:
         # Regular command execution
         try:
-            asyncio.run(
-                main(
-                    args.command, args.temperature, args.provider, args.debug, args.chat
-                )
-            )
+            asyncio.run(main(args.command, args.temperature, args.provider, args.debug))
         finally:
             # Stop coverage and save data if enabled
             # Always append the coverage data
