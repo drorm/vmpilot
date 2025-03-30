@@ -28,7 +28,9 @@ def add_test_methods_to_pipeline(pipeline_class):
             from vmpilot.chat import Chat
 
             chat_id = getattr(self, "chat_id", None)
-            self._chat = Chat(chat_id=chat_id)
+            self._chat = Chat()
+            if chat_id:
+                self._chat.chat_id = chat_id
 
         # Call the original method
         return original_pipe(self, user_message, model_id, messages, body)
@@ -53,10 +55,32 @@ def add_test_methods_to_pipeline(pipeline_class):
         # Extract chat_id from body if it was set as an attribute
         provided_chat_id = getattr(self, "chat_id", None)
 
-        # Create a temporary Chat object to handle the logic
-        temp_chat = Chat(
-            chat_id=provided_chat_id, messages=messages, output_callback=output_callback
-        )
+        # First, try to extract chat_id from messages
+        extracted_id = None
+
+        # Try to extract from messages first (similar to Chat._extract_chat_id_from_messages)
+        if messages:
+            for msg in messages:
+                if msg["role"] == "assistant" and isinstance(msg.get("content"), str):
+                    content_lines = msg["content"].split("\n")
+                    if content_lines and "Chat id" in content_lines[0]:
+                        parts = content_lines[0].split(":", 1)
+                        if len(parts) > 1:
+                            extracted_id = parts[1].strip()
+                            break
+
+        # If we found an extracted_id, use it without creating a Chat object
+        # This prevents the output_callback from being called
+        if extracted_id:
+            return extracted_id
+
+        # If we didn't find an extracted_id or if one was provided, create a Chat object
+        temp_chat = Chat(messages=messages, output_callback=output_callback)
+
+        # Override the chat_id if provided
+        if provided_chat_id:
+            temp_chat.chat_id = provided_chat_id
+            return provided_chat_id
 
         # For existing conversations (more than 2 messages), try to extract a chat_id
         if messages and len(messages) > 2:
