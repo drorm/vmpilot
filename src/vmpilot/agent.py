@@ -249,7 +249,7 @@ async def process_messages(
     temperature: float = TEMPERATURE,
     disable_logging: bool = False,
     recursion_limit: int = None,  # Maximum number of steps to run in the request
-    thread_id: str = None,  # Chat ID for conversation state management
+    thread_id: str = None,  # DEPRECATED: Chat ID for conversation state management
 ) -> List[dict]:
     """Process messages through the agent and handle outputs.
 
@@ -265,7 +265,7 @@ async def process_messages(
         temperature: Temperature for generation
         disable_logging: Whether to disable detailed logging
         recursion_limit: Maximum number of steps to run in the request
-        thread_id: Chat ID for conversation state management
+        thread_id: DEPRECATED - Previously used for chat ID, now handled internally by the Chat class
 
     Returns:
         List of processed messages
@@ -288,13 +288,25 @@ async def process_messages(
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
 
+    # Create or retrieve Chat object to handle conversation state
+    from .chat import Chat
+    
+    # Create Chat object to manage conversation state
+    try:
+        chat = Chat(chat_id=thread_id, messages=messages, output_callback=output_callback)
+        logger.debug(f"Using chat_id: {chat.chat_id}")
+    except Exception as e:
+        logger.error(f"Error creating Chat object: {e}")
+        raise
+    
     # Set prompt suffix and provider
     prompt_suffix.set(system_prompt_suffix)
     current_provider.set(provider)
+    
     # Create an Exchange object to track this user-LLM interaction with Git tracking
     user_message = messages[-1] if messages else {"role": "user", "content": ""}
     exchange = Exchange(
-        chat_id=thread_id,
+        chat_id=chat.chat_id,  # Use the chat_id directly from the Chat object
         user_message=user_message,
         output_callback=output_callback,
     )
@@ -349,34 +361,34 @@ async def process_messages(
 
     logger.debug("DEBUG: Agent created successfully")
 
-    # Check if we have a previous conversation state for this thread_id
+
+    # Check if we have a previous conversation state for this chat session
     formatted_messages = []
     cache_info = {}
-    if thread_id is not None:
-        # Determine if this is a new chat session by checking the conversation state first
-        previous_messages, previous_cache_info = get_conversation_state(thread_id)
 
-        # If there are no previous messages OR this is explicitly a new chat (len <= 2)
-        # then we treat it as a new chat session
-        is_new_chat = (not previous_messages) or len(messages) <= 2
-
-        if is_new_chat:
-            # For new chats, clear any existing conversation state with this thread_id
-            clear_conversation_state(thread_id)
-            logger.info(f"Started new chat session with thread_id: {thread_id}")
-        else:
-            # This is a continuing chat, use the previous conversation state
-            logger.info(
-                f"Retrieved previous conversation state with {len(previous_messages)} messages for thread_id: {thread_id}"
-            )
-            formatted_messages.extend(previous_messages)
-            cache_info = previous_cache_info
-            # If we have previous messages, we only need to process the last message from the current request
-            if messages:
-                messages = [messages[-1]]
-                logger.debug(
-                    f"Using only the last message from current request: {messages}"
-                )
+    # Determine if this is a new chat session by checking the conversation state
+    previous_messages, previous_cache_info = get_conversation_state(chat.chat_id)
+    
+    # If there are no previous messages OR this is explicitly a new chat (len <= 2)
+    # then we treat it as a new chat session
+    is_new_chat = (not previous_messages) or len(messages) <= 2
+    
+    if is_new_chat:
+        # For new chats, clear any existing conversation state
+        clear_conversation_state(chat.chat_id)
+        logger.info(f"Started new chat session with chat_id: {chat.chat_id}")
+    else:
+        # This is a continuing chat, use the previous conversation state
+        logger.info(
+            f"Retrieved previous conversation state with {len(previous_messages)} messages for chat_id: {chat.chat_id}"
+        )
+        formatted_messages.extend(previous_messages)
+        cache_info = previous_cache_info
+        # Use the Chat class to determine if we should truncate messages
+        if messages:
+            # Let the Chat class handle message truncation
+            messages = chat.get_formatted_messages(messages)
+            logger.debug(f"Using formatted messages from Chat: {messages}")
 
     # Convert messages from openai to LangChain format
     try:
@@ -437,10 +449,8 @@ async def process_messages(
         raise
 
     # Stream agent responses
-    if thread_id is None:
-        thread_id = f"vmpilot-{os.getpid()}"
     logger.debug(
-        f"Starting agent stream with {len(formatted_messages)} messages and thread_id: {thread_id}"
+        f"Starting agent stream with {len(formatted_messages)} messages and chat_id: {chat.chat_id}"
     )
 
     """Send the request and process the stream of messages from the agent."""
@@ -456,8 +466,8 @@ async def process_messages(
             async for agent_response in agent.astream(
                 {"messages": formatted_messages},
                 config={
-                    "thread_id": thread_id,
-                    "run_name": f"vmpilot-run-{thread_id}",
+                    "thread_id": chat.chat_id,  # Use the chat_id directly from the Chat object
+                    "run_name": f"vmpilot-run-{chat.chat_id}",
                     "recursion_limit": recursion_limit,
                 },
                 stream_mode="values",
@@ -600,11 +610,10 @@ async def process_messages(
             exchange.complete(assistant_message, collected_tool_calls)
 
             # Save the full conversation state to ensure all messages are preserved
-            if thread_id is not None:
-                save_conversation_state(thread_id, response["messages"], cache_info)
-                logger.debug(
-                    f"Saved complete conversation state with {len(response['messages'])} messages for thread_id: {thread_id}"
-                )
+            save_conversation_state(chat.chat_id, response["messages"], cache_info)
+            logger.debug(
+                f"Saved complete conversation state with {len(response['messages'])} messages for chat_id: {chat.chat_id}"
+            )
 
             # Log exchange summary
             exchange_summary = exchange.get_exchange_summary()
@@ -631,11 +640,10 @@ async def process_messages(
                 exchange.complete(assistant_message, collected_tool_calls)
 
                 # Save the full conversation state
-                if thread_id is not None:
-                    save_conversation_state(thread_id, response["messages"], cache_info)
-                    logger.debug(
-                        f"Saved complete conversation state with {len(response['messages'])} messages for thread_id: {thread_id}"
-                    )
+                save_conversation_state(chat.chat_id, response["messages"], cache_info)
+                logger.debug(
+                    f"Saved complete conversation state with {len(response['messages'])} messages for chat_id: {chat.chat_id}"
+                )
             else:
                 # Fallback if no messages at all
                 exchange.complete(

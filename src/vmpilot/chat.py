@@ -40,6 +40,8 @@ class Chat:
             output_callback: Optional callback function for sending output.
         """
         self.project_dir = project_dir if project_dir else config.DEFAULT_PROJECT
+        self.messages = messages or []
+        self.output_callback = output_callback
 
         # Extract project directory from messages if provided
         if messages:
@@ -175,3 +177,48 @@ class Chat:
             error_msg = f"Failed to change to project directory {self.project_dir}: {e}"
             logger.error(error_msg)
             raise Exception(error_msg)
+            
+    def should_truncate_messages(self, messages):
+        """
+        Determine if messages should be truncated based on chat context.
+        
+        In a continuing conversation, we only need the last message from the current request.
+        
+        Args:
+            messages: List of messages to check
+            
+        Returns:
+            bool: True if messages should be truncated, False otherwise
+        """
+        # If this is a continuing conversation (with existing history)
+        # and we have more than 2 messages (system + user), we should truncate
+        if self.chat_id and len(messages) > 2:
+            return True
+        return False
+        
+    def get_formatted_messages(self, messages):
+        """
+        Get properly formatted messages for processing.
+        
+        For continuing conversations, this will truncate to just the last message.
+        For new conversations, it will return all messages.
+        
+        Args:
+            messages: List of messages to format
+            
+        Returns:
+            list: Properly formatted messages for processing
+        """
+        if self.should_truncate_messages(messages):
+            # Only keep the last message for continuing conversations
+            return [messages[-1]]
+        return messages
+        
+    def update_messages(self, new_messages):
+        """
+        Update the chat's message history.
+        
+        Args:
+            new_messages: New messages to add to history
+        """
+        self.messages = new_messages
