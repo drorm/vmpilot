@@ -1,6 +1,6 @@
 [run]
 source = src/vmpilot
-omit = 
+omit =
     # Exclude test files
     */tests/*
     # Exclude any __init__.py files
