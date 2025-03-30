@@ -15,6 +15,7 @@ nav:
     - Installation: installation.md
     - Configuration: configuration.md
     - User Guide: user-guide.md
+    - Coding: coding.md
     - Git Tracking: git-tracking.md
     - Examples:
         - Overview: examples/index.md
