@@ -50,6 +50,9 @@ jobs:
       run: |
         mkdir -p ~/.anthropic
         mkdir -p ~/.openai
+        mkdir -p ~/vmpilot
+        # Make sure the environment knows where the project directory is
+        echo "VMPILOT_PROJECT_DIR=~/vmpilot" >> $GITHUB_ENV
 
     - name: Run tests
       run: |
