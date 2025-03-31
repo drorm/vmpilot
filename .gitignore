@@ -31,5 +31,11 @@ ENV/
 #PipeLine specific
 valves.json
 
-# pythong coverage
+# python coverage
 .coverage*
+htmlcov/
+
+# Keep reports directory but ignore contents (managed by reports/.gitignore)
+reports/*
+!reports/.gitignore
+!reports/README.md
