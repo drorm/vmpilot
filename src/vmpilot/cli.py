@@ -3,6 +3,7 @@
 CLI interface for interacting with vmpilot from the cli using LangChain
 Usage: ./cli.py "your command here"
        ./cli.py -f input_file.txt (processes commands from a file)
+       ./cli.py --coverage "your command here" (run with code coverage)
 """
 
 import argparse
@@ -13,6 +14,14 @@ import sys
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
+
+# Import coverage (conditionally used with --coverage flag)
+try:
+    import coverage
+
+    COVERAGE_AVAILABLE = True
+except ImportError:
+    COVERAGE_AVAILABLE = False
 
 # Configure basic logging as early as possible
 log_level = os.environ.get("PYTHONLOGLEVEL", "INFO")
@@ -70,26 +79,16 @@ async def main(
     temperature: float,
     provider: str,
     debug: bool,
-    chat_id: Optional[str] = None,
 ):
     """Main CLI execution flow"""
     # Create pipeline with configuration
     pipeline = Pipeline()
 
-    # Create a Chat object for this session
-    chat = Chat(chat_id=chat_id)
+    # Create a Chat object for this session - chat_id is determined internally
+    chat = Chat()
 
-    # Change to the project directory when starting a new chat
-    if not chat_id:
-        chat.change_to_project_dir()
-        if debug:
-            logging.debug(f"Changed to project directory: {chat.project_dir}")
-
-    # Set chat ID for conversation persistence if provided
-    if chat_id:
-        pipeline.chat_id = chat_id
-        if debug:
-            logging.debug(f"Using chat context with ID: {chat_id}")
+    # Change to the project directory
+    chat.change_to_project_dir()
 
     # Create pipeline call parameters
     body = create_mock_body(temperature=temperature, debug=debug)
@@ -159,7 +158,8 @@ if __name__ == "__main__":
         "  cli.sh -f commands.txt                      # Execute commands from a file one line at the time\n"
         "  cli.sh -f commands.txt -c                   # Execute commands from a file one line at the time with chat context\n"
         "  cli.sh -v 'list all python files'           # Execute with verbose logging\n"
-        "  cli.sh -d 'list all python files'           # Execute with debug logging",
+        "  cli.sh -d 'list all python files'           # Execute with debug logging\n"
+        "  cli.sh --coverage 'list all python files'   # Execute with code coverage analysis",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -203,11 +203,15 @@ if __name__ == "__main__":
         help="Enable verbose output with INFO level logging",
     )
     parser.add_argument(
+        "--coverage",
+        action="store_true",
+        help="Enable code coverage analysis",
+    )
+    parser.add_argument(
         "-c",
         "--chat",
-        nargs="?",
-        const=str(uuid.uuid4()),  # Generate a random ID if flag is used without value
-        help="Enable chat mode to maintain conversation context. Optional: provide a specific chat ID.",
+        action="store_true",
+        help="Enable chat mode to maintain conversation context between commands.",
     )
 
     # Git tracking options (use defaults from config)
@@ -225,6 +229,19 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    # Check for coverage flag and initialize if available
+    cov = None
+    if args.coverage:
+        if COVERAGE_AVAILABLE:
+            # generate a short unique suffix without using uuid
+            suffix = str(hash(os.times()))
+            cov = coverage.Coverage(data_suffix=suffix)
+            cov.start()
+        else:
+            print(
+                "Warning: Coverage module not available. Install with 'pip install coverage'"
+            )
 
     # Configure logging based on debug and verbose flags
     if args.debug:
@@ -246,20 +263,13 @@ if __name__ == "__main__":
 
     # Check if file input is provided
     if args.file:
-        # Generate a random chat ID if chat mode is enabled without a specific ID
-        chat_id = (
-            args.chat
-            if args.chat
-            else str(uuid.uuid4()) if args.chat is not None else None
-        )
-
         # Convert to absolute path if it's a relative path
         file_path = os.path.abspath(args.file)
 
         try:
             print(f"Processing commands from file: {args.file}")
-            if chat_id:
-                print(f"Using chat ID: {chat_id}")
+            if args.chat:
+                print("Chat not currently supported.")
 
             with open(file_path, "r") as f:
                 for line_num, line in enumerate(f, 1):
@@ -269,9 +279,13 @@ if __name__ == "__main__":
                         continue
 
                     print(f"\n--- Executing command (line {line_num}): {line} ---")
-                    asyncio.run(
-                        main(line, args.temperature, args.provider, args.debug, chat_id)
-                    )
+                    asyncio.run(main(line, args.temperature, args.provider, args.debug))
+
+            # Stop coverage and save data if enabled
+            # Always append the coverage data
+            if args.coverage and cov:
+                cov.stop()
+                cov.save()
         except FileNotFoundError:
             print(f"Error: File not found: {args.file}", file=sys.stderr)
             sys.exit(1)
@@ -280,8 +294,13 @@ if __name__ == "__main__":
             sys.exit(1)
     elif args.command:
         # Regular command execution
-        asyncio.run(
-            main(args.command, args.temperature, args.provider, args.debug, args.chat)
-        )
+        try:
+            asyncio.run(main(args.command, args.temperature, args.provider, args.debug))
+        finally:
+            # Stop coverage and save data if enabled
+            # Always append the coverage data
+            if args.coverage and cov:
+                cov.stop()
+                cov.save()
     else:
         parser.error("Either a command or an input file (-f/--file) must be specified")

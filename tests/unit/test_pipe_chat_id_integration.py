@@ -112,7 +112,8 @@ class TestPipeChatIDIntegration:
         # Set a chat_id on the pipeline
         pipeline.chat_id = "test123"
         # Initialize _chat attribute for the test
-        pipeline._chat = Chat(chat_id=pipeline.chat_id)
+        pipeline._chat = Chat()
+        pipeline._chat.chat_id = pipeline.chat_id
 
         # Create test messages
         messages = [
@@ -325,5 +326,6 @@ class TestPipeChatIDIntegration:
         body_chat_id = "body456"
 
         # Create a Chat object with the provided chat_id and verify it's used
-        chat = Chat(chat_id=body_chat_id)
+        chat = Chat()
+        chat.chat_id = body_chat_id
         assert chat.chat_id == body_chat_id

@@ -6,8 +6,9 @@ test_file="$TEST_DIR/test2.py"
 # Store initial content
 initial_content=$(cat "$test_file")
 
-# Run modification command
-output=$(../bin/cli.sh -t 0 "Change 'This is a sample Python file' to 'This is a **very simple** Python file' in $test_file")
+# Run modification command using the wrapper script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+output=$("$SCRIPT_DI"$SCRIPT_DIR/run_cli.sh"" -t 0 "Change 'This is a sample Python file' to 'This is a **very simple** Python file' in $test_file")
 
 # Verify the change
 if grep -q "This is a \*\*very simple\*\* Python file" "$test_file"; then

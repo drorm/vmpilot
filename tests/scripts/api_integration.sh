@@ -1,4 +1,6 @@
 #!/bin/bash
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Test API integration and responses
 # Requires TEST_DIR environment variable to be set
@@ -6,7 +8,7 @@
 set -e  # Exit on error
 
 # Set the absolute path to cli.sh
-CLI_PATH="/home/dror/vmpilot/bin/cli.sh"
+CLI_PATH=""$SCRIPT_DI"$SCRIPT_DIR/run_cli.sh"""
 
 echo "Starting API integration tests..."
 

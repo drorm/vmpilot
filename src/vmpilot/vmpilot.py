@@ -291,9 +291,7 @@ class Pipeline:
                     "type": "ephemeral"
                 }
 
-            # if we have a chat_id, we only want to keep the last message that'll get appended to the existing chat
-            if body.get("chat_id"):
-                formatted_messages = formatted_messages[-1:]
+            # Message truncation is now handled by the Chat class in agent.py
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
@@ -347,24 +345,7 @@ class Pipeline:
                             truncated_output += "\n"
                         output_queue.put(truncated_output)
 
-                # Extract chat_id from body if present
-                chat_id = getattr(self, "chat_id", None)
-
-                # It's a new Chat if we only have system and user messages
-                if not hasattr(self, "_chat") or (messages and len(messages) <= 2):
-                    try:
-                        self._chat = Chat(
-                            chat_id=chat_id,
-                            messages=messages,
-                            output_callback=output_callback,
-                        )
-                    except Exception as e:
-                        logger.warning(f"Error creating chat: {e}")
-                        yield f"{e}"
-                        return
-
-                # Make sure we have the chat_id from the chat object
-                chat_id = self._chat.chat_id
+                # Chat object creation and management is now handled in agent.py
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
 
@@ -411,7 +392,6 @@ class Pipeline:
                                 temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
-                                thread_id=chat_id,
                             )
                         )
                     except Exception as e:

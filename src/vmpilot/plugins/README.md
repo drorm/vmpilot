@@ -5,7 +5,7 @@ Alls plugins as well as the main README.md are located in $PROJECT_ROOT/src/vmpi
 # Github
 
 directory: github\_issues
-- To view or list issues, use "cd $PROJECT_ROOT && $PROJECT_ROOT/src/vmpilot/plugins/github_issues/gh_issue.sh  view $number" or any other "gh" command.
+- To view or list issues, use "cd $PROJECT_ROOT && $PROJECT_ROOT/src/vmpilot/plugins/github_issues/gh_issue.sh  view $number" or use this gh_issue.sh command as a replacement for any other "gh" command.
 - To create an issue view the README.md file for instructions.
 
 # Documentation
@@ -13,8 +13,9 @@ directory: github\_issues
 directory: documentation
 - Provides guidance for creating clear, concise, and user-friendly documentation
 
-# Unit Testing
+# Testing
 
-directory: unit_testing
-- Provides guidance for creating comprehensive unit tests for VMPilot components
-- Includes test templates and best practices for effective test implementation
+directory: testing
+- Provides guidance for the VMPilot testing ecosystem as part of the CI/CD workflow
+- Testing is an integral part of development, not an optional activity
+- Includes unit tests, end-to-end tests, and coverage analysis requirements

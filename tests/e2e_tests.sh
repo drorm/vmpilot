@@ -1,14 +1,28 @@
 #!/bin/bash
 
+# Parse command line arguments
+# Check if --coverage flag is passed
+if [[ "$*" == *"--coverage"* ]]; then
+    echo "Running with coverage analysis enabled"
+    # Export environment variable for test scripts
+    export VMPILOT_COVERAGE="1"
+    # Remove --coverage from arguments to prevent passing it to test scripts
+    set -- "${@/--coverage/}"
+fi
+
 # Setup
 TEST_DIR=$(mktemp -d)
 echo "Creating test environment in $TEST_DIR"
 cd "$(dirname "$0")"
 
+# Get the project root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 # Copy sample files to test directory
 echo "Current working directory: $(pwd)"
 
-cp -r /home/dror/vmpilot/tests/sample_files/* "$TEST_DIR/" 2>/dev/null || true
+cp -r "$PROJECT_ROOT/tests/sample_files/"* "$TEST_DIR/" 2>/dev/null || true
 
 if [ $? -ne 0 ]; then echo "Error copying files to $TEST_DIR"; exit 1; fi
 ls -l $TEST_DIR
@@ -67,6 +81,8 @@ for test in "${test_files[@]}"; do
     
     # Run the test in the background and capture its pid
     (
+        # Run test with provider flag but don't pass coverage flag
+        # (coverage is handled via VMPILOT_COVERAGE environment variable)
         if bash "$test" -p "$PROVIDER" > "$RESULTS_DIR/$test_name.log" 2>&1; then
             echo "$test_name: PASS" > "$RESULTS_DIR/$test_name.result"
         else

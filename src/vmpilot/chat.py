@@ -27,26 +27,25 @@ class Chat:
         r"\$PROJECT_ROOT=([^\s]+)",
     ]
 
-    def __init__(
-        self, chat_id=None, project_dir=None, messages=None, output_callback=None
-    ):
+    def __init__(self, project_dir=None, messages=None, output_callback=None):
         """
         Initialize a chat session.
 
         Args:
-            chat_id: Optional chat ID. If not provided, one will be generated.
             project_dir: Optional project directory. If not provided, will use default_project.
             messages: Optional list of chat messages to extract information from.
             output_callback: Optional callback function for sending output.
         """
         self.project_dir = project_dir if project_dir else config.DEFAULT_PROJECT
+        self.messages = messages or []
+        self.output_callback = output_callback
 
         # Extract project directory from messages if provided
         if messages:
             self.extract_project_dir(messages)
 
         # Get or generate chat_id
-        self.chat_id = self._get_or_generate_chat_id(chat_id, messages, output_callback)
+        self.chat_id = self._determine_chat_id(self.messages, output_callback)
 
         # Change to project directory for new chats
         self.change_to_project_dir()
@@ -67,47 +66,27 @@ class Chat:
         )
         return f"{timestamp}{random_part}"
 
-    def _get_or_generate_chat_id(
+    def _determine_chat_id(
         self,
-        provided_chat_id: Optional[str],
         messages: Optional[List[Dict[str, str]]],
         output_callback: Optional[Callable[[Dict], None]],
     ) -> str:
         """
-        Get an existing chat_id from messages, use provided chat_id, or generate a new one.
+        Extract an existing chat_id if present, or generate a new one if needed.
 
         Args:
-            provided_chat_id: Chat ID explicitly provided to the constructor
             messages: List of chat messages
             output_callback: Callback function for sending output
 
         Returns:
             Chat ID string
         """
-        # If a chat_id was explicitly provided, use it
-        if provided_chat_id:
-            logger.info(f"Using provided chat_id: {provided_chat_id}")
-            return provided_chat_id
+        # Try to extract an existing chat_id from messages
+        extracted_id = self._extract_chat_id_from_messages(messages)
+        if extracted_id:
+            return extracted_id
 
-        # If we have messages, try to extract from them
-        if messages and len(messages) > 2:
-            # Existing chat, try to extract chat_id from assistant messages
-            for msg in messages:
-                if msg["role"] == "assistant" and isinstance(msg["content"], str):
-                    content_lines = msg["content"].split("\n")
-                    if content_lines and content_lines[0].startswith(
-                        self.CHAT_ID_PREFIX
-                    ):
-                        # Extract chat_id from the first line
-                        parts = content_lines[0].split(self.CHAT_ID_DELIMITER, 1)
-                        if len(parts) > 1:
-                            extracted_id = parts[1].strip()
-                            logger.debug(f"Extracted chat_id: {extracted_id}")
-                            return extracted_id
-
-            logger.warning("Could not extract chat_id from messages")
-
-        # Generate a new chat_id
+        # If no existing chat_id found, generate a new one
         new_chat_id = self._generate_chat_id()
         logger.debug(f"Generated new chat_id: {new_chat_id}")
 
@@ -121,6 +100,53 @@ class Chat:
             )
 
         return new_chat_id
+
+    def _extract_chat_id_from_messages(
+        self, messages: Optional[List[Dict[str, str]]]
+    ) -> Optional[str]:
+        """
+        Extract chat_id from messages if present.
+
+        Args:
+            messages: List of chat messages
+
+        Returns:
+            Extracted chat_id or None if not found
+        """
+        if not messages:
+            return None
+
+        # Check all messages for chat_id, prioritizing the most recent ones
+        for msg in messages:
+            logger.debug(
+                f"Checking message content: {msg.get('content')} isinstance: {isinstance(msg.get('content'), str)}"
+            )
+
+            if msg["role"] == "assistant":
+                content = msg.get("content", "")
+                if isinstance(content, list) and len(content) > 0:
+                    for content_item in content:
+                        if (
+                            isinstance(content_item, dict)
+                            and content_item.get("type") == "text"
+                        ):
+                            text = content_item.get("text", "")
+                            if text:
+                                content_lines = text.split("\n")
+                                if content_lines and content_lines[0].startswith(
+                                    self.CHAT_ID_PREFIX
+                                ):
+                                    # Extract chat_id from the first line
+                                    parts = content_lines[0].split(
+                                        self.CHAT_ID_DELIMITER, 1
+                                    )
+                                    if len(parts) > 1:
+                                        extracted_id = parts[1].strip()
+                                        return extracted_id
+
+        # If we reach here, no chat_id was found
+        logger.debug("No chat_id found in messages")
+        return None
 
     def extract_project_dir(self, messages: List[Dict[str, str]]) -> Optional[str]:
         """
@@ -175,3 +201,39 @@ class Chat:
             error_msg = f"Failed to change to project directory {self.project_dir}: {e}"
             logger.error(error_msg)
             raise Exception(error_msg)
+
+    def should_truncate_messages(self, messages):
+        """
+        Determine if messages should be truncated based on chat context.
+
+        In a continuing conversation, we only need the last message from the current request.
+
+        Args:
+            messages: List of messages to check
+
+        Returns:
+            bool: True if messages should be truncated, False otherwise
+        """
+        # If this is a continuing conversation (with existing history)
+        # and we have more than 2 messages (system + user), we should truncate
+        if self.chat_id and len(messages) > 2:
+            return True
+        return False
+
+    def get_formatted_messages(self, messages):
+        """
+        Get properly formatted messages for processing.
+
+        For continuing conversations, this will truncate to just the last message.
+        For new conversations, it will return all messages.
+
+        Args:
+            messages: List of messages to format
+
+        Returns:
+            list: Properly formatted messages for processing
+        """
+        if self.should_truncate_messages(messages):
+            # Only keep the last message for continuing conversations
+            return [messages[-1]]
+        return messages

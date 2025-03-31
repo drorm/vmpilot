@@ -35,12 +35,12 @@ class TestChatDirectoryErrors:
 
         # Test that creating a Chat with non-existent directory raises Exception
         with pytest.raises(Exception) as excinfo:
-            Chat(
-                chat_id="test123",
+            chat = Chat(
                 messages=default_messages,
                 output_callback=mock_callback,
                 project_dir="/nonexistent/directory",
             )
+            chat.chat_id = "test123"  # Set chat_id after initialization
 
         # Verify the exception message contains useful information
         assert "does not exist" in str(excinfo.value)
@@ -63,12 +63,12 @@ class TestChatDirectoryErrors:
 
         # Test that permission error is caught and re-raised with context
         with pytest.raises(Exception) as excinfo:
-            Chat(
-                chat_id="test123",
+            chat = Chat(
                 messages=default_messages,
                 output_callback=mock_callback,
                 project_dir="/protected/directory",
             )
+            chat.chat_id = "test123"  # Set chat_id after initialization
 
         # Verify the exception message contains useful information
         expected_msg = "Failed to change to project directory /protected/directory: Permission denied"
@@ -90,11 +90,11 @@ class TestChatDirectoryErrors:
 
         # Create Chat instance
         chat = Chat(
-            chat_id="test123",
             messages=default_messages,
             output_callback=mock_callback,
             project_dir="/valid/directory",
         )
+        chat.chat_id = "test123"  # Set chat_id after initialization
 
         # Verify os.chdir was called with the expanded path
         mock_chdir.assert_called_once()
@@ -114,11 +114,11 @@ class TestChatDirectoryErrors:
 
         # Create Chat instance with tilde in path
         chat = Chat(
-            chat_id="test123",
             messages=default_messages,
             output_callback=mock_callback,
             project_dir="~/my_project",
         )
+        chat.chat_id = "test123"  # Set chat_id after initialization
 
         # Verify os.chdir was called with the expanded path
         mock_chdir.assert_called_once()
@@ -138,12 +138,12 @@ class TestChatDirectoryErrors:
 
         # Test that error is properly raised
         with pytest.raises(Exception) as excinfo:
-            Chat(
-                chat_id="test123",
+            chat = Chat(
                 messages=default_messages,
                 output_callback=mock_callback,
                 project_dir="/path/to/file.txt",  # This is a file, not a directory
             )
+            chat.chat_id = "test123"  # Set chat_id after initialization
 
         # Verify the exception message contains useful information
         expected_msg = (

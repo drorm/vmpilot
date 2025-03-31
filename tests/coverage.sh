@@ -1,0 +1,56 @@
+#!/bin/bash
+# Script to run code coverage analysis for VMPilot
+# This script performs the following:
+# 1. Erases existing coverage data
+# 2. Runs unit tests with coverage
+# 3. Runs e2e tests with coverage
+# 4. Generates and displays coverage report
+
+set -e  # Exit on error
+
+# Get the project root directory
+PROJECT_ROOT=$(cd "$(dirname "$0")/.." && pwd)
+cd "$PROJECT_ROOT"
+
+echo "Starting code coverage analysis for VMPilot..."
+echo "Project root: $PROJECT_ROOT"
+
+# Process command line arguments
+FAIL_UNDER=70
+while getopts "f:" opt; do
+  case $opt in
+    f) FAIL_UNDER="$OPTARG" ;;
+  esac
+done
+
+# Step 1: Erase existing coverage data
+echo "Erasing existing coverage data..."
+python -m coverage erase
+
+# Step 2: Run unit tests with coverage
+echo "Running unit tests with coverage..."
+# Use --no-cov-on-fail to ensure coverage data is saved even if tests fail
+python -m pytest -q --cov=src/vmpilot --cov-report= --no-cov-on-fail tests/unit || true
+
+# Save unit test coverage
+mv .coverage .coverage.unit
+
+# Step 3: Run e2e tests with coverage
+echo "Running end-to-end tests with coverage..."
+# Export environment variable for test scripts to detect coverage mode
+export VMPILOT_COVERAGE=1
+
+# Get a list of available test scripts
+TEST_SCRIPTS=$(find "$PROJECT_ROOT/tests/scripts" -name "*.sh" -not -name "run_cli.sh" -not -name "update_cli_calls.sh" | sort)
+
+# Run e2e tests with all available test scripts
+"$PROJECT_ROOT/tests/e2e_tests.sh" $TEST_SCRIPTS || true
+
+# Step 4: Generate and display coverage report
+echo "Combining coverage data..."
+python -m coverage combine
+
+echo "Generating coverage report..."
+python -m coverage report --fail-under=$FAIL_UNDER || true
+
+echo "Coverage analysis complete!"
