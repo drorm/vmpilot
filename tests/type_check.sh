@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-ROOT_DIR="../.."
+ROOT_DIR=".."
 # Use the existing reports directory
 REPORTS_DIR="$ROOT_DIR/reports"
 
