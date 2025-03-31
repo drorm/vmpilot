@@ -237,12 +237,3 @@ class Chat:
             # Only keep the last message for continuing conversations
             return [messages[-1]]
         return messages
-
-    def update_messages(self, new_messages):
-        """
-        Update the chat's message history.
-
-        Args:
-            new_messages: New messages to add to history
-        """
-        self.messages = new_messages

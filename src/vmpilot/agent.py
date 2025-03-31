@@ -373,7 +373,7 @@ async def process_messages(
     if is_new_chat:
         # For new chats, clear any existing conversation state
         clear_conversation_state(chat.chat_id)
-        logger.info(f"Started new chat session with chat_id: {chat.chat_id}")
+        logger.debug(f"Started new chat session with chat_id: {chat.chat_id}")
     else:
         # This is a continuing chat, use the previous conversation state
         logger.info(
