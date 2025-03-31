@@ -72,32 +72,32 @@ class Pipeline:
 
         # Property for anthropic_api_key with setter that updates state
         @property
-        def anthropic_api_key(self) -> str:
+        def anthropic_key(self) -> str:
             return self.anthropic_api_key
 
-        @anthropic_api_key.setter
-        def anthropic_api_key(self, value: str):
+        @anthropic_key.setter
+        def anthropic_key(self, value: str):
             self.anthropic_api_key = value
             if self.provider == Provider.ANTHROPIC:
                 self._update_api_key()
 
         # Property for openai_api_key with setter that updates state
         @property
-        def openai_api_key(self) -> str:
+        def openai_key(self) -> str:
             return self.openai_api_key
 
-        @openai_api_key.setter
-        def openai_api_key(self, value: str):
+        @openai_key.setter
+        def openai_key(self, value: str):
             self.openai_api_key = value
             if self.provider == Provider.OPENAI:
                 self._update_api_key()
 
         # Property for google_api_key with setter that updates state
         @property
-        def google_api_key(self) -> str:
+        def google_key(self) -> str:
             return self.google_api_key
 
-        @google_api_key.setter
+        @google_key.setter
         def google_api_key(self, value: str):
             self.google_api_key = value
             if self.provider == Provider.GOOGLE:
@@ -183,7 +183,10 @@ class Pipeline:
 
     def set_model(self, model: str):
         """Set the model and validate against current provider"""
-        if config.validate_model(model, self.valves.provider):
+        # ModelConfig has no validate_model attribute, use config module function instead
+        if hasattr(config, "validate_model") and config.validate_model(
+            model, self.valves.provider
+        ):
             self.valves.model = model
         else:
             raise ValueError(f"Unsupported model: {model}")
@@ -452,7 +455,10 @@ class Pipeline:
                 for msg in generate_responses():
                     output_parts.append(msg)
                 result = (
-                    "\n\n".join(part.strip() for part in output_parts)
+                    "\n\n".join(
+                        str(part).strip() if hasattr(part, "strip") else str(part)
+                        for part in output_parts
+                    )
                     if output_parts
                     else "Command executed successfully"
                 )

@@ -62,7 +62,7 @@ class GitStatus(Enum):
 class GitTracker:
     """Class for tracking LLM-generated changes in Git."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the GitTracker."""
         self.repo_path = os.getcwd()
         # Use the global configuration
@@ -228,7 +228,7 @@ class GitTracker:
             logger.error(f"Failed to get diff: {e}")
             return ""
 
-    def commit_changes(self, message: str, author: str = None) -> bool:
+    def commit_changes(self, message: str, author: str | None = None) -> bool:
         """Commit uncommitted changes.
 
         This method stages all changes in the working directory using 'git add .'
