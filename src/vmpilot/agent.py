@@ -7,14 +7,15 @@ import os
 import pathlib
 import traceback
 from contextvars import ContextVar
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
+from pydantic import SecretStr as PydanticSecretStr
 
 from vmpilot.agent_logging import log_conversation_messages
 from vmpilot.agent_memory import (
@@ -84,7 +85,8 @@ def _modify_state_messages(state: AgentState):
         if cached > 0:
             if isinstance(message.content, list):
                 for block in message.content:
-                    block["cache_control"] = {"type": "ephemeral"}
+                    if isinstance(block, dict):
+                        block["cache_control"] = {"type": "ephemeral"}
                     logger.debug(f"Added cache_eph block: {block}")
                     cached -= 1
             else:
@@ -96,12 +98,13 @@ def _modify_state_messages(state: AgentState):
         else:
             if isinstance(message.content, list):
                 for block in message.content:
-                    block.pop("cache_control", None)
+                    if isinstance(block, dict) and "cache_control" in block:
+                        block.pop("cache_control", None)
             else:
                 message.additional_kwargs.pop("cache_control", None)
 
     logger.debug(f"Modified state messages: {state['messages']}")
-    log_conversation_messages(messages, level="debug")
+    log_conversation_messages(list(state["messages"]), level="debug")
     return messages
 
 
@@ -168,12 +171,12 @@ async def create_agent(
         if provider_config.beta_flags:
             betas.extend([flag for flag in provider_config.beta_flags.keys()])
 
-        {
+        headers = {
             "anthropic-beta": ",".join(betas),
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
-        system_content = {
+        system_content: dict[str, Any] = {
             "type": "text",
             "text": get_system_prompt()
             + ("\n\n" + system_prompt_suffix if system_prompt_suffix else ""),
@@ -184,10 +187,10 @@ async def create_agent(
             system_content["cache_control"] = {"type": "ephemeral"}
 
         llm = ChatAnthropic(
-            model=model,
+            model_name=model,
             temperature=temperature,
-            max_tokens=max_tokens,
-            anthropic_api_key=api_key,
+            max_tokens_to_sample=max_tokens,
+            api_key=PydanticSecretStr(api_key),
             timeout=30,  # Add 30-second timeout
             model_kwargs={
                 "extra_headers": {"anthropic-beta": ",".join(betas)},
@@ -198,11 +201,13 @@ async def create_agent(
         # Only set temperature=1 for o3-mini model
         provider_config = config.get_provider_config(APIProvider.OPENAI)
         model_temperature = 1 if model == "o3-mini" else temperature
+        from pydantic import SecretStr
+
         llm = ChatOpenAI(
             model=model,
             temperature=model_temperature,
-            max_tokens=MAX_TOKENS,
-            openai_api_key=api_key,
+            max_tokens_limit=MAX_TOKENS,
+            api_key=PydanticSecretStr(api_key),
             timeout=30,
         )
     elif provider == APIProvider.GOOGLE:
@@ -213,8 +218,8 @@ async def create_agent(
                 model=model,
                 temperature=temperature,
                 max_output_tokens=max_tokens,
-                google_api_key=api_key,
-                request_timeout=30,
+                google_api_key=PydanticSecretStr(api_key),
+                timeout=30,
             )
         except Exception as e:
             logging.error(f"Error creating Google AI LLM: {str(e)}")
@@ -248,7 +253,7 @@ async def process_messages(
     max_tokens: int = MAX_TOKENS,
     temperature: float = TEMPERATURE,
     disable_logging: bool = False,
-    recursion_limit: int = None,  # Maximum number of steps to run in the request
+    recursion_limit: int | None = None,  # Maximum number of steps to run in the request
 ) -> List[dict]:
     """Process messages through the agent and handle outputs.
 
@@ -336,7 +341,9 @@ async def process_messages(
             )
 
             # Return early with just the error message
-            return messages + [error_message]
+            return messages + [
+                {"role": "assistant", "content": error_message}
+            ]  # Convert to dict format
         # For other actions (stash), continue processing
 
     # Handle prompt caching for Anthropic provider
@@ -359,7 +366,7 @@ async def process_messages(
                 "role": "assistant",
                 "content": system_prompt,
             },
-        )
+        )  # type: ignore  # Ignoring list item type issue
 
     logger.debug("DEBUG: Agent created successfully")
 
@@ -519,8 +526,15 @@ async def process_messages(
                                 if (
                                     formatted_messages
                                     and isinstance(formatted_messages[-1], HumanMessage)
+                                    and hasattr(content, "strip")
                                     and content.strip()
-                                    == formatted_messages[-1].content.strip()
+                                    == (
+                                        formatted_messages[-1].content.strip()
+                                        if hasattr(
+                                            formatted_messages[-1].content, "strip"
+                                        )
+                                        else str(formatted_messages[-1].content)
+                                    )
                                 ):
                                     continue
                                 output_callback({"type": "text", "text": content})
