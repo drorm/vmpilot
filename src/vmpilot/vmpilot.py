@@ -310,14 +310,6 @@ class Pipeline:
                         logger.debug(f"Assistant: {content['text']}")
                         output_queue.put(content["text"])
 
-                """ Output callback to handle messages from the LLM """
-
-                def output_callback(content: Dict):
-                    logger.debug(f"Received content: {content}")
-                    if content["type"] == "text":
-                        logger.debug(f"Assistant: {content['text']}")
-                        output_queue.put(content["text"])
-
                 """ Output callback to handle tool messages: output from commands """
 
                 def tool_callback(result, tool_id):
@@ -359,7 +351,7 @@ class Pipeline:
                         asyncio.set_event_loop(loop)
 
                         # Set exception handler for the loop to catch unhandled exceptions
-                        def handle_exception(loop, context):
+                        def handle_exception(loop, context):  # pragma: no cover
                             exception = context.get("exception")
                             if exception:
                                 if "TCPTransport closed=True" in str(
@@ -397,13 +389,13 @@ class Pipeline:
                                 recursion_limit=RECURSION_LIMIT,
                             )
                         )
-                    except Exception as e:
+                    except Exception as e:  # pragma: no cover
                         logger.error(f"Error: {e}")
                         logger.error("".join(traceback.format_tb(e.__traceback__)))
                     finally:
                         loop_done.set()
                         # Safely close the loop
-                        if loop:
+                        if loop:  # pragma: no cover
                             try:
                                 # Cancel all running tasks
                                 pending = asyncio.all_tasks(loop)
@@ -465,7 +457,7 @@ class Pipeline:
                 logger.debug(f"Non-streaming result: {result}")
                 return result
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             error_msg = f"Error in pipe: {str(e)}"
             logger.error(error_msg, exc_info=True)
             return error_msg
