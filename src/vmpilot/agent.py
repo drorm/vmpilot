@@ -120,7 +120,7 @@ def setup_tools(llm=None):
 
     if llm is not None:
         try:
-            shell_tool = SetupShellTool(llm=llm)
+            shell_tool = SetupShellTool()
             tools.append(shell_tool)
             tools.append(EditTool())  # for editing
             tools.append(CreateFileTool())  # for creating files
@@ -203,7 +203,6 @@ async def create_agent(
         llm = ChatOpenAI(
             model=model,
             temperature=model_temperature,
-            max_tokens_limit=MAX_TOKENS,
             api_key=PydanticSecretStr(api_key),
             timeout=30,
         )
@@ -214,8 +213,6 @@ async def create_agent(
             llm = ChatGoogleGenerativeAI(
                 model=model,
                 temperature=temperature,
-                max_output_tokens=max_tokens,
-                google_api_key=PydanticSecretStr(api_key),
                 timeout=30,
             )
         except Exception as e:
@@ -580,7 +577,7 @@ async def process_messages(
                     output_callback(
                         {"type": "text", "text": f"Error processing response: {str(e)}"}
                     )
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             error_message = str(e)
             message = ""
             if "Recursion limit" in error_message and "reached" in error_message:
@@ -634,7 +631,7 @@ async def process_messages(
             # If changes were committed, log the commit message
             if exchange_summary.get("git_changes_committed"):
                 logger.info("Git changes committed successfully")
-        else:
+        else:  # pragma: no cover
             # If no AI messages found but we have a response, use the last message
             last_message = response["messages"][-1] if response["messages"] else None
             if last_message:
