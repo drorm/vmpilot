@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from pydantic import SecretStr
 
 from vmpilot.config import Provider as APIProvider
 from vmpilot.worker_llm import get_worker_llm, run_worker, run_worker_async
@@ -39,8 +40,8 @@ class TestGetWorkerLLM:
         mock_chat_openai.assert_called_once_with(
             model="gpt-4-turbo",
             temperature=0.5,
-            max_tokens=1000,
-            api_key="fake-api-key",
+            max_tokens_limit=1000,
+            api_key=SecretStr("fake-api-key"),
         )
         assert result == "openai-instance"
 
@@ -63,10 +64,10 @@ class TestGetWorkerLLM:
         # Verify
         mock_config.get_api_key.assert_called_once_with(APIProvider.ANTHROPIC)
         mock_chat_anthropic.assert_called_once_with(
-            model="claude-3-opus-20240229",
+            model_name="claude-3-opus-20240229",
             temperature=0.7,
-            max_tokens=2000,
-            api_key="fake-api-key",
+            max_tokens_to_sample=2000,
+            api_key=SecretStr("fake-api-key"),
         )
         assert result == "anthropic-instance"
 
