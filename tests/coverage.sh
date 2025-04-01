@@ -40,16 +40,17 @@ mv .coverage .coverage.unit
 echo "Running end-to-end tests with coverage..."
 # Export environment variable for test scripts to detect coverage mode
 export VMPILOT_COVERAGE=1
-
+export COVERAGE_PROCESS_START=$PROJECT_ROOT/.coveragerc
 
 # Run e2e tests 
 "$PROJECT_ROOT/tests/e2e_tests.sh" || true
 
 # Step 4: Generate and display coverage report
 echo "Combining coverage data..."
-python -m coverage combine
+python -m coverage combine .coverage.*
 
 echo "Generating coverage report..."
 python -m coverage report --fail-under=$FAIL_UNDER > $REPORTS_DIR/coverage.txt || true
 
 echo "Coverage reports saved to $REPORTS_DIR"
+echo "To combine with pipeline coverage, run bin/combine_coverage.sh after running pipeline tests"
