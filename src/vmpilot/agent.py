@@ -3,13 +3,11 @@ LangChain-based implementation for VMPilot's agent functionality.
 """
 
 import logging
-import os
-import pathlib
 import traceback
 from contextvars import ContextVar
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
@@ -22,10 +20,9 @@ from vmpilot.agent_memory import (
     clear_conversation_state,
     get_conversation_state,
     save_conversation_state,
-    update_cache_info,
 )
 from vmpilot.caching.chat_models import ChatAnthropic
-from vmpilot.config import MAX_TOKENS, TEMPERATURE, GitConfig
+from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.exchange import Exchange
