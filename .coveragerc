@@ -1,5 +1,6 @@
 [run]
-source = src/vmpilot
+source = /home/dror/vmpilot/src/vmpilot
+parallel = true
 omit =
     # Exclude test files
     */tests/*
@@ -7,6 +8,11 @@ omit =
     */__init__.py
     # Exclude any generated files
     */generated/*
+    # Exclude imported files
+    src/vmpilot/tools/edit_diff.py
+    src/vmpilot/caching/chat_models.py
+    */pipelines/*
+    utils/*
 
 [report]
 # Exclude lines from coverage report
@@ -32,13 +38,3 @@ show_missing = True
 
 # Fail if coverage is below defined threshold
 fail_under = 70
-
-[html]
-# Directory for HTML report
-directory = htmlcov
-# Title for HTML report
-title = VMPilot Coverage Report
-
-[xml]
-# Output file for XML report (for CI integration)
-output = coverage.xml
