@@ -149,6 +149,16 @@ class TestPipeChatIDIntegration:
                     # For this test, we want to simulate:
                     # 1. If chat_id exists, only the last message is used
 
+                    # Simulate the behavior of the Chat class for message truncation
+                    from vmpilot.chat import Chat
+
+                    chat = Chat(messages=messages)
+                    chat.chat_id = "test123"  # Set the chat_id
+
+                    # Get the formatted messages (should be truncated because we have a chat_id)
+                    formatted_messages = chat.get_formatted_messages(messages)
+
+                    # Now call process_messages with the correct parameters
                     # Suppress the "coroutine was never awaited" warning
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", RuntimeWarning)
@@ -156,13 +166,12 @@ class TestPipeChatIDIntegration:
                             model=pipeline.valves.model,
                             provider="anthropic",  # Simplified for test
                             system_prompt_suffix="System prompt",
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": "Second user message",  # Use a string for content
-                                }
-                            ],
-                            thread_id="test123",  # This is the chat_id we set
+                            messages=formatted_messages,
+                            output_callback=lambda x: None,
+                            tool_output_callback=lambda x, y: None,
+                            api_key="mock_api_key",
+                            max_tokens=1000,
+                            temperature=0.7,
                         )
 
             thread.start = fake_start
@@ -211,9 +220,6 @@ class TestPipeChatIDIntegration:
                     else:
                         assert content == "Second user message"
 
-                    # Verify that thread_id was passed to process_messages
-                    assert kwargs.get("thread_id") == "test123"
-
     @timeout_after(5)  # 5 second timeout
     @patch("vmpilot.agent.process_messages")
     def test_message_retention_without_chat_id(self, mock_process_messages, pipeline):
@@ -257,6 +263,17 @@ class TestPipeChatIDIntegration:
                     # For this test, we want to simulate:
                     # Without chat_id, all messages are kept
 
+                    # Simulate the behavior of the Chat class for message retention
+                    from vmpilot.chat import Chat
+
+                    chat = Chat(messages=messages)
+                    # Ensure no chat_id is set (for testing - normally it would generate one)
+                    chat.chat_id = None
+
+                    # Get the formatted messages (should not be truncated because we have no chat_id)
+                    formatted_messages = chat.get_formatted_messages(messages)
+
+                    # Now call process_messages with the correct parameters
                     # Suppress the "coroutine was never awaited" warning
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", RuntimeWarning)
@@ -264,8 +281,12 @@ class TestPipeChatIDIntegration:
                             model=pipeline.valves.model,
                             provider="anthropic",  # Simplified for test
                             system_prompt_suffix="",
-                            messages=messages,
-                            thread_id=None,  # No chat_id
+                            messages=formatted_messages,
+                            output_callback=lambda x: None,
+                            tool_output_callback=lambda x, y: None,
+                            api_key="mock_api_key",
+                            max_tokens=1000,
+                            temperature=0.7,
                         )
 
             thread.start = fake_start
@@ -306,9 +327,6 @@ class TestPipeChatIDIntegration:
 
                     # Check that all messages were passed (3 in this case)
                     assert len(kwargs.get("messages", [])) == 3
-
-                    # Verify that thread_id was not passed to process_messages
-                    assert kwargs.get("thread_id") is None
 
     @patch("vmpilot.agent.process_messages")
     def test_chat_id_generation_in_pipe(self, mock_process_messages, pipeline):
