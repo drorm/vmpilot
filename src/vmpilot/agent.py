@@ -291,7 +291,11 @@ async def process_messages(
 
     # Create Chat object to manage conversation state
     try:
-        chat = Chat(messages=messages, output_callback=output_callback)
+        chat = Chat(
+            messages=messages,
+            output_callback=output_callback,
+            system_prompt_suffix=system_prompt_suffix,
+        )
         logger.debug(f"Using chat_id: {chat.chat_id}")
     except Exception as e:
         logger.error(f"Error creating Chat object: {e}")

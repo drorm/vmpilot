@@ -2,22 +2,26 @@
 Prompt for the agent
 """
 
+import logging
 import pathlib
 import platform
 from datetime import datetime
 
 from vmpilot.config import TOOL_OUTPUT_LINES
+from vmpilot.env import get_project_root, get_vmpilot_root, get_plugins_dir, get_docs_dir
 
+logger = logging.getLogger(__name__)
 
 # Read plugins README.md
 def get_plugins_readme():
-    plugins_readme_path = pathlib.Path(__file__).parent / "plugins" / "README.md"
+    plugins_readme_path = pathlib.Path(get_plugins_dir()) / "README.md"
     try:
         with open(plugins_readme_path, "r") as f:
+            logger.info(f"Loaded plugins README from {plugins_readme_path}")
             return f.read()
     except FileNotFoundError:
+        logger.warning(f"Plugins README not found at {plugins_readme_path}")
         return "No plugins available"
-
 
 # System prompt maintaining compatibility with original VMPilot
 SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
@@ -25,6 +29,10 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * You can execute any valid bash command but do not install packages
 * When using commands that are expected to output very large quantities of text, redirect into a tmp file
 * The current date is {datetime.today().strftime('%A, %B %-d, %Y')}
+* The root of the project is {get_project_root()}
+* The root of VMPilot is {get_vmpilot_root()}
+* VMPilot's plugins are located in {get_plugins_dir()}
+* VMPilot's documentation is located in {get_docs_dir()}
 * When using your shelltool with commands that are expected to output very large quantities of text, redirect into a tmp file and use str_replace_editor or `grep -n -B <lines before> -A <lines after> <query> <filename>` to confirm output.
 </SYSTEM_CAPABILITY>
 
