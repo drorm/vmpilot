@@ -168,10 +168,12 @@ class Chat:
         Returns:
             Project directory if found, None otherwise
         """
-        extracted = env.extract_project_dir(messages)
-        if extracted:
-            self.project_dir = extracted
-        return extracted
+        if system_prompt_suffix:
+            extracted = env.extract_project_dir(system_prompt_suffix)
+            if extracted:
+                self.project_dir = extracted
+            return extracted
+        return None
 
     def change_to_project_dir(self):
         """

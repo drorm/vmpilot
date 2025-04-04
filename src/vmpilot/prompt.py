@@ -8,9 +8,15 @@ import platform
 from datetime import datetime
 
 from vmpilot.config import TOOL_OUTPUT_LINES
-from vmpilot.env import get_project_root, get_vmpilot_root, get_plugins_dir, get_docs_dir
+from vmpilot.env import (
+    get_project_root,
+    get_vmpilot_root,
+    get_plugins_dir,
+    get_docs_dir,
+)
 
 logger = logging.getLogger(__name__)
+
 
 # Read plugins README.md
 def get_plugins_readme():
@@ -23,6 +29,8 @@ def get_plugins_readme():
         logger.warning(f"Plugins README not found at {plugins_readme_path}")
         return "No plugins available"
 
+
+logger.info(f"In prompt project root is {get_project_root()}")
 # System prompt maintaining compatibility with original VMPilot
 SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
