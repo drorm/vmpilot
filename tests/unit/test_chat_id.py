@@ -1,16 +1,20 @@
+import os
 import re
 import sys
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from vmpilot.vmpilot import Pipeline
 
-sys.path.insert(0, "/home/dror/vmpilot")
+sys.path.insert(0, "/home/dror/4vmpilot")
 from tests.unit.pipeline_test_adapter import add_test_methods_to_pipeline
 
 # Apply the adapter to add backward compatibility methods
 add_test_methods_to_pipeline(Pipeline)
+
+# Set PROJECT_ROOT environment variable for tests
+os.environ["PROJECT_ROOT"] = "/tmp"
 
 
 class TestChatID:
@@ -24,10 +28,23 @@ class TestChatID:
         """Create a mock callback function for testing."""
         return MagicMock()
 
+    @pytest.fixture(autouse=True)
+    def setup_env_patches(self):
+        """Set up patches for environment checks in all tests."""
+        with (
+            patch("vmpilot.env.os.path.exists", return_value=True),
+            patch("vmpilot.env.os.path.isdir", return_value=True),
+            patch("vmpilot.env.os.chdir"),
+            patch("os.path.exists", return_value=True),
+            patch("os.path.isdir", return_value=True),
+            patch("os.chdir"),
+        ):
+            yield
+
     def test_generate_new_chat_id(self, pipeline, mock_callback):
         """Test that a new chat_id is generated when none exists and messages are minimal."""
         messages = [
-            {"role": "system", "content": "System prompt"},
+            {"role": "system", "content": "System prompt $PROJECT_ROOT=/tmp"},
             {"role": "user", "content": "User message"},
         ]
 
@@ -49,7 +66,7 @@ class TestChatID:
         """Test that an existing chat_id is extracted from previous messages."""
         test_chat_id = "abc12345"
         messages = [
-            {"role": "system", "content": "System prompt"},
+            {"role": "system", "content": "System prompt $PROJECT_ROOT=/tmp"},
             {"role": "user", "content": "User message"},
             {
                 "role": "assistant",
@@ -67,7 +84,7 @@ class TestChatID:
     def test_use_existing_instance_chat_id(self, pipeline, mock_callback):
         """Test that a new chat_id is generated when there's no body chat_id."""
         messages = [
-            {"role": "system", "content": "System prompt"},
+            {"role": "system", "content": "System prompt $PROJECT_ROOT=/tmp"},
             {"role": "user", "content": "User message"},
         ]
 
@@ -84,7 +101,7 @@ class TestChatID:
         """Test extracting chat_id with spaces in the format."""
         test_chat_id = "space123"
         messages = [
-            {"role": "system", "content": "System prompt"},
+            {"role": "system", "content": "System prompt $PROJECT_ROOT=/tmp"},
             {"role": "user", "content": "User message"},
             {
                 "role": "assistant",
@@ -102,7 +119,7 @@ class TestChatID:
     def test_no_chat_id_in_messages(self, pipeline, mock_callback):
         """Test behavior when no chat_id is found in messages and there are more than 2 messages."""
         messages = [
-            {"role": "system", "content": "System prompt"},
+            {"role": "system", "content": "System prompt $PROJECT_ROOT=/tmp"},
             {"role": "user", "content": "User message 1"},
             {"role": "assistant", "content": "Assistant response without chat id"},
             {"role": "user", "content": "User message 2"},
@@ -129,7 +146,7 @@ class TestChatID:
     def test_non_string_content(self, pipeline, mock_callback):
         """Test behavior when assistant message has non-string content."""
         messages = [
-            {"role": "system", "content": "System prompt"},
+            {"role": "system", "content": "System prompt $PROJECT_ROOT=/tmp"},
             {"role": "user", "content": "User message"},
             {
                 "role": "assistant",
@@ -147,7 +164,7 @@ class TestChatID:
         """Test behavior with multiple assistant messages, only first should be checked."""
         test_chat_id = "first123"
         messages = [
-            {"role": "system", "content": "System prompt"},
+            {"role": "system", "content": "System prompt $PROJECT_ROOT=/tmp"},
             {"role": "user", "content": "User message 1"},
             {
                 "role": "assistant",
@@ -168,7 +185,7 @@ class TestChatID:
         """Test that chat_id from messages is extracted correctly."""
         extracted_chat_id = "extracted456"
         messages = [
-            {"role": "system", "content": "System prompt"},
+            {"role": "system", "content": "System prompt $PROJECT_ROOT=/tmp"},
             {"role": "user", "content": "User message"},
             {
                 "role": "assistant",
@@ -186,7 +203,7 @@ class TestChatID:
     def test_malformed_chat_id_line(self, pipeline, mock_callback):
         """Test behavior with malformed chat_id line in assistant message."""
         messages = [
-            {"role": "system", "content": "System prompt"},
+            {"role": "system", "content": "System prompt $PROJECT_ROOT=/tmp"},
             {"role": "user", "content": "User message"},
             {
                 "role": "assistant",

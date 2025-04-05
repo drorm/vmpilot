@@ -111,8 +111,14 @@ class TestPipeChatIDIntegration:
         """Test that only the last message is kept when chat_id exists."""
         # Set a chat_id on the pipeline
         pipeline.chat_id = "test123"
-        # Initialize _chat attribute for the test
-        pipeline._chat = Chat()
+        # Initialize _chat attribute for the test with a valid system_prompt_suffix
+        # Use a test directory that always exists
+        with (
+            patch("vmpilot.env.os.path.exists", return_value=True),
+            patch("vmpilot.env.os.path.isdir", return_value=True),
+            patch("vmpilot.env.os.chdir"),
+        ):
+            pipeline._chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
         pipeline._chat.chat_id = pipeline.chat_id
 
         # Create test messages
@@ -215,8 +221,14 @@ class TestPipeChatIDIntegration:
         # Ensure no chat_id exists
         if hasattr(pipeline, "chat_id"):
             delattr(pipeline, "chat_id")
-        # Initialize _chat attribute for the test
-        pipeline._chat = Chat()
+        # Initialize _chat attribute for the test with a valid system_prompt_suffix
+        # Use a test directory that always exists
+        with (
+            patch("vmpilot.env.os.path.exists", return_value=True),
+            patch("vmpilot.env.os.path.isdir", return_value=True),
+            patch("vmpilot.env.os.chdir"),
+        ):
+            pipeline._chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
 
         # Create test messages
         messages = [
@@ -315,7 +327,12 @@ class TestPipeChatIDIntegration:
         # that a chat_id is generated when none exists
 
         # Create a new Chat object directly and verify it generates a chat_id
-        chat = Chat()
+        with (
+            patch("vmpilot.env.os.path.exists", return_value=True),
+            patch("vmpilot.env.os.path.isdir", return_value=True),
+            patch("vmpilot.env.os.chdir"),
+        ):
+            chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
         assert chat.chat_id is not None
         assert len(chat.chat_id) > 0
 
@@ -326,6 +343,11 @@ class TestPipeChatIDIntegration:
         body_chat_id = "body456"
 
         # Create a Chat object with the provided chat_id and verify it's used
-        chat = Chat()
+        with (
+            patch("vmpilot.env.os.path.exists", return_value=True),
+            patch("vmpilot.env.os.path.isdir", return_value=True),
+            patch("vmpilot.env.os.chdir"),
+        ):
+            chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
         chat.chat_id = body_chat_id
         assert chat.chat_id == body_chat_id
