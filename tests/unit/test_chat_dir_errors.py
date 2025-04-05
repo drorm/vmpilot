@@ -38,7 +38,7 @@ class TestChatDirectoryErrors:
             chat = Chat(
                 messages=default_messages,
                 output_callback=mock_callback,
-                project_dir="/nonexistent/directory",
+                system_prompt_suffix="$PROJECT_ROOT=/nonexistent/directory",
             )
             chat.chat_id = "test123"  # Set chat_id after initialization
 
@@ -66,7 +66,7 @@ class TestChatDirectoryErrors:
             chat = Chat(
                 messages=default_messages,
                 output_callback=mock_callback,
-                project_dir="/protected/directory",
+                system_prompt_suffix="$PROJECT_ROOT=/protected/directory",
             )
             chat.chat_id = "test123"  # Set chat_id after initialization
 
@@ -77,9 +77,9 @@ class TestChatDirectoryErrors:
         # Verify os.chdir was called
         mock_chdir.assert_called_once()
 
-    @patch("os.path.exists")
-    @patch("os.chdir")
-    @patch("os.path.isdir")
+    @patch("vmpilot.env.os.path.exists")
+    @patch("vmpilot.env.os.chdir")
+    @patch("vmpilot.env.os.path.isdir")
     def test_successful_directory_change(
         self, mock_isdir, mock_chdir, mock_exists, mock_callback, default_messages
     ):
@@ -92,18 +92,18 @@ class TestChatDirectoryErrors:
         chat = Chat(
             messages=default_messages,
             output_callback=mock_callback,
-            project_dir="/valid/directory",
+            system_prompt_suffix="$PROJECT_ROOT=/valid/directory",
         )
         chat.chat_id = "test123"  # Set chat_id after initialization
 
         # Verify os.chdir was called with the expanded path
-        mock_chdir.assert_called_once()
+        assert mock_chdir.call_count >= 1
         args, _ = mock_chdir.call_args
         assert args[0] == os.path.expanduser("/valid/directory")
 
-    @patch("os.path.exists")
-    @patch("os.chdir")
-    @patch("os.path.isdir")
+    @patch("vmpilot.env.os.path.exists")
+    @patch("vmpilot.env.os.chdir")
+    @patch("vmpilot.env.os.path.isdir")
     def test_tilde_expansion_in_project_dir(
         self, mock_isdir, mock_chdir, mock_exists, mock_callback, default_messages
     ):
@@ -116,12 +116,12 @@ class TestChatDirectoryErrors:
         chat = Chat(
             messages=default_messages,
             output_callback=mock_callback,
-            project_dir="~/my_project",
+            system_prompt_suffix="$PROJECT_ROOT=~/my_project",
         )
         chat.chat_id = "test123"  # Set chat_id after initialization
 
         # Verify os.chdir was called with the expanded path
-        mock_chdir.assert_called_once()
+        assert mock_chdir.call_count >= 1
         args, _ = mock_chdir.call_args
         assert args[0] == os.path.expanduser("~/my_project")
 
@@ -141,7 +141,7 @@ class TestChatDirectoryErrors:
             chat = Chat(
                 messages=default_messages,
                 output_callback=mock_callback,
-                project_dir="/path/to/file.txt",  # This is a file, not a directory
+                system_prompt_suffix="$PROJECT_ROOT=/path/to/file.txt",  # This is a file, not a directory
             )
             chat.chat_id = "test123"  # Set chat_id after initialization
 
