@@ -9,8 +9,7 @@ import string
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
-from . import config
-from . import env
+from . import config, env
 
 logger = logging.getLogger(__name__)
 

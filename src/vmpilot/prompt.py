@@ -9,10 +9,10 @@ from datetime import datetime
 
 from vmpilot.config import TOOL_OUTPUT_LINES
 from vmpilot.env import (
+    get_docs_dir,
+    get_plugins_dir,
     get_project_root,
     get_vmpilot_root,
-    get_plugins_dir,
-    get_docs_dir,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,14 +30,18 @@ def get_plugins_readme():
         return "No plugins available"
 
 
-logger.info(f"In prompt project root is {get_project_root()}")
-# System prompt maintaining compatibility with original VMPilot
-SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
+# Generate system prompt on demand, ensuring current project root is used
+def get_system_prompt():
+    project_root = get_project_root()
+    logger.info(f"In prompt project root is {project_root}")
+
+    # System prompt maintaining compatibility with original VMPilot
+    return f"""<SYSTEM_CAPABILITY>
 * You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
 * You can execute any valid bash command but do not install packages
 * When using commands that are expected to output very large quantities of text, redirect into a tmp file
 * The current date is {datetime.today().strftime('%A, %B %-d, %Y')}
-* The root of the project is {get_project_root()}
+* The root of the project is {project_root}
 * The root of VMPilot is {get_vmpilot_root()}
 * VMPilot's plugins are located in {get_plugins_dir()}
 * VMPilot's documentation is located in {get_docs_dir()}

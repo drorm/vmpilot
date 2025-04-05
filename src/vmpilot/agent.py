@@ -28,7 +28,7 @@ from vmpilot.config import MAX_TOKENS, TEMPERATURE, GitConfig
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.exchange import Exchange
-from vmpilot.prompt import SYSTEM_PROMPT
+from vmpilot.prompt import get_system_prompt
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
@@ -175,7 +175,7 @@ async def create_agent(
         }
         system_content = {
             "type": "text",
-            "text": SYSTEM_PROMPT
+            "text": get_system_prompt()
             + ("\n\n" + system_prompt_suffix if system_prompt_suffix else ""),
         }
         logger.debug(f"System prompt: {system_content}")
@@ -350,7 +350,7 @@ async def process_messages(
     # for openai and google preprend the system prompt
     if provider == APIProvider.GOOGLE or provider == APIProvider.OPENAI:
         # Prepend system prompt to messages for OpenAI
-        system_prompt = SYSTEM_PROMPT + (
+        system_prompt = get_system_prompt() + (
             "\n\n" + system_prompt_suffix if system_prompt_suffix else ""
         )
         messages.insert(
