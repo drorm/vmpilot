@@ -26,11 +26,11 @@ def get_vmpilot_root() -> str:
     Returns:
         Path to VMPilot root directory
     """
-    # Check if VMPILOT_ROOT environment variable is set
+    # VMPILOT_ROOT environment variable is by the shell script
     vmpilot_root = os.environ.get("VMPILOT_ROOT")
 
     if vmpilot_root:
-        logger.info(f"Using VMPILOT_ROOT from environment: {vmpilot_root}")
+        logger.debug(f"Using VMPILOT_ROOT from environment in env: {vmpilot_root}")
         return vmpilot_root
 
     # If not set, calculate based on the location of this file
@@ -62,12 +62,12 @@ def get_project_root() -> str:
         if expanded_root != project_root:
             os.environ["PROJECT_ROOT"] = expanded_root
             project_root = expanded_root
-        logger.info(f"Using PROJECT_ROOT from environment: {project_root}")
+        logger.debug(f"Using PROJECT_ROOT from environment: {project_root}")
         return project_root
 
     # If not set, use current working directory
     project_root = os.getcwd()
-    logger.info(f"Using current directory as PROJECT_ROOT: {project_root}")
+    logger.debug(f"Using current directory as PROJECT_ROOT: {project_root}")
 
     # Set environment variable for other components
     os.environ["PROJECT_ROOT"] = project_root
@@ -97,7 +97,7 @@ def extract_project_dir(system_prompt_suffix: str) -> Optional[str]:
             project_dir = match.group(1)
             # Expand ~ to user's home directory
             expanded_dir = os.path.expanduser(project_dir)
-            logger.info(
+            logger.debug(
                 f"Extracted project directory from message: {project_dir} (expanded to {expanded_dir})"
             )
 
@@ -129,7 +129,6 @@ def change_to_project_dir(project_dir: Optional[str] = None) -> bool:
         project_dir = get_project_root()
 
     expanded_dir = os.path.expanduser(project_dir)
-    logger.info(f"Attempting to change to project directory: {expanded_dir}")
 
     # Check if directory exists
     if not os.path.exists(expanded_dir):
@@ -148,7 +147,7 @@ def change_to_project_dir(project_dir: Optional[str] = None) -> bool:
     # Try to change to the directory
     try:
         os.chdir(expanded_dir)
-        logger.info(f"Changed to project directory: {expanded_dir}")
+        logger.debug(f"Changed to project directory: {expanded_dir}")
 
         # Update environment variable in case it was expanded
         os.environ["PROJECT_ROOT"] = expanded_dir
@@ -177,7 +176,6 @@ def get_plugins_dir() -> str:
     vmp_root = get_vmpilot_root()
     plugins_dir = os.path.join(vmp_root, "src", "vmpilot", "plugins")
 
-    logger.info(f"Plugins directory: {plugins_dir}")
     return plugins_dir
 
 
@@ -189,7 +187,6 @@ def get_docs_dir() -> str:
         Path to documentation directory
     """
     docs_dir = os.path.join(get_vmpilot_root(), "docs", "source")
-    logger.info(f"Documentation directory: {docs_dir}")
     return docs_dir
 
 
@@ -200,10 +197,10 @@ try:
     plugins_dir = get_plugins_dir()
     docs_dir = get_docs_dir()
 
-    logger.info(f"Environment initialized:")
-    logger.info(f"  - VMPilot root: {vmpilot_root}")
-    logger.info(f"  - Project root: {project_root}")
-    logger.info(f"  - Plugins directory: {plugins_dir}")
-    logger.info(f"  - Documentation directory: {docs_dir}")
+    logger.debug(f"Environment initialized:")
+    logger.debug(f"  - VMPilot root: {vmpilot_root}")
+    logger.debug(f"  - Project root: {project_root}")
+    logger.debug(f"  - Plugins directory: {plugins_dir}")
+    logger.debug(f"  - Documentation directory: {docs_dir}")
 except Exception as e:
     logger.error(f"Error initializing environment: {str(e)}")

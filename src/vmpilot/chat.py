@@ -46,9 +46,6 @@ class Chat:
             extracted_dir = env.extract_project_dir(system_prompt_suffix)
             if extracted_dir:
                 self.project_dir = extracted_dir
-                logger.info(
-                    f"Using project directory from messages: {self.project_dir}"
-                )
 
         # Get or generate chat_id
         self.chat_id = self._determine_chat_id(self.messages, output_callback)

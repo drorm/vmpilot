@@ -23,7 +23,7 @@ def get_plugins_readme():
     plugins_readme_path = pathlib.Path(get_plugins_dir()) / "README.md"
     try:
         with open(plugins_readme_path, "r") as f:
-            logger.info(f"Loaded plugins README from {plugins_readme_path}")
+            logger.debug(f"Loaded plugins README from {plugins_readme_path}")
             return f.read()
     except FileNotFoundError:
         logger.warning(f"Plugins README not found at {plugins_readme_path}")
@@ -33,7 +33,6 @@ def get_plugins_readme():
 # Generate system prompt on demand, ensuring current project root is used
 def get_system_prompt():
     project_root = get_project_root()
-    logger.info(f"In prompt project root is {project_root}")
 
     # System prompt maintaining compatibility with original VMPilot
     return f"""<SYSTEM_CAPABILITY>
