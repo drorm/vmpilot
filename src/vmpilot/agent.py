@@ -8,6 +8,7 @@ from contextvars import ContextVar
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.runnables.config import RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
@@ -186,6 +187,7 @@ async def create_agent(
         llm = ChatAnthropic(
             model_name=model,
             temperature=temperature,
+            stop=None,
             max_tokens_to_sample=max_tokens,
             api_key=PydanticSecretStr(api_key),
             timeout=30,  # Add 30-second timeout
@@ -223,6 +225,7 @@ async def create_agent(
     tools = setup_tools(llm=llm)
 
     # Create React agent
+    # TODO: Re-evaluate how to apply state modification if needed, state_modifier removed due to API change
     agent = create_react_agent(
         llm, tools, state_modifier=_modify_state_messages, checkpointer=MemorySaver()
     )
@@ -463,11 +466,13 @@ async def process_messages(
         try:
             async for agent_response in agent.astream(
                 {"messages": formatted_messages},
-                config={
-                    "thread_id": chat.chat_id,  # Use the chat_id directly from the Chat object
-                    "run_name": f"vmpilot-run-{chat.chat_id}",
-                    "recursion_limit": recursion_limit,
-                },
+                config=RunnableConfig(
+                    configurable={
+                        "thread_id": chat.chat_id,  # Use the chat_id directly from the Chat object
+                        "run_name": f"vmpilot-run-{chat.chat_id}",
+                        "recursion_limit": recursion_limit,
+                    }
+                ),
                 stream_mode="values",
             ):
                 logger.debug(f"Got response: {response}")
@@ -498,12 +503,33 @@ async def process_messages(
                         if isinstance(message, ToolMessage):
                             logger.debug(f"isinstance message: {message}")
                             # Handle tool message responses
-                            tool_result = {"output": message.content, "error": None}
-                            tool_output_callback(tool_result, message.name)
+                            tool_result = {
+                                "output": (
+                                    message.content
+                                    if message.content is not None
+                                    else ""
+                                ),
+                                "error": None,
+                            }
+                            tool_output_callback(
+                                tool_result,
+                                (
+                                    message.name
+                                    if message.name is not None
+                                    else "unknown_tool"
+                                ),
+                            )
 
                             # Track tool call for Exchange
                             collected_tool_calls.append(
-                                {"name": message.name, "content": message.content}
+                                {
+                                    "name": message.name,
+                                    "content": (
+                                        message.content
+                                        if message.content is not None
+                                        else ""
+                                    ),
+                                }
                             )
 
                         elif isinstance(message, AIMessage):
@@ -516,12 +542,12 @@ async def process_messages(
                                 if (
                                     formatted_messages
                                     and isinstance(formatted_messages[-1], HumanMessage)
-                                    and hasattr(content, "strip")
+                                    and isinstance(content, str)
                                     and content.strip()
                                     == (
                                         formatted_messages[-1].content.strip()
-                                        if hasattr(
-                                            formatted_messages[-1].content, "strip"
+                                        if isinstance(
+                                            formatted_messages[-1].content, str
                                         )
                                         else str(formatted_messages[-1].content)
                                     )
