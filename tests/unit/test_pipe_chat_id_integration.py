@@ -6,6 +6,10 @@ import sys
 import threading
 import time
 import warnings
+
+# Suppress the specific ddtrace deprecation warning
+warnings.filterwarnings("ignore", message="module 'sre_constants' is deprecated")
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

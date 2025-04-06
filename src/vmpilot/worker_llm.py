@@ -43,7 +43,8 @@ def get_worker_llm(
         return ChatOpenAI(
             model=model,
             temperature=temperature,
-            max_tokens_limit=max_tokens,
+            # OpenAI uses model_kwargs to pass max_tokens
+            model_kwargs={"max_tokens": max_tokens},
             api_key=SecretStr(config.get_api_key(provider)),
         )
     elif provider == APIProvider.ANTHROPIC:
@@ -51,6 +52,8 @@ def get_worker_llm(
             model_name=model,
             temperature=temperature,
             max_tokens_to_sample=max_tokens,
+            timeout=None,  # Adding required timeout parameter
+            stop=None,  # Adding required stop parameter
             api_key=SecretStr(config.get_api_key(provider)),
         )
     else:
@@ -94,7 +97,7 @@ def run_worker(
     # Generate response
     response = llm.invoke(messages)
     # Handle potential different response types
-    if hasattr(response.content, "strip"):
+    if isinstance(response.content, str):
         result = response.content.strip()
     else:
         result = str(response.content)
@@ -140,7 +143,7 @@ async def run_worker_async(
     # Generate response asynchronously
     response = await llm.ainvoke(messages)
     # Handle potential different response types
-    if hasattr(response.content, "strip"):
+    if isinstance(response.content, str):
         result = response.content.strip()
     else:
         result = str(response.content)
