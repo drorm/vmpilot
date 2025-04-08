@@ -23,7 +23,7 @@ echo "Reports directory: $(pwd)/reports"
 # Step 3: Run linting checks, tests, type checking, and coverage
 echo "Running tests and quality checks..."
 cd tests
-python3 -m pytest unit
+python3 -m pytest -q unit
 ./e2e_tests.sh
 cd /home/dror/vmpilot/sh && ./lint.sh
 cd /home/dror/vmpilot
