@@ -610,6 +610,9 @@ async def process_messages(
                 message = f" I've done {recursion_limit} steps in a row. Type *continue* if you'd like me to keep going."
                 logger.info(message)
             # Handle specific tool_use/tool_result error
+            elif "Request timed out" in error_message:
+                logger.error(f"Request timed out: {e}")
+                message = f"Request timed out: {str(e)}"
             elif (
                 "Messages containing `tool_use` blocks must be followed by a user message with `tool_result` blocks"
                 in error_message
@@ -620,7 +623,7 @@ async def process_messages(
             else:
                 logger.error(f"Error in agent stream: {e}")
                 logger.error("".join(traceback.format_tb(e.__traceback__)))
-                logger.error(f"messages: {formatted_messages}")
+                logger.debug(f"messages: {formatted_messages}")
                 message = f"Error in agent stream: {str(e)}"
 
             # Complete the Exchange with error information
