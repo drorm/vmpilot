@@ -43,7 +43,7 @@ export VMPILOT_COVERAGE=1
 export COVERAGE_PROCESS_START=$PROJECT_ROOT/.coveragerc
 
 # Run e2e tests 
-"$PROJECT_ROOT/tests/e2e_tests.sh" || true
+"$PROJECT_ROOT/tests/e2e_tests.sh" --coverage || true
 
 # Step 4: Generate and display coverage report
 echo "Combining coverage data..."

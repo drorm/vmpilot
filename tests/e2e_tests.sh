@@ -1,28 +1,37 @@
 #!/bin/bash
 
+
+filtered_args=()
+VMPILOT_COVERAGE=0
+
 # Parse command line arguments
 # Check if --coverage flag is passed
-if [[ "$*" == *"--coverage"* ]]; then
-    echo "Running with coverage analysis enabled"
-    # Export environment variable for test scripts
-    export VMPILOT_COVERAGE="1"
-    # Remove --coverage from arguments to prevent passing it to test scripts
-    set -- "${@/--coverage/}"
-fi
+
+for arg in "$@"; do
+  if [[ "$arg" == "--coverage" ]]; then
+    export VMPILOT_COVERAGE=1
+  else
+    filtered_args+=("$arg")
+  fi
+done
+
+set -- "${filtered_args[@]}"
 
 # Setup
 TEST_DIR=$(mktemp -d)
 echo "Creating test environment in $TEST_DIR"
-cd "$(dirname "$0")"
 
-# Get the project root directory
+# Get the script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Change to the script directory
+cd "$SCRIPT_DIR"
 
 # Copy sample files to test directory
 echo "Current working directory: $(pwd)"
 
-cp -r "$PROJECT_ROOT/tests/sample_files/"* "$TEST_DIR/" 2>/dev/null || true
+cp -r "$SCRIPT_DIR/sample_files/"* "$TEST_DIR/" 2>/dev/null || true
 
 if [ $? -ne 0 ]; then echo "Error copying files to $TEST_DIR"; exit 1; fi
 ls -l $TEST_DIR
