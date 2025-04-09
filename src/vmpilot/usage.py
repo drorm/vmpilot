@@ -8,7 +8,7 @@ between the user and the AI assistant.
 import logging
 from typing import Any, Dict, Tuple
 
-from vmpilot.config import ModelPricing, Provider, PricingDisplay, config
+from vmpilot.config import ModelPricing, PricingDisplay, Provider, config
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ class Usage:
         pricing_display = config.get_pricing_display()
 
         # We only show pricing for Anthropic
-        if self.provider == Provider.ANTHROPIC:
+        if self.provider != Provider.ANTHROPIC:
             pricing_display = PricingDisplay.DISABLED
         # If pricing display is disabled, return empty string
         if pricing_display == PricingDisplay.DISABLED:
@@ -124,7 +124,7 @@ class Usage:
         _, cost = self.get_cost_summary()
 
         # Format based on the display setting
-        if self.pricing_display == PricingDisplay.TOTAL_ONLY:
+        if pricing_display == PricingDisplay.TOTAL_ONLY:
             cost_message = f"\n\n" f"**Cost Summary:** `${cost['total_cost']:.6f}`"
         else:  # Detailed display
             cost_message = (
