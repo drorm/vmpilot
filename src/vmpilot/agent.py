@@ -318,7 +318,7 @@ async def process_messages(
     )
 
     # Initialize usage tracking for this exchange with the current provider
-    usage = Usage(provider=config.default_provider)
+    usage = Usage(provider=provider)
 
     # Check Git repository status and handle dirty_repo_action
     if not exchange.check_git_status():
