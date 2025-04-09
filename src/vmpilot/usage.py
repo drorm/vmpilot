@@ -8,7 +8,7 @@ between the user and the AI assistant.
 import logging
 from typing import Any, Dict, Tuple
 
-from vmpilot.config import ModelPricing, Provider, config
+from vmpilot.config import ModelPricing, Provider, PricingDisplay, config
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +114,9 @@ class Usage:
 
         pricing_display = config.get_pricing_display()
 
+        # We only show pricing for Anthropic
+        if self.provider == Provider.ANTHROPIC:
+            pricing_display = PricingDisplay.DISABLED
         # If pricing display is disabled, return empty string
         if pricing_display == PricingDisplay.DISABLED:
             return ""
@@ -121,16 +124,14 @@ class Usage:
         _, cost = self.get_cost_summary()
 
         # Format based on the display setting
-        if pricing_display == PricingDisplay.TOTAL_ONLY:
+        if self.pricing_display == PricingDisplay.TOTAL_ONLY:
             cost_message = f"\n\n" f"**Cost Summary:** `${cost['total_cost']:.6f}`"
         else:  # Detailed display
             cost_message = (
                 f"\n\n"
-                f" Input: `${cost['input_cost']:.6f}` "
-                f" Output: `${cost['output_cost']:.6f}` "
-                f" Cache Creation: `${cost['cache_creation_cost']:.6f}` "
-                f" Cache Read: `${cost['cache_read_cost']:.6f}` "
-                f"\n**Total**: `${cost['total_cost']:.6f}`"
+                f"| **Total** | Cache Creation | Cache Read | Output |\n"
+                f"|--------|----------------|------------|----------|\n"
+                f"| ${cost['total_cost']:.6f} | ${cost['cache_creation_cost']:.6f} | ${cost['cache_read_cost']:.6f} | ${cost['output_cost']:.6f} |"
             )
 
         return cost_message
