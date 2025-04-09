@@ -1,6 +1,6 @@
 # Available plugins
 
-Alls plugins as well as the main README.md are located in $PROJECT_ROOT/src/vmpilot/plugins.
+Alls plugins as well as the main README.md are located in $VMPILOT_ROOT/src/vmpilot/plugins.
 
 # Github
 
@@ -19,3 +19,7 @@ directory: testing
 - Provides guidance for the VMPilot testing ecosystem as part of the CI/CD workflow
 - Testing is an integral part of development, not an optional activity
 - Includes unit tests, end-to-end tests, and coverage analysis requirements
+
+# Code Review
+directory: code_review
+- Provides guidelines for conducting code reviews within the project, to ensure code quality, consistency, and maintainability 
