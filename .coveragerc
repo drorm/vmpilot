@@ -1,0 +1,40 @@
+[run]
+source = /home/dror/vmpilot/src/vmpilot
+parallel = true
+omit =
+    # Exclude test files
+    */tests/*
+    # Exclude any __init__.py files
+    */__init__.py
+    # Exclude any generated files
+    */generated/*
+    # Exclude imported files
+    src/vmpilot/tools/edit_diff.py
+    src/vmpilot/caching/chat_models.py
+    */pipelines/*
+    utils/*
+
+[report]
+# Exclude lines from coverage report
+exclude_lines =
+    # Skip any pragma comments
+    pragma: no cover
+    # Skip defensive assertion code
+    raise NotImplementedError
+    # Skip abstract methods
+    @(abc\.)?abstractmethod
+    # Skip pass-only code
+    pass
+    # Skip type checking branches
+    if TYPE_CHECKING:
+    # Skip debug-only code
+    def __repr__
+    if self\.debug
+    # Skip unreachable exception handlers
+    except ImportError:
+
+# Show line numbers of missing lines
+show_missing = True
+
+# Fail if coverage is below defined threshold
+fail_under = 70

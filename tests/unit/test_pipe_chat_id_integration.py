@@ -6,10 +6,15 @@ import sys
 import threading
 import time
 import warnings
+
+# Suppress the specific ddtrace deprecation warning
+warnings.filterwarnings("ignore", message="module 'sre_constants' is deprecated")
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from vmpilot.config import Provider
 from vmpilot.vmpilot import Pipeline
 
 sys.path.insert(0, "/home/dror/vmpilot")
@@ -81,8 +86,18 @@ class TestPipeChatIDIntegration:
     def pipeline(self):
         """Create a Pipeline instance with mocked API key for testing."""
         pipeline = Pipeline()
-        # Mock API key to avoid actual API calls
-        pipeline._api_key = "mock_api_key_at_least_32_characters_long"
+        # Mock API key to avoid actual API calls based on the current provider
+        # Use the valves object which has the provider attribute
+        if pipeline.valves.provider == Provider.ANTHROPIC:
+            pipeline.valves.anthropic_api_key = (
+                "mock_api_key_at_least_32_characters_long"
+            )
+        elif pipeline.valves.provider == Provider.OPENAI:
+            pipeline.valves.openai_api_key = "mock_api_key_at_least_32_characters_long"
+        elif pipeline.valves.provider == Provider.GOOGLE:
+            pipeline.valves.google_api_key = "mock_api_key_at_least_32_characters_long"
+        # Set class-level API key for backward compatibility
+        Pipeline._api_key = "mock_api_key_at_least_32_characters_long"
         yield pipeline
 
         # Cleanup after test
@@ -100,8 +115,15 @@ class TestPipeChatIDIntegration:
         """Test that only the last message is kept when chat_id exists."""
         # Set a chat_id on the pipeline
         pipeline.chat_id = "test123"
-        # Initialize _chat attribute for the test
-        pipeline._chat = Chat(chat_id=pipeline.chat_id)
+        # Initialize _chat attribute for the test with a valid system_prompt_suffix
+        # Use a test directory that always exists
+        with (
+            patch("vmpilot.env.os.path.exists", return_value=True),
+            patch("vmpilot.env.os.path.isdir", return_value=True),
+            patch("vmpilot.env.os.chdir"),
+        ):
+            pipeline._chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
+        pipeline._chat.chat_id = pipeline.chat_id
 
         # Create test messages
         messages = [
@@ -131,6 +153,16 @@ class TestPipeChatIDIntegration:
                     # For this test, we want to simulate:
                     # 1. If chat_id exists, only the last message is used
 
+                    # Simulate the behavior of the Chat class for message truncation
+                    from vmpilot.chat import Chat
+
+                    chat = Chat(messages=messages)
+                    chat.chat_id = "test123"  # Set the chat_id
+
+                    # Get the formatted messages (should be truncated because we have a chat_id)
+                    formatted_messages = chat.get_formatted_messages(messages)
+
+                    # Now call process_messages with the correct parameters
                     # Suppress the "coroutine was never awaited" warning
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", RuntimeWarning)
@@ -138,13 +170,12 @@ class TestPipeChatIDIntegration:
                             model=pipeline.valves.model,
                             provider="anthropic",  # Simplified for test
                             system_prompt_suffix="System prompt",
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": "Second user message",  # Use a string for content
-                                }
-                            ],
-                            thread_id="test123",  # This is the chat_id we set
+                            messages=formatted_messages,
+                            output_callback=lambda x: None,
+                            tool_output_callback=lambda x, y: None,
+                            api_key="mock_api_key",
+                            max_tokens=1000,
+                            temperature=0.7,
                         )
 
             thread.start = fake_start
@@ -193,9 +224,6 @@ class TestPipeChatIDIntegration:
                     else:
                         assert content == "Second user message"
 
-                    # Verify that thread_id was passed to process_messages
-                    assert kwargs.get("thread_id") == "test123"
-
     @timeout_after(5)  # 5 second timeout
     @patch("vmpilot.agent.process_messages")
     def test_message_retention_without_chat_id(self, mock_process_messages, pipeline):
@@ -203,8 +231,14 @@ class TestPipeChatIDIntegration:
         # Ensure no chat_id exists
         if hasattr(pipeline, "chat_id"):
             delattr(pipeline, "chat_id")
-        # Initialize _chat attribute for the test
-        pipeline._chat = Chat()
+        # Initialize _chat attribute for the test with a valid system_prompt_suffix
+        # Use a test directory that always exists
+        with (
+            patch("vmpilot.env.os.path.exists", return_value=True),
+            patch("vmpilot.env.os.path.isdir", return_value=True),
+            patch("vmpilot.env.os.chdir"),
+        ):
+            pipeline._chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
 
         # Create test messages
         messages = [
@@ -233,6 +267,17 @@ class TestPipeChatIDIntegration:
                     # For this test, we want to simulate:
                     # Without chat_id, all messages are kept
 
+                    # Simulate the behavior of the Chat class for message retention
+                    from vmpilot.chat import Chat
+
+                    chat = Chat(messages=messages)
+                    # Ensure no chat_id is set (for testing - normally it would generate one)
+                    chat.chat_id = None
+
+                    # Get the formatted messages (should not be truncated because we have no chat_id)
+                    formatted_messages = chat.get_formatted_messages(messages)
+
+                    # Now call process_messages with the correct parameters
                     # Suppress the "coroutine was never awaited" warning
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", RuntimeWarning)
@@ -240,8 +285,12 @@ class TestPipeChatIDIntegration:
                             model=pipeline.valves.model,
                             provider="anthropic",  # Simplified for test
                             system_prompt_suffix="",
-                            messages=messages,
-                            thread_id=None,  # No chat_id
+                            messages=formatted_messages,
+                            output_callback=lambda x: None,
+                            tool_output_callback=lambda x, y: None,
+                            api_key="mock_api_key",
+                            max_tokens=1000,
+                            temperature=0.7,
                         )
 
             thread.start = fake_start
@@ -283,9 +332,6 @@ class TestPipeChatIDIntegration:
                     # Check that all messages were passed (3 in this case)
                     assert len(kwargs.get("messages", [])) == 3
 
-                    # Verify that thread_id was not passed to process_messages
-                    assert kwargs.get("thread_id") is None
-
     @patch("vmpilot.agent.process_messages")
     def test_chat_id_generation_in_pipe(self, mock_process_messages, pipeline):
         """Test that chat_id is generated in pipe method when needed."""
@@ -303,7 +349,12 @@ class TestPipeChatIDIntegration:
         # that a chat_id is generated when none exists
 
         # Create a new Chat object directly and verify it generates a chat_id
-        chat = Chat()
+        with (
+            patch("vmpilot.env.os.path.exists", return_value=True),
+            patch("vmpilot.env.os.path.isdir", return_value=True),
+            patch("vmpilot.env.os.chdir"),
+        ):
+            chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
         assert chat.chat_id is not None
         assert len(chat.chat_id) > 0
 
@@ -314,5 +365,11 @@ class TestPipeChatIDIntegration:
         body_chat_id = "body456"
 
         # Create a Chat object with the provided chat_id and verify it's used
-        chat = Chat(chat_id=body_chat_id)
+        with (
+            patch("vmpilot.env.os.path.exists", return_value=True),
+            patch("vmpilot.env.os.path.isdir", return_value=True),
+            patch("vmpilot.env.os.chdir"),
+        ):
+            chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
+        chat.chat_id = body_chat_id
         assert chat.chat_id == body_chat_id

@@ -12,7 +12,7 @@ Terminology:
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -29,8 +29,8 @@ class Exchange:
     def __init__(
         self,
         chat_id: str,
-        user_message: Union[Dict, HumanMessage],
-        output_callback=None,
+        user_message: Union[Dict[str, Any], HumanMessage],
+        output_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
     ):
         """Initialize a new exchange.
 
@@ -48,10 +48,10 @@ class Exchange:
         else:
             self.user_message = user_message
 
-        self.assistant_message = None
-        self.tool_calls = []
+        self.assistant_message: AIMessage | None = None
+        self.tool_calls: list[dict[str, Any]] = []
         self.started_at = datetime.now()
-        self.completed_at = None
+        self.completed_at: datetime | None = None
 
         # Use provided git_enabled or fall back to config
         self.git_enabled = config.git_config.enabled
@@ -110,8 +110,8 @@ class Exchange:
 
     def complete(
         self,
-        assistant_message: Union[Dict, AIMessage],
-        tool_calls: Optional[List] = None,
+        assistant_message: Union[Dict[str, Any], AIMessage],
+        tool_calls: Optional[List[Dict[str, Any]]] = None,
     ) -> "Exchange":
         """Complete the exchange with assistant response and handle Git commit.
 
@@ -173,7 +173,7 @@ class Exchange:
         save_conversation_state(self.chat_id, self.to_messages(), {})
         logger.debug(f"Saved conversation state for chat_id: {self.chat_id}")
 
-    def to_messages(self) -> List:
+    def to_messages(self) -> List[Union[HumanMessage, AIMessage]]:
         """Convert exchange to message format for conversation state.
 
         Returns:
@@ -184,11 +184,11 @@ class Exchange:
             messages.append(self.assistant_message)
         return messages
 
-    def get_duration(self) -> float:
+    def get_duration(self) -> float | None:
         """Get the duration of this exchange in seconds.
 
         Returns:
-            Duration in seconds, or None if exchange is not completed
+            float | None: Duration in seconds, or None if exchange is not completed
         """
         if not self.completed_at:
             return None

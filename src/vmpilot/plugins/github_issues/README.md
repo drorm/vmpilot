@@ -112,11 +112,34 @@ cd $PROJECT_ROOT && gh issue create --title "Add logging feature" --label "enhan
 
 **IMPORTANT**: All GitHub commands must be executed from the project root directory ($PROJECT_ROOT)
 
-- Create issue: `cd $PROJECT_ROOT && gh issue create`
-- List issues: `cd $PROJECT_ROOT && gh issue list`
-- View issue: `cd $PROJECT_ROOT && gh issue view --comments <number>`
-- Close issue: `cd $PROJECT_ROOT && gh issue close <number>`
-- Reopen issue: `cd $PROJECT_ROOT && gh issue reopen <number>`
+Use the provided wrapper script for all GitHub issue operations:
+
+```bash
+$PROJECT_ROOT/src/vmpilot/plugins/github_issues/gh_issue.sh [command] [options]
+```
+
+Available commands:
+- `view <number>` - View an issue (handles no-comments case)
+- `view-json <number>` - View issue in JSON format
+- `list` - List all open issues
+- `create [options]` - Create a new issue
+- `close <number>` - Close an issue
+- `reopen <number>` - Reopen a closed issue
+- `help` - Show help information
+
+Examples:
+```bash
+# View issue #10
+./gh_issue.sh view 10
+
+# List all open issues
+./gh_issue.sh list
+
+# Create a new issue
+./gh_issue.sh create --title "New Feature" --label "enhancement"
+```
+
+These scripts solve the problem where `gh issue view --comments <number>` returns a blank output when an issue has no comments.
 
 ## Available Templates
 

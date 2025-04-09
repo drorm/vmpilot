@@ -26,7 +26,9 @@ cp sample_files/test2.py "$TEST_DIR/"
 echo "Running content check test..."
 
 # Run the CLI command with temperature 0 for consistency
-output=$(../bin/cli.sh -p "$PROVIDER" -t 0 "What does the Python file $TEST_DIR/test2.py do? Be concise.")
+# Use the run_cli.sh wrapper script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+output=$("$SCRIPT_DI"$SCRIPT_DIR/run_cli.sh"" -p "$PROVIDER" -t 0 "What does the Python file $TEST_DIR/test2.py do? Be concise.")
 
 # Expected output - we'll use grep to look for key terms that should be present
 if echo "$output" | grep -q "sample" && echo "$output" | grep -q "function" && echo "$output" | grep -q "print"; then

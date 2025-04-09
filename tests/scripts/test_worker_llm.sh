@@ -1,4 +1,6 @@
 #!/bin/bash
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Test the worker_llm module functionality
 # This test verifies that both synchronous and asynchronous worker LLM functions

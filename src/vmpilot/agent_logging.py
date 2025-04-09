@@ -18,17 +18,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def _serialize_message(message: Union[Dict, list, Any]) -> str:
+def _serialize_message(message: Union[Dict[Any, Any], list[Any], Any]) -> str:
     """Serialize message to JSON string, converting non-serializable objects to strings."""
     if not isinstance(message, (dict, list)):
         return str(message)
 
-    def serialize_value(v):
+    def serialize_value(v: Any) -> Any:
         try:
             json.dumps(v)
             return v
         except (TypeError, ValueError):
             return str(v)
+
+    # Prepare serializable message based on type
+    serializable_message: Union[Dict[Any, Any], list[Any]]
 
     if isinstance(message, dict):
         serializable_message = {k: serialize_value(v) for k, v in message.items()}
@@ -125,7 +128,7 @@ def log_message_received(message: Any, level: str = "debug") -> None:
     )
 
 
-def log_conversation_messages(messages: list, level: str = "info") -> None:
+def log_conversation_messages(messages: list[Any], level: str = "info") -> None:
     """
     Log the full conversation history in a structured, readable format.
 

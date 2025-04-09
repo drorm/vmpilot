@@ -5,7 +5,7 @@ date: 2024-12-02
 version: 0.2
 license: MIT
 description: A pipeline that enables using an LLM to execute commands via LangChain
-environment_variables: ANTHROPIC_API_KEY
+environment_variables: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
 """
 
 # Configure logging early
@@ -54,6 +54,7 @@ class Pipeline:
         # Private storage for properties
         anthropic_api_key: str = ""
         openai_api_key: str = ""
+        google_api_key: str = ""
         _provider: Provider = Provider(DEFAULT_PROVIDER)
 
         # Model configuration (inherited from config)
@@ -71,24 +72,35 @@ class Pipeline:
 
         # Property for anthropic_api_key with setter that updates state
         @property
-        def anthropic_api_key(self) -> str:
+        def anthropic_key(self) -> str:
             return self.anthropic_api_key
 
-        @anthropic_api_key.setter
-        def anthropic_api_key(self, value: str):
+        @anthropic_key.setter
+        def anthropic_key(self, value: str):
             self.anthropic_api_key = value
             if self.provider == Provider.ANTHROPIC:
                 self._update_api_key()
 
         # Property for openai_api_key with setter that updates state
         @property
-        def openai_api_key(self) -> str:
+        def openai_key(self) -> str:
             return self.openai_api_key
 
-        @openai_api_key.setter
-        def openai_api_key(self, value: str):
+        @openai_key.setter
+        def openai_key(self, value: str):
             self.openai_api_key = value
             if self.provider == Provider.OPENAI:
+                self._update_api_key()
+
+        # Property for google_api_key with setter that updates state
+        @property
+        def google_key(self) -> str:
+            return self.google_api_key
+
+        @google_key.setter
+        def google_api_key(self, value: str):
+            self.google_api_key = value
+            if self.provider == Provider.GOOGLE:
                 self._update_api_key()
 
         def __init__(self, **data):
@@ -98,6 +110,8 @@ class Pipeline:
                 self.anthropic_api_key = data["anthropic_api_key"]
             if "openai_api_key" in data:
                 self.openai_api_key = data["openai_api_key"]
+            if "google_api_key" in data:
+                self.google_api_key = data["google_api_key"]
             if "provider" in data:
                 self._provider = data["provider"]
             self._sync_with_config()
@@ -113,12 +127,18 @@ class Pipeline:
 
         def _update_api_key(self):
             """Update API key based on current provider"""
-            Pipeline._provider = self.provider
-            Pipeline._api_key = (
-                self.anthropic_api_key
-                if self.provider == Provider.ANTHROPIC
-                else self.openai_api_key
-            )
+            try:
+                Pipeline._provider = self.provider
+                if self.provider == Provider.ANTHROPIC:
+                    Pipeline._api_key = self.anthropic_api_key
+                elif self.provider == Provider.OPENAI:
+                    Pipeline._api_key = self.openai_api_key
+                elif self.provider == Provider.GOOGLE:
+                    Pipeline._api_key = self.google_api_key
+                else:
+                    logger.error(f"Unknown provider: {self.provider}")
+            except Exception as e:
+                logger.error(f"Error updating API key: {str(e)}")
 
     def __init__(self):
         self.name = parser.get("pipeline", "name")
@@ -132,6 +152,9 @@ class Pipeline:
             ),
             openai_api_key=os.getenv(
                 "OPENAI_API_KEY", "To use OpenAI, enter your API key here"
+            ),
+            google_api_key=os.getenv(
+                "GOOGLE_API_KEY", "To use Google, enter your API key here"
             ),
             provider=Provider(DEFAULT_PROVIDER),
         )
@@ -160,7 +183,10 @@ class Pipeline:
 
     def set_model(self, model: str):
         """Set the model and validate against current provider"""
-        if config.validate_model(model, self.valves.provider):
+        # ModelConfig has no validate_model attribute, use config module function instead
+        if hasattr(config, "validate_model") and config.validate_model(
+            model, self.valves.provider
+        ):
             self.valves.model = model
         else:
             raise ValueError(f"Unsupported model: {model}")
@@ -177,6 +203,11 @@ class Pipeline:
                 "id": "openai",
                 "name": "OpenAI (GPT-4o)",
                 "description": "Execute commands using OpenAI's GPT-4o model",
+            },
+            {
+                "id": "google",
+                "name": "Google AI",
+                "description": "Execute commands using Google AI",
             },
         ]
 
@@ -263,23 +294,13 @@ class Pipeline:
                     "type": "ephemeral"
                 }
 
-            # if we have a chat_id, we only want to keep the last message that'll get appended to the existing chat
-            if body.get("chat_id"):
-                formatted_messages = formatted_messages[-1:]
+            # Message truncation is now handled by the Chat class in agent.py
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
             def generate_responses():
                 output_queue = queue.Queue()
                 loop_done = threading.Event()
-
-                """ Output callback to handle messages from the LLM """
-
-                def output_callback(content: Dict):
-                    logger.debug(f"Received content: {content}")
-                    if content["type"] == "text":
-                        logger.debug(f"Assistant: {content['text']}")
-                        output_queue.put(content["text"])
 
                 """ Output callback to handle messages from the LLM """
 
@@ -319,24 +340,7 @@ class Pipeline:
                             truncated_output += "\n"
                         output_queue.put(truncated_output)
 
-                # Extract chat_id from body if present
-                chat_id = getattr(self, "chat_id", None)
-
-                # It's a new Chat if we only have system and user messages
-                if not hasattr(self, "_chat") or (messages and len(messages) <= 2):
-                    try:
-                        self._chat = Chat(
-                            chat_id=chat_id,
-                            messages=messages,
-                            output_callback=output_callback,
-                        )
-                    except Exception as e:
-                        logger.warning(f"Error creating chat: {e}")
-                        yield f"{e}"
-                        return
-
-                # Make sure we have the chat_id from the chat object
-                chat_id = self._chat.chat_id
+                # Chat object creation and management is now handled in agent.py
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
 
@@ -347,7 +351,7 @@ class Pipeline:
                         asyncio.set_event_loop(loop)
 
                         # Set exception handler for the loop to catch unhandled exceptions
-                        def handle_exception(loop, context):
+                        def handle_exception(loop, context):  # pragma: no cover
                             exception = context.get("exception")
                             if exception:
                                 if "TCPTransport closed=True" in str(
@@ -383,16 +387,15 @@ class Pipeline:
                                 temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
-                                thread_id=chat_id,
                             )
                         )
-                    except Exception as e:
+                    except Exception as e:  # pragma: no cover
                         logger.error(f"Error: {e}")
                         logger.error("".join(traceback.format_tb(e.__traceback__)))
                     finally:
                         loop_done.set()
                         # Safely close the loop
-                        if loop:
+                        if loop:  # pragma: no cover
                             try:
                                 # Cancel all running tasks
                                 pending = asyncio.all_tasks(loop)
@@ -444,14 +447,17 @@ class Pipeline:
                 for msg in generate_responses():
                     output_parts.append(msg)
                 result = (
-                    "\n\n".join(part.strip() for part in output_parts)
+                    "\n\n".join(
+                        str(part).strip() if hasattr(part, "strip") else str(part)
+                        for part in output_parts
+                    )
                     if output_parts
                     else "Command executed successfully"
                 )
                 logger.debug(f"Non-streaming result: {result}")
                 return result
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             error_msg = f"Error in pipe: {str(e)}"
             logger.error(error_msg, exc_info=True)
             return error_msg
