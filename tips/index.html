@@ -530,29 +530,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../examples/unit_testing_example.md" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Unit Testing
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -635,7 +612,7 @@
   
   
   <span class="md-ellipsis">
-    GitHub Plugin
+    GitHub Issues
     
   </span>
   
@@ -1061,6 +1038,51 @@
    Plugins like GitHub Issues will automatically operate in the correct repository context based on the current project directory.</p>
 </li>
 </ol>
+<h2 id="multi-branch-workspace-support">Multi-Branch Workspace Support</h2>
+<p>VMPilot allows you to work on multiple branches or features simultaneously through workspace management:</p>
+<h3 id="setting-up-multiple-workspaces-for-parallel-development">Setting Up Multiple Workspaces for Parallel Development</h3>
+<ol>
+<li>
+<p><strong>Create separate workspaces for different branches</strong>:
+   <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
+<span class="normal"><a href="#__codelineno-0-2">2</a></span>
+<span class="normal"><a href="#__codelineno-0-3">3</a></span>
+<span class="normal"><a href="#__codelineno-0-4">4</a></span>
+<span class="normal"><a href="#__codelineno-0-5">5</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>Workspace 1: claude-proj1
+<a id="__codelineno-0-2" name="__codelineno-0-2"></a>$PROJECT_ROOT=~/proj1
+<a id="__codelineno-0-3" name="__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4"></a>Workspace 2: claude-proj2
+<a id="__codelineno-0-5" name="__codelineno-0-5"></a>$PROJECT_ROOT=~/proj2
+</code></pre></div></td></tr></table></div></p>
+</li>
+<li>
+<p><strong>Switch between workspaces</strong> using the OpenWebUI workspace dropdown to instantly change context.</p>
+</li>
+<li>
+<p><strong>Work on different branches simultaneously</strong>:</p>
+</li>
+<li>Each workspace maintains its own repository context</li>
+<li>You can have the same project in different directories to work on different branches</li>
+<li>Perfect isolation between features/branches</li>
+</ol>
+<h3 id="example-workflow">Example Workflow</h3>
+<ol>
+<li>Create two workspaces in OpenWebUI:</li>
+<li><code>feature-a</code> with <code>$PROJECT_ROOT=~/project-feature-a</code></li>
+<li>
+<p><code>feature-b</code> with <code>$PROJECT_ROOT=~/project-feature-b</code></p>
+</li>
+<li>
+<p>Clone your repository to both directories and check out different branches in each.</p>
+</li>
+<li>
+<p>Work in the <code>feature-a</code> workspace on one feature branch, then switch to the <code>feature-b</code> workspace to work on another feature branch.</p>
+</li>
+<li>
+<p>Use standard Git operations to keep branches in sync with the remote repository.</p>
+</li>
+</ol>
+<p>This approach provides clean separation between feature work while maintaining context awareness through OpenWebUI's workspace feature and standard Git practices.</p>
 <h1 id="using-openwebui">Using OpenWebUI</h1>
 <h2 id="use-workspaces">Use Workspaces</h2>
 <p>Workspaces are powerful organizational tools that allow you to group related pipelines and prompts. Here are some example workspace categories:</p>

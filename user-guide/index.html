@@ -629,29 +629,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../examples/unit_testing_example.md" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Unit Testing
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -734,7 +711,7 @@
   
   
   <span class="md-ellipsis">
-    GitHub Plugin
+    GitHub Issues
     
   </span>
   
@@ -1125,6 +1102,25 @@ VMPilot operates with the user permissions. The LLM can execute any command avai
 </code></pre></div></td></tr></table></div></p>
 </li>
 </ol>
+<h2 id="multi-branch-and-multi-project-development">Multi-Branch and Multi-Project Development</h2>
+<p>VMPilot supports working on multiple branches, projects, or features simultaneously through workspace management:</p>
+<ol>
+<li>Create separate workspaces for different branches/features/projects</li>
+<li>Configure each workspace with its own project directory</li>
+<li>Switch between workspaces to seamlessly work on different branches</li>
+</ol>
+<p>For example:
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span>
+<span class="normal"><a href="#__codelineno-2-2">2</a></span>
+<span class="normal"><a href="#__codelineno-2-3">3</a></span>
+<span class="normal"><a href="#__codelineno-2-4">4</a></span>
+<span class="normal"><a href="#__codelineno-2-5">5</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1"></a>Workspace 1: feature-a
+<a id="__codelineno-2-2" name="__codelineno-2-2"></a>$PROJECT_ROOT=~/project-feature-a
+<a id="__codelineno-2-3" name="__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4"></a>Workspace 2: feature-b
+<a id="__codelineno-2-5" name="__codelineno-2-5"></a>$PROJECT_ROOT=~/project-feature-b
+</code></pre></div></td></tr></table></div></p>
+<p>This provides complete isolation between different features while maintaining full context awareness. For detailed instructions, see the <a href="../tips/#multi-branch-workspace-support">Multi-Branch Workspace Support</a> section in the Tips guide.</p>
 <h1 id="additional-features">Additional Features</h1>
 <h2 id="plugins">Plugins</h2>
 <p>VMPilot supports various plugins to extend its functionality. See the <a href="../plugins/overview/">Plugins</a> documentation for details about available plugins and how to use them.</p>
