@@ -10,6 +10,7 @@ set -e  # Exit on error
 
 # Get the project root directory
 PROJECT_ROOT=$(cd "$(dirname "$0")/.." && pwd)
+REPORTS_DIR="$PROJECT_ROOT/reports"
 cd "$PROJECT_ROOT"
 
 echo "Starting code coverage analysis for VMPilot..."
@@ -39,18 +40,17 @@ mv .coverage .coverage.unit
 echo "Running end-to-end tests with coverage..."
 # Export environment variable for test scripts to detect coverage mode
 export VMPILOT_COVERAGE=1
+export COVERAGE_PROCESS_START=$PROJECT_ROOT/.coveragerc
 
-# Get a list of available test scripts
-TEST_SCRIPTS=$(find "$PROJECT_ROOT/tests/scripts" -name "*.sh" -not -name "run_cli.sh" -not -name "update_cli_calls.sh" | sort)
-
-# Run e2e tests with all available test scripts
-"$PROJECT_ROOT/tests/e2e_tests.sh" $TEST_SCRIPTS || true
+# Run e2e tests 
+"$PROJECT_ROOT/tests/e2e_tests.sh" --coverage || true
 
 # Step 4: Generate and display coverage report
 echo "Combining coverage data..."
-python -m coverage combine
+python -m coverage combine .coverage.*
 
 echo "Generating coverage report..."
-python -m coverage report --fail-under=$FAIL_UNDER || true
+python -m coverage report --fail-under=$FAIL_UNDER > $REPORTS_DIR/coverage.txt || true
 
-echo "Coverage analysis complete!"
+echo "Coverage reports saved to $REPORTS_DIR"
+echo "To combine with pipeline coverage, run bin/combine_coverage.sh after running pipeline tests"

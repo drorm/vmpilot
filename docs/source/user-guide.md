@@ -90,6 +90,25 @@ There are two ways to specify which project directory VMPilot should use:
    $PROJECT_ROOT=/path/to/your/project
    ```
 
+## Multi-Branch and Multi-Project Development
+
+VMPilot supports working on multiple branches, projects, or features simultaneously through workspace management:
+
+1. Create separate workspaces for different branches/features/projects
+2. Configure each workspace with its own project directory
+3. Switch between workspaces to seamlessly work on different branches
+
+For example:
+```
+Workspace 1: feature-a
+$PROJECT_ROOT=~/project-feature-a
+
+Workspace 2: feature-b
+$PROJECT_ROOT=~/project-feature-b
+```
+
+This provides complete isolation between different features while maintaining full context awareness. For detailed instructions, see the [Multi-Branch Workspace Support](tips.md#multi-branch-workspace-support) section in the Tips guide.
+
 # Additional Features
 
 ## Plugins

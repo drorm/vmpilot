@@ -6,6 +6,7 @@ Usage: ./cli.py "your command here"
        ./cli.py --coverage "your command here" (run with code coverage)
 """
 
+# Standard library imports
 import argparse
 import asyncio
 import logging
@@ -13,9 +14,9 @@ import os
 import sys
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-# Import coverage (conditionally used with --coverage flag)
+# Third-party imports (conditionally loaded)
 try:
     import coverage
 
@@ -32,21 +33,30 @@ logging.getLogger("vmpilot").setLevel(getattr(logging, log_level))
 for logger_name in ["vmpilot.exchange", "vmpilot.agent", "vmpilot.agent_logging"]:
     logging.getLogger(logger_name).setLevel(logging.WARNING)
 
-# Add parent directory to Python path when running as script
-if __name__ == "__main__":
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-try:
-    from vmpilot.chat import Chat
-    from vmpilot.vmpilot import Pipeline
-except ImportError:
-    # Fallback to relative imports if the module is part of a package
-    from .chat import Chat
-    from .vmpilot import Pipeline
+# Add parent directory to Python path when running as script
+def setup_path() -> None:
+    """
+    Add parent directory to Python path for script execution.
+
+    This allows the script to be run directly from the command line
+    without requiring the package to be installed, by adding the parent
+    directory to the Python module search path.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
-    """Create a mock body for pipeline calls"""
+    """
+    Create a mock request body for pipeline calls.
+
+    Args:
+        temperature: The temperature setting for the LLM (controls randomness)
+        debug: Whether to enable debug mode
+
+    Returns:
+        A dictionary containing the configuration for the pipeline request
+    """
     from vmpilot.config import MAX_TOKENS, TOOL_OUTPUT_LINES, config
 
     return {
@@ -59,7 +69,15 @@ def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
 
 
 def create_mock_messages(command: str) -> List[Dict]:
-    """Create initial message history with user command"""
+    """
+    Create initial message history with the user command.
+
+    Args:
+        command: The command string provided by the user
+
+    Returns:
+        A list of message dictionaries formatted for LangChain compatibility
+    """
     # Format messages for LangChain compatibility
     return [
         {
@@ -74,31 +92,28 @@ def create_mock_messages(command: str) -> List[Dict]:
     ]
 
 
-async def main(
+async def process_command(
     command: str,
     temperature: float,
     provider: str,
     debug: bool,
-    chat_id: Optional[str] = None,
-):
+) -> None:
     """Main CLI execution flow"""
+    try:
+        from vmpilot.chat import Chat
+        from vmpilot.vmpilot import Pipeline
+    except ImportError:
+        # Fallback to relative imports if the module is part of a package
+        from .chat import Chat
+        from .vmpilot import Pipeline
     # Create pipeline with configuration
     pipeline = Pipeline()
 
-    # Create a Chat object for this session
-    chat = Chat(chat_id=chat_id)
+    # Create a Chat object for this session - chat_id is determined internally
+    chat = Chat()
 
-    # Change to the project directory when starting a new chat
-    if not chat_id:
-        chat.change_to_project_dir()
-        if debug:
-            logging.debug(f"Changed to project directory: {chat.project_dir}")
-
-    # Set chat ID for conversation persistence if provided
-    if chat_id:
-        pipeline.chat_id = chat_id
-        if debug:
-            logging.debug(f"Using chat context with ID: {chat_id}")
+    # Change to the project directory
+    chat.change_to_project_dir()
 
     # Create pipeline call parameters
     body = create_mock_body(temperature=temperature, debug=debug)
@@ -137,16 +152,22 @@ async def main(
                 elif msg.get("type") == "tool_output":
                     output = msg.get("output", "").strip()
                     error = msg.get("error")
+
+                    # Print output if present
                     if output:
                         print(output, end="\n", flush=True)
+
+                    # Print error if present
                     if error:
                         print(f"Error: {error}", end="\n", flush=True)
             else:
                 # Handle error messages and other string outputs
                 msg_str = str(msg).strip()
-                if msg_str and not any(
-                    x in msg_str for x in [command, "Executing command", "['ls"]
-                ):
+                # Skip empty messages, command echoes, and certain system messages
+                skip_patterns = [command, "Executing command", "['ls"]
+
+                if msg_str and not any(pattern in msg_str for pattern in skip_patterns):
+                    # Handle error messages differently (no newline at end)
                     if msg_str.startswith("Error:"):
                         print(msg_str, flush=True)
                     else:
@@ -156,8 +177,9 @@ async def main(
         sys.exit(1)
 
 
-if __name__ == "__main__":
-    from vmpilot.config import CommitMessageStyle, Provider, config
+def main() -> None:
+    """Main entry point for the CLI application."""
+    from vmpilot.config import TEMPERATURE, CommitMessageStyle, Provider, config
 
     parser = argparse.ArgumentParser(
         description="VMPilot CLI",
@@ -165,10 +187,13 @@ if __name__ == "__main__":
         "  cli.sh 'list all python files'              # Execute a single command\n"
         "  cli.sh -c 'list python files'               # Start a chat session\n"
         "  cli.sh -c 'tell me about those files'       # Continue the chat session\n"
-        "  cli.sh -f commands.txt                      # Execute commands from a file one line at the time\n"
-        "  cli.sh -f commands.txt -c                   # Execute commands from a file one line at the time with chat context\n"
+        "  cli.sh -f commands.txt                      # Execute commands from a file one line at a time\n"
+        "  cli.sh -p openai 'list all python files'    # Use a specific provider (openai, anthropic, etc.)\n"
+        "  cli.sh -t 0.5 'list all python files'       # Set a specific temperature value (0.0-1.0)\n"
         "  cli.sh -v 'list all python files'           # Execute with verbose logging\n"
         "  cli.sh -d 'list all python files'           # Execute with debug logging\n"
+        "  cli.sh --git 'update this file'             # Enable Git tracking for this command\n"
+        "  cli.sh --no-git 'update this file'          # Disable Git tracking for this command\n"
         "  cli.sh --coverage 'list all python files'   # Execute with code coverage analysis",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -177,8 +202,6 @@ if __name__ == "__main__":
         nargs="?",
         help="Command to execute (not required if using -f/--file)",
     )
-    from vmpilot.config import TEMPERATURE
-
     parser.add_argument(
         "-t",
         "--temperature",
@@ -220,9 +243,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "-c",
         "--chat",
-        nargs="?",
-        const=str(uuid.uuid4()),  # Generate a random ID if flag is used without value
-        help="Enable chat mode to maintain conversation context. Optional: provide a specific chat ID.",
+        action="store_true",
+        help="Enable chat mode to maintain conversation context between commands.",
     )
 
     # Git tracking options (use defaults from config)
@@ -274,41 +296,52 @@ if __name__ == "__main__":
 
     # Check if file input is provided
     if args.file:
-        # Generate a random chat ID if chat mode is enabled without a specific ID
-        chat_id = (
-            args.chat
-            if args.chat
-            else str(uuid.uuid4()) if args.chat is not None else None
-        )
-
-        # Convert to absolute path if it's a relative path
-        file_path = os.path.abspath(args.file)
-
         try:
             print(f"Processing commands from file: {args.file}")
-            if chat_id:
-                print(f"Using chat ID: {chat_id}")
+            if args.chat:
+                print(
+                    "Chat mode is not currently supported for file input. Feature planned for future release."
+                )
 
-            with open(file_path, "r") as f:
-                for line_num, line in enumerate(f, 1):
-                    line = line.strip()
-                    # Skip empty lines and comments
-                    if not line or line.startswith("#"):
-                        continue
+            # Use the file path as provided (for testing compatibility)
+            try:
+                with open(args.file, "r") as f:
+                    for line_num, line in enumerate(f, 1):
+                        line = line.strip()
+                        # Skip empty lines and comments
+                        if not line or line.startswith("#"):
+                            continue
 
-                    print(f"\n--- Executing command (line {line_num}): {line} ---")
-                    asyncio.run(
-                        main(line, args.temperature, args.provider, args.debug, chat_id)
-                    )
+                        print(f"\n--- Executing command (line {line_num}): {line} ---")
+                        asyncio.run(
+                            process_command(
+                                line, args.temperature, args.provider, args.debug
+                            )
+                        )
+            except FileNotFoundError:
+                print(f"Error: File not found: {args.file}", file=sys.stderr)
+                sys.exit(1)
+            except PermissionError:
+                print(
+                    f"Error: Permission denied when accessing file: {args.file}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            except UnicodeDecodeError:
+                print(
+                    f"Error: Unable to decode file: {args.file}. Please ensure it is a text file.",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
 
             # Stop coverage and save data if enabled
             # Always append the coverage data
             if args.coverage and cov:
                 cov.stop()
                 cov.save()
-        except FileNotFoundError:
-            print(f"Error: File not found: {args.file}", file=sys.stderr)
-            sys.exit(1)
+        except KeyboardInterrupt:
+            print("\nOperation canceled by user.")
+            sys.exit(130)  # Standard exit code for SIGINT
         except Exception as e:
             print(f"Error processing file: {str(e)}", file=sys.stderr)
             sys.exit(1)
@@ -316,10 +349,16 @@ if __name__ == "__main__":
         # Regular command execution
         try:
             asyncio.run(
-                main(
-                    args.command, args.temperature, args.provider, args.debug, args.chat
+                process_command(
+                    args.command, args.temperature, args.provider, args.debug
                 )
             )
+        except KeyboardInterrupt:
+            print("\nOperation canceled by user.")
+            sys.exit(130)  # Standard exit code for SIGINT
+        except Exception as e:
+            print(f"Error executing command: {str(e)}", file=sys.stderr)
+            sys.exit(1)
         finally:
             # Stop coverage and save data if enabled
             # Always append the coverage data
@@ -328,3 +367,8 @@ if __name__ == "__main__":
                 cov.save()
     else:
         parser.error("Either a command or an input file (-f/--file) must be specified")
+
+
+if __name__ == "__main__":
+    setup_path()
+    main()

@@ -17,12 +17,27 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Step 2: Run linting checks and tests
+# Reports will be saved to the existing reports directory
+echo "Reports directory: $(pwd)/reports"
+
+# Step 3: Run linting checks, tests, type checking, and coverage
+echo "Running tests and quality checks..."
 cd tests
-python3 -m pytest unit
+python3 -m pytest -q unit
 ./e2e_tests.sh
 cd /home/dror/vmpilot/sh && ./lint.sh
 cd /home/dror/vmpilot
+
+# Run type checking
+echo "Running type checking..."
+./tests/sh/type_check.sh || true
+
+# Run coverage analysis
+echo "Running coverage analysis..."
+./tests/sh/coverage.sh || true
+
+# Inform the user
+echo "Check the reports directory for type checking and coverage results"
 
 # Step 3: Switch to dev branch
 echo "Switching to $DEV_BRANCH branch..."

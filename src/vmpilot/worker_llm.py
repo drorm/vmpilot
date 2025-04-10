@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
@@ -42,15 +43,18 @@ def get_worker_llm(
         return ChatOpenAI(
             model=model,
             temperature=temperature,
-            max_tokens=max_tokens,
-            api_key=config.get_api_key(provider),
+            # OpenAI uses model_kwargs to pass max_tokens
+            model_kwargs={"max_tokens": max_tokens},
+            api_key=SecretStr(config.get_api_key(provider)),
         )
     elif provider == APIProvider.ANTHROPIC:
         return ChatAnthropic(
-            model=model,
+            model_name=model,
             temperature=temperature,
-            max_tokens=max_tokens,
-            api_key=config.get_api_key(provider),
+            max_tokens_to_sample=max_tokens,
+            timeout=None,  # Adding required timeout parameter
+            stop=None,  # Adding required stop parameter
+            api_key=SecretStr(config.get_api_key(provider)),
         )
     else:
         raise ValueError(f"Unsupported provider: {provider}")
@@ -92,7 +96,11 @@ def run_worker(
 
     # Generate response
     response = llm.invoke(messages)
-    result = response.content.strip()
+    # Handle potential different response types
+    if isinstance(response.content, str):
+        result = response.content.strip()
+    else:
+        result = str(response.content)
 
     logger.debug(f"Worker LLM task completed, response length: {len(result)}")
     return result
@@ -134,7 +142,11 @@ async def run_worker_async(
 
     # Generate response asynchronously
     response = await llm.ainvoke(messages)
-    result = response.content.strip()
+    # Handle potential different response types
+    if isinstance(response.content, str):
+        result = response.content.strip()
+    else:
+        result = str(response.content)
 
     logger.debug(f"Async worker LLM task completed, response length: {len(result)}")
     return result

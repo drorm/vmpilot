@@ -25,13 +25,4 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Run mypy
-# echo "Running type checking with mypy..."
-# mypy .
-# if [ $? -ne 0 ]; then
-    # echo "Error: Type checking failed."
-    # exit 1
-# fi
-
-
 echo "✅ All linting checks passed!"

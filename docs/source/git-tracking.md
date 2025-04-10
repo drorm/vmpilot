@@ -52,6 +52,7 @@ commit_prefix = [VMPilot]
 1. **Clean Repository**: Start with a clean repository before asking VMPilot to make changes
 2. **Review Commits**: Always review the commits made by VMPilot to ensure they're appropriate
 3. **Branch Strategy**: Consider having VMPilot work in a dedicated branch for larger changes
+4. **Multi-Branch Development**: Use separate workspaces with different project directories to work on multiple branches simultaneously. See [Multi-Branch Workspace Support](tips.md#multi-branch-workspace-support) for details.
 
 ## Limitations
 

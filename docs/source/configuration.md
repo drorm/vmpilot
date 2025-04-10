@@ -40,6 +40,8 @@ The `config.ini` file is organized into the following sections:
 | tool_output_lines | Number of lines shown in tool output | 15 |
 | pricing_display | Controls how pricing information is displayed (disabled, total_only, or detailed) | detailed |
 
+> **Note:** The `default_project` setting is used when no workspace-specific project is defined. For multi-branch development, you can override this by setting `$PROJECT_ROOT=/path/to/project` in each workspace's system prompt. See [Multi-Branch Workspace Support](tips.md#multi-branch-workspace-support) for details.
+
 ### Pricing Settings [pricing]
 | Setting | Description | Default |
 |---------|-------------|---------|
