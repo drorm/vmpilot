@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4] - 2025-04-09
+
+### Added
+- #36: [Feature] Token Management and Display Features (@dror-llm)
+- #49: Feature Request: Code Coverage Analysis Plugin (@dror-llm)
+- #51: [Feature Request] Support Google Gemini 2.5 model (@dror-llm)
+- #54: Add Code Coverage CLI Flag and Coverage Script (@dror-llm)
+- #57: [Feature Request] Consolidate chat_id handling (@dror-llm)
+- #58: [Feature Request] Add Environment Variables and Date Information to System Context (@dror-llm)
+- #6: Enhance Code Quality Strategy: Linting, Type Checking, and Process Improvements (@dror-llm)
+
 ## [0.3.1] - 2025-03-25
 
 ### Added
