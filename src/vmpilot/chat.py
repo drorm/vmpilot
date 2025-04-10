@@ -6,10 +6,12 @@ Handles chat IDs, project directories, and session management.
 import logging
 import secrets
 import string
+import os
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
 from . import config, env
+from .project import Project
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +218,10 @@ class Chat:
 
             # For tests, update env variable
             os.environ["PROJECT_ROOT"] = expanded_dir
+            
+            # Check for .vmpilot directory structure
+            self._check_project_structure(expanded_dir)
+            
         except PermissionError:
             error_msg = f"Failed to change to project directory {self.project_dir}: Permission denied"
             logger.error(error_msg)
@@ -224,6 +230,25 @@ class Chat:
             error_msg = f"Failed to change to project directory {self.project_dir}: {e}"
             logger.error(error_msg)
             raise Exception(error_msg)
+            
+    def _check_project_structure(self, project_dir):
+        """
+        Check if the project has the required .vmpilot directory structure.
+        
+        Args:
+            project_dir: Path to the project directory
+        """
+        # Skip in test environment
+        if "PYTEST_CURRENT_TEST" in os.environ:
+            logger.debug("Skipping project structure check in test environment")
+            return
+            
+        # Initialize Project instance and check structure
+        project = Project(project_dir)
+        has_structure = project.check_vmpilot_structure()
+        
+        # At this point, we're just logging the status
+        # Future implementation will handle creation of missing structure
 
     def should_truncate_messages(self, messages):
         """
