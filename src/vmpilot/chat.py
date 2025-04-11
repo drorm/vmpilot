@@ -38,23 +38,18 @@ class Chat:
             output_callback: Optional callback function for sending output.
         """
         # Set initial project directory value
-        self.project_dir = ""
         self.messages = messages or []
         self.output_callback = output_callback
-
-        # Extract project directory from messages if provided
-        if system_prompt_suffix:
-            logger.debug(f"Using system prompt suffix: {system_prompt_suffix}")
-            extracted_dir = env.extract_project_dir(system_prompt_suffix)
-            if extracted_dir:
-                self.project_dir = extracted_dir
+        self.new_chat = False
+        self.done = False
+        self.project = Project(system_prompt_suffix, self.output_callback)
+        self.project.check_project_structure()
+        if self.project.done():
+            self.done = True
+            return
 
         # Get or generate chat_id
         self.chat_id = self._determine_chat_id(self.messages, output_callback)
-
-        # For tests: change directory now during initialization
-        # This matches the behavior expected by the tests
-        self.change_to_project_dir()
 
         if self.chat_id:
             logger.debug(f"Using chat_id: {self.chat_id}")
@@ -75,7 +70,7 @@ class Chat:
     def _determine_chat_id(
         self,
         messages: Optional[List[Dict[str, str]]],
-        output_callback: Optional[Callable[[Dict], None]],
+        output_callback: Callable[[Dict], None],
     ) -> str:
         """
         Extract an existing chat_id if present, or generate a new one if needed.
@@ -90,8 +85,10 @@ class Chat:
         # Try to extract an existing chat_id from messages
         extracted_id = self._extract_chat_id_from_messages(messages)
         if extracted_id:
+            self.new_chat = False
             return extracted_id
 
+        self.new_chat = True
         # If no existing chat_id found, generate a new one
         new_chat_id = self._generate_chat_id()
         logger.debug(f"Generated new chat_id: {new_chat_id}")
@@ -153,102 +150,6 @@ class Chat:
         # If we reach here, no chat_id was found
         logger.debug("No chat_id found in messages")
         return None
-
-    # Compatibility methods for tests
-    def extract_project_dir(self, system_prompt_suffix: str = None) -> Optional[str]:
-        """
-        Extract project directory from system message if present.
-        This is a compatibility method for tests - actual implementation is in env.py.
-
-        Args:
-            system_prompt_suffix: Optional system prompt suffix to extract project directory from
-
-        Returns:
-            Project directory if found, None otherwise
-        """
-        if system_prompt_suffix:
-            extracted = env.extract_project_dir(system_prompt_suffix)
-            if extracted:
-                self.project_dir = extracted
-            return extracted
-        return None
-
-    def change_to_project_dir(self):
-        """
-        Ensure the project directory exists and is a directory before changing to it.
-        This is a compatibility method for tests - actual implementation is in env.py.
-
-        Direct implementation for tests - doesn't use env.py to ensure test compatibility
-        """
-        import os
-
-        # For tests: if the PROJECT_ROOT environment variable is set, use it
-        # This is a workaround for tests that don't set project_dir
-        if not self.project_dir and "PROJECT_ROOT" in os.environ:
-            self.project_dir = os.environ["PROJECT_ROOT"]
-            logger.debug(f"Using PROJECT_ROOT from environment: {self.project_dir}")
-
-        # Use the project_dir that was set in __init__
-        expanded_dir = os.path.expanduser(self.project_dir)
-        logger.debug(
-            f"Changing to project directory: {expanded_dir} (original: {self.project_dir})"
-        )
-
-        # In test environment, skip directory validation if running under pytest
-        if "PYTEST_CURRENT_TEST" in os.environ and not expanded_dir:
-            logger.debug("Skipping directory validation in test environment")
-            return
-
-        # Check if directory exists
-        if not os.path.exists(expanded_dir):
-            error = f"Project directory {self.project_dir} does not exist. See https://vmpdocs.a1.lingastic.org/user-guide/?h=project+directory#project-directory-configuration "
-            logger.error(error)
-            raise Exception(error)
-
-        # Check if it's a directory
-        if not os.path.isdir(expanded_dir):
-            error_msg = f"Failed to change to project directory {self.project_dir}: Not a directory"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-
-        # Try to change to the directory
-        try:
-            os.chdir(expanded_dir)
-            logger.info(f"Changed to project directory: {expanded_dir}")
-
-            # For tests, update env variable
-            os.environ["PROJECT_ROOT"] = expanded_dir
-
-            # Check for .vmpilot directory structure
-            self._check_project_structure(expanded_dir)
-
-        except PermissionError:
-            error_msg = f"Failed to change to project directory {self.project_dir}: Permission denied"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-        except Exception as e:
-            error_msg = f"Failed to change to project directory {self.project_dir}: {e}"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-
-    def _check_project_structure(self, project_dir):
-        """
-        Check if the project has the required .vmpilot directory structure.
-
-        Args:
-            project_dir: Path to the project directory
-        """
-        # Skip in test environment
-        if "PYTEST_CURRENT_TEST" in os.environ:
-            logger.debug("Skipping project structure check in test environment")
-            return
-
-        # Initialize Project instance and check structure
-        project = Project(project_dir)
-        has_structure = project.check_vmpilot_structure()
-
-        # At this point, we're just logging the status
-        # Future implementation will handle creation of missing structure
 
     def should_truncate_messages(self, messages):
         """

@@ -301,6 +301,19 @@ async def process_messages(
             system_prompt_suffix=system_prompt_suffix,
         )
         logger.debug(f"Using chat_id: {chat.chat_id}")
+
+        # Check if project structure is invalid and user needs to make a choice
+        if hasattr(chat, "done") and chat.done is True:
+            logger.info(
+                "Project structure is invalid. Ending chat to allow user to choose an option."
+            )
+            # Add a placeholder assistant message to ensure proper display
+            if output_callback:
+                # Message already sent through the chat output callback
+                pass
+            # Return early with just the existing messages
+            return messages
+
     except Exception as e:
         logger.error(f"Error creating Chat object: {e}")
         raise
