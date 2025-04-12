@@ -15,9 +15,39 @@ import os
 import re
 from typing import Optional
 
-from vmpilot.env import get_plugins_dir
+from vmpilot.env import get_plugins_dir, get_project_root
+
+# Constants for project directory structure
+VMPILOT_DIR = ".vmpilot"
+PROMPTS_DIR = "prompts"
+PROJECT_MD = "project.md"
+CURRENT_ISSUE_MD = "current_issue.md"
 
 logger = logging.getLogger(__name__)
+
+
+def get_project_description():
+    """
+    Read project.md file content if it exists in the .vmpilot/prompts directory.
+
+    Returns:
+        str: Content of project.md or empty string if file doesn't exist
+    """
+    project_root = get_project_root()
+    project_md_path = os.path.join(project_root, VMPILOT_DIR, PROMPTS_DIR, PROJECT_MD)
+
+    if not os.path.exists(project_md_path):
+        logger.debug(f"Project description file not found at {project_md_path}")
+        return ""
+
+    try:
+        with open(project_md_path, "r") as f:
+            content = f.read()
+            logger.debug(f"Loaded project description from {project_md_path}")
+            return f"\n## Project Overview: \n{content}"
+    except Exception as e:
+        logger.warning(f"Error reading project.md file: {e}")
+        return ""
 
 
 class Project:
@@ -42,10 +72,10 @@ class Project:
         """
 
         if self.project_root is not None:
-            self.vmpilot_dir = os.path.join(self.project_root, ".vmpilot")
-            self.prompts_dir = os.path.join(self.vmpilot_dir, "prompts")
-            self.project_md = os.path.join(self.prompts_dir, "project.md")
-            self.current_issue_md = os.path.join(self.prompts_dir, "current_issue.md")
+            self.vmpilot_dir = os.path.join(self.project_root, VMPILOT_DIR)
+            self.prompts_dir = os.path.join(self.vmpilot_dir, PROMPTS_DIR)
+            self.project_md = os.path.join(self.prompts_dir, PROJECT_MD)
+            self.current_issue_md = os.path.join(self.prompts_dir, CURRENT_ISSUE_MD)
 
     def check_vmpilot_structure(self):
         """
