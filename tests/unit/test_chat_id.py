@@ -38,6 +38,9 @@ class TestChatID:
             patch("os.path.exists", return_value=True),
             patch("os.path.isdir", return_value=True),
             patch("os.chdir"),
+            patch(
+                "vmpilot.project.Project.check_project_structure"
+            ),  # Patch the project structure check
         ):
             yield
 
