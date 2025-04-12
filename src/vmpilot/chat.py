@@ -42,14 +42,18 @@ class Chat:
         self.output_callback = output_callback
         self.new_chat = False
         self.done = False
-        self.project = Project(system_prompt_suffix, self.output_callback)
-        self.project.check_project_structure()
-        if self.project.done():
-            self.done = True
-            return
-
         # Get or generate chat_id
         self.chat_id = self._determine_chat_id(self.messages, output_callback)
+
+        # Check project setup
+        project = Project(system_prompt_suffix, self.output_callback)
+
+        if self.new_chat:
+            project.check_project_structure()
+            if project.done():
+                # If it's a new project and the check sends a message to the user, no need to continue
+                self.done = True
+                return
 
         if self.chat_id:
             logger.debug(f"Using chat_id: {self.chat_id}")

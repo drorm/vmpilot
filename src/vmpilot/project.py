@@ -15,6 +15,8 @@ import os
 import re
 from typing import Optional
 
+from vmpilot.env import get_plugins_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +33,7 @@ class Project:
         self.finish_chat = False
         self.project_root = None
         self.extract_project_dir(system_prompt_suffix)
-        logger.info(f"Extracted project directory in project: {self.project_root}")
+        logger.debug(f"Extracted project directory in project: {self.project_root}")
         """
         Initialize a Project instance.
 
@@ -53,28 +55,13 @@ class Project:
             bool: True if the complete structure exists, False otherwise
         """
 
-        if not self.project_root:
-            logger.info("Project root is not set. Won't check .vmpilot structure.")
-            return False
-
         vmpilot_exists = os.path.exists(self.vmpilot_dir)
         prompts_exists = os.path.exists(self.prompts_dir)
         project_md_exists = os.path.exists(self.project_md)
 
-        logger.info(
-            f".vmpilot directory {'exists' if vmpilot_exists else 'does not exist'} at {self.vmpilot_dir}"
-        )
-
         if vmpilot_exists:
-            logger.info(
-                f".vmpilot/prompts directory {'exists' if prompts_exists else 'does not exist'}"
-            )
-
             if prompts_exists:
-                logger.info(
-                    f"project.md {'exists' if project_md_exists else 'does not exist'}"
-                )
-                logger.info(
+                logger.debug(
                     f"current_issue.md {'exists' if os.path.exists(self.current_issue_md) else 'does not exist'}"
                 )
 
@@ -105,7 +92,7 @@ class Project:
                 project_root = match.group(1)
                 # Expand ~ to user's home directory
                 expanded_dir = os.path.expanduser(project_root)
-                logger.info(
+                logger.debug(
                     f"Extracted project directory from message: {project_root} (expanded to {expanded_dir})"
                 )
 
@@ -161,29 +148,52 @@ class Project:
             logger.error(error_msg)
             raise Exception(error_msg)
 
-    def check_project_structure(self) -> bool:
+    def check_project_structure(self):
         """
         Check if the project has the required .vmpilot directory structure.
         If structure is missing, present options to the user and end the chat.
-
+        If user previously opted to skip setup, respect that choice.
         """
 
+        if not self.project_root:
+            logger.debg("Project root is not set. Won't check .vmpilot structure.")
+            return
+
+        # Check if user has previously opted to skip project setup for this project
+        noproject_file = os.path.expanduser("~/.vmpilot/noproject.md")
+        if os.path.exists(noproject_file):
+            with open(noproject_file, "r") as f:
+                skipped_projects = f.read().splitlines()
+                if self.project_root in skipped_projects:
+                    logger.debug(
+                        f"User previously opted to skip project setup for {self.project_root}"
+                    )
+                    return
+
         has_structure = self.check_vmpilot_structure()
+
+        plugins_dir = get_plugins_dir()
         # If structure doesn't exist, and there's a project root, ask the user
-        if not has_structure and self.project_root:
-            project_setup_message = """
-A project description helps me better understand your codebase and provide relevant assistance. 
-Your project structure is not yet set up. Would you like me to:
+        if not has_structure:
+            project_setup_message = f"""
+## 🚀 Project Setup
+Your project structure is not yet set up yet for VMPilot. A project description helps me better understand your project and provide relevant assistance.
+**Note:** This description is used at the beginning of each conversation so it's important to balance between being informative and concise.
 
-a. **Recommended:** Analyze your existing code and generate a tailored project description
-b. Create standard project files from a template and you can edit them later
-c. Skip project setup (I'll remember this preference)
+### Would you like me to:
 
-You can change the content of these files at any time. Your choice will help me provide more targeted assistance in future interactions.
+#### 🔍 **Option A: Recommended**
+I'll run: {plugins_dir}/project/standard_setup.sh
+This creates standard project files from a template. You can then either edit them yourself or let me analyze your project and generate a tailored description.
 
-Note that the project description is used at the beginning of each conversation to help me understand your project better.
 
-Once you've made your choice, I'll use the project plugin to implement it.
+#### ⏭️ **Option B:**
+I'll run: {plugins_dir}/project/skip_setup.sh
+This creates a flag telling me to skip project setup chekck for this project in the future.
+
+---
+*You can change the content of the created files at any time.*
+Once you've made your choice.
 """
             # Send message to user through the output callback if available
             if hasattr(self, "output_callback") and self.output_callback:
