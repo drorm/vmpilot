@@ -28,7 +28,8 @@ VMPilot combines natural language understanding with system-level operations, en
 │   │   ├── github_issues/
 │   │   ├── documentation/
 │   │   ├── testing/
-│   │   └── code_review/
+│   │   ├── code_review/
+│   │   └── ...         # Other plugins
 │   ├── agent.py        # Core LangChain agent implementation
 │   ├── vmpilot.py      # Main application entry point
 │   ├── config.py       # Configuration management
@@ -52,9 +53,9 @@ VMPilot combines natural language understanding with system-level operations, en
   - Streaming and non-streaming response handling
 
 - **LLM Support**:
-  - OpenAI models integration
-  - Anthropic Claude integration
-  - Configurable model parameters
+  - OpenAI models
+  - Anthropic Claude
+  - Google Gemini
 
 - **Tool System Architecture**:
   - Standard tool interface with required methods
@@ -94,6 +95,5 @@ VMPilot combines natural language understanding with system-level operations, en
 
 ## Key Dependencies
 
-- **Core**: pydantic, fastapi, asyncio
 - **LLM**: langchain, anthropic, openai
-- **Development**: pytest, black, isort, flake8, pyright
+- **Development**: pytest, black, isort, pyright
