@@ -23,3 +23,9 @@ directory: testing
 # Code Review
 directory: code_review
 - Provides guidelines for conducting code reviews within the project, to ensure code quality, consistency, and maintainability 
+
+# Branch Manager
+
+directory: branch_manager
+- Automates the process of creating git branches for issues and updating project context
+- Use `create_branch.sh <issue_number>` to create a branch for an issue
