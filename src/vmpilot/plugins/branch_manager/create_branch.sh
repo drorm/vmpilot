@@ -82,14 +82,47 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Create the branch
-echo "Creating branch: $BRANCH_NAME"
-git checkout -b "$BRANCH_NAME"
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to create branch '$BRANCH_NAME'."
-    echo "Git status:"
-    git status
-    exit 1
+# Check if branch already exists (locally or remotely)
+echo "Checking if branch already exists..."
+LOCAL_BRANCH_EXISTS=$(git branch --list "$BRANCH_NAME")
+REMOTE_BRANCH_EXISTS=$(git ls-remote --heads origin "$BRANCH_NAME" | wc -l)
+
+# Check for branches with the issue number (to catch issue-34 vs issue-334 confusion)
+SIMILAR_BRANCHES=$(git branch -a | grep -E "/${ISSUE_NUMBER}-" | grep -v "$BRANCH_NAME")
+
+if [ -n "$LOCAL_BRANCH_EXISTS" ] || [ "$REMOTE_BRANCH_EXISTS" -gt 0 ]; then
+    echo "Warning: Branch '$BRANCH_NAME' already exists."
+    echo "Switching to existing branch..."
+    git checkout "$BRANCH_NAME"
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to switch to existing branch '$BRANCH_NAME'."
+        echo "Git status:"
+        git status
+        exit 1
+    fi
+elif [ -n "$SIMILAR_BRANCHES" ]; then
+    echo "Warning: Found branches with similar issue number:"
+    echo "$SIMILAR_BRANCHES"
+    
+    # Create the branch
+    echo "Creating branch: $BRANCH_NAME"
+    git checkout -b "$BRANCH_NAME"
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to create branch '$BRANCH_NAME'."
+        echo "Git status:"
+        git status
+        exit 1
+    fi
+else
+    # Create the branch
+    echo "Creating branch: $BRANCH_NAME"
+    git checkout -b "$BRANCH_NAME"
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to create branch '$BRANCH_NAME'."
+        echo "Git status:"
+        git status
+        exit 1
+    fi
 fi
 
 # Push the branch to origin
