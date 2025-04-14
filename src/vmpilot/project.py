@@ -20,8 +20,10 @@ from vmpilot.env import get_plugins_dir, get_project_root
 # Constants for project directory structure
 VMPILOT_DIR = ".vmpilot"
 PROMPTS_DIR = "prompts"
+SCRIPTS_DIR = "scripts"
 PROJECT_MD = "project.md"
 CURRENT_ISSUE_MD = "current_issue.md"
+NEW_CHAT_SH = "new_chat.sh"
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +52,52 @@ def get_project_description():
         return ""
 
 
+def get_chat_info():
+    """
+    Execute the new_chat.sh script to dynamically fetch info about the new chat.
+    The default provides info about the current issue.
+
+    Returns:
+        str: output of the script or empty string if the script fails
+    """
+    project_root = get_project_root()
+    script_path = os.path.join(project_root, VMPILOT_DIR, SCRIPTS_DIR, NEW_CHAT_SH)
+    fallback_path = os.path.join(
+        project_root, VMPILOT_DIR, PROMPTS_DIR, CURRENT_ISSUE_MD
+    )
+
+    # First try the dynamic script if it exists
+    if os.path.exists(script_path) and os.access(script_path, os.X_OK):
+        try:
+            logger.debug(f"Executing new_chat.sh script at {script_path}")
+            # Set PROJECT_ROOT environment variable for the script
+            env = os.environ.copy()
+            env["PROJECT_ROOT"] = project_root
+
+            # Execute the script and capture its output
+            import subprocess
+
+            result = subprocess.run(
+                [script_path], env=env, capture_output=True, text=True, check=False
+            )
+
+            if result.returncode == 0 and result.stdout.strip():
+                logger.debug(
+                    "Successfully fetched current issue information dynamically"
+                )
+                return result.stdout
+            else:
+                logger.warning(
+                    f"Script executed but returned no valid output or error: {result.stderr}"
+                )
+        except Exception as e:
+            logger.warning(f"Error executing new_chat.sh script: {e}")
+
+    # No current issue information available
+    logger.debug("No current issue information available")
+    return ""
+
+
 class Project:
     """
     Class to manage project-specific configuration and operations.
@@ -74,8 +122,10 @@ class Project:
         if self.project_root is not None:
             self.vmpilot_dir = os.path.join(self.project_root, VMPILOT_DIR)
             self.prompts_dir = os.path.join(self.vmpilot_dir, PROMPTS_DIR)
+            self.scripts_dir = os.path.join(self.vmpilot_dir, SCRIPTS_DIR)
             self.project_md = os.path.join(self.prompts_dir, PROJECT_MD)
             self.current_issue_md = os.path.join(self.prompts_dir, CURRENT_ISSUE_MD)
+            self.new_chat_info = os.path.join(self.scripts_dir, NEW_CHAT_SH)
 
     def check_vmpilot_structure(self):
         """
@@ -87,12 +137,18 @@ class Project:
 
         vmpilot_exists = os.path.exists(self.vmpilot_dir)
         prompts_exists = os.path.exists(self.prompts_dir)
+        scripts_exists = os.path.exists(self.scripts_dir)
         project_md_exists = os.path.exists(self.project_md)
+        new_chat_info_exists = os.path.exists(self.new_chat_info)
 
         if vmpilot_exists:
             if prompts_exists:
                 logger.debug(
                     f"current_issue.md {'exists' if os.path.exists(self.current_issue_md) else 'does not exist'}"
+                )
+            if scripts_exists:
+                logger.debug(
+                    f"new_chat.sh {'exists' if new_chat_info_exists else 'does not exist'}"
                 )
 
         # For the complete structure to exist, we need all of these to be present

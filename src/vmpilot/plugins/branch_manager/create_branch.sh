@@ -135,26 +135,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Update current_issue.md
-echo "Updating current issue information..."
-mkdir -p "$PROJECT_ROOT/.vmpilot/prompts"
-ISSUE_DETAILS=$(gh issue view "$ISSUE_NUMBER")
-cat > "$PROJECT_ROOT/.vmpilot/prompts/current_issue.md" << EOF
-# Current Issue: #$ISSUE_NUMBER - $ISSUE_TITLE
-
-## Branch
-\`\`\`
-$BRANCH_NAME
-\`\`\`
-
-## Issue Details
-\`\`\`
-$ISSUE_DETAILS
-\`\`\`
-EOF
 
 echo ""
 echo "✅ Successfully created and pushed branch: $BRANCH_NAME"
-echo "✅ Updated current issue information in .vmpilot/prompts/current_issue.md"
+echo "✅ Created/updated dynamic issue script at .vmpilot/scripts/get_current_issue.sh"
 echo ""
 echo "You are now working on issue #$ISSUE_NUMBER"

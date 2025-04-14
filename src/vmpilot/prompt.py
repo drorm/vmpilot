@@ -14,7 +14,7 @@ from vmpilot.env import (
     get_project_root,
     get_vmpilot_root,
 )
-from vmpilot.project import get_project_description
+from vmpilot.project import get_chat_info, get_project_description
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,7 @@ def get_plugins_readme():
 def get_system_prompt():
     project_root = get_project_root()
     project_md_content = get_project_description()
+    current_issue_content = get_chat_info()
 
     prompt = f"""<SYSTEM_CAPABILITY>
 * You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
@@ -82,6 +83,7 @@ Use multiple edit blocks if needed.
 <PLUGINS>
 {get_plugins_readme()}
 </PLUGINS>
-{project_md_content}"""
-    logger.info(f"Prompt: {prompt}")
+{project_md_content}
+{current_issue_content}"""
+    logger.debug(f"Prompt: {current_issue_content}")
     return prompt

@@ -7,7 +7,6 @@ This plugin automates the process of creating git branches for issues and updati
 - Creates and pushes branches with proper naming conventions
 - Checks if branches already exist (locally or remotely) before creating
 - Detects similar issue numbers to prevent confusion (e.g., issue-34 vs issue-334)
-- Updates `.vmpilot/prompts/current_issue.md` with issue details
 - Uses GitHub CLI directly for fetching issue information
 - Handles errors gracefully and provides informative output
 
@@ -51,7 +50,6 @@ This command:
   - If similar branches exist (with the same issue number), asks for confirmation
   - Otherwise, creates a new branch
 - Creates and pushes the branch
-- Updates `.vmpilot/prompts/current_issue.md` with issue details
 - Provides detailed error information if any step fails
 
 #### Examples:
