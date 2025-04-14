@@ -24,6 +24,13 @@ directory: testing
 directory: code_review
 - Provides guidelines for conducting code reviews within the project, to ensure code quality, consistency, and maintainability 
 
+# Project
+
+directory: project
+- Manages project-specific configuration through the .vmpilot directory structure
+- Creates and maintains project context files that persist across conversations
+- Provides a framework for project documentation and setup
+
 # Branch Manager
 
 directory: branch_manager

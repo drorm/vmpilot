@@ -48,6 +48,22 @@ directory: testing
 - Provides guidance for the VMPilot testing ecosystem as part of the CI/CD workflow
 - Includes unit tests, end-to-end tests, and coverage analysis requirements
 - Testing is an integral part of development, not an optional activity
+
+# Project
+
+directory: project
+- Manages project-specific configuration through the .vmpilot directory structure
+- Creates and maintains project context files that persist across conversations
+- Provides a framework for project documentation and setup
+- Streamlines the onboarding experience for new projects
+
+# Branch Manager
+
+directory: branch_manager
+- Automates the process of creating git branches for GitHub issues
+- Ensures consistent branch naming conventions across the project
+- Integrates with GitHub to fetch issue details and create appropriate branches
+- Streamlines the workflow when starting work on a new issue
 ```
 
 ## Managing Plugins
