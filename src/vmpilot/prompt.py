@@ -36,6 +36,17 @@ def get_system_prompt():
     project_root = get_project_root()
     project_md_content = get_project_description()
     current_issue_content = get_chat_info()
+    # if it's None or empty,
+    if current_issue_content is None or current_issue_content == "":
+        full_current_issue = ""
+    else:
+        # if it's not empty, use it
+        full_current_issue = f"""
+<CURRENT ISSUE>
+This is the current issue we're working on. You do not need to fetch it again.
+{current_issue_content}
+</CURRENT ISSUE>
+"""
 
     prompt = f"""<SYSTEM_CAPABILITY>
 * You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with bash command execution capabilities
@@ -86,7 +97,7 @@ Use multiple edit blocks if needed.
 {project_md_content}
 <CURRENT ISSUE>
 This is the current issue we're working on. You do not need to fetch it again.
-{current_issue_content}
+{full_current_issue}
 </CURRENT ISSUE>
 """
     logger.debug(f"Prompt: {current_issue_content}")
