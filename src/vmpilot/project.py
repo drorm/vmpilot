@@ -110,7 +110,8 @@ class Project:
         self.output_callback = output_callback
         self.finish_chat = False
         self.project_root = None
-        self.extract_project_dir(system_prompt_suffix)
+        if system_prompt_suffix:
+            self.extract_project_dir(system_prompt_suffix)
         logger.debug(f"Extracted project directory in project: {self.project_root}")
         """
         Initialize a Project instance.
@@ -242,7 +243,7 @@ class Project:
         """
 
         if not self.project_root:
-            logger.debg("Project root is not set. Won't check .vmpilot structure.")
+            logger.debug("Project root is not set. Won't check .vmpilot structure.")
             return
 
         # Check if user has previously opted to skip project setup for this project
