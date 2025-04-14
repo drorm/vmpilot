@@ -84,6 +84,10 @@ Use multiple edit blocks if needed.
 {get_plugins_readme()}
 </PLUGINS>
 {project_md_content}
-{current_issue_content}"""
+<CURRENT ISSUE>
+This is the current issue we're working on. You do not need to fetch it again.
+{current_issue_content}
+</CURRENT ISSUE>
+"""
     logger.debug(f"Prompt: {current_issue_content}")
     return prompt
