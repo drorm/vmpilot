@@ -216,8 +216,8 @@ async def create_agent(
                 model=model,
                 temperature=temperature,
                 timeout=30,
-                google_api_key=api_key,
-                request_timeout=30,
+                google_api_key=api_key,  # type: ignore
+                request_timeout=30,  # type: ignore
             )
         except Exception as e:
             logging.error(f"Error creating Google AI LLM: {str(e)}")
@@ -229,7 +229,10 @@ async def create_agent(
     # Create React agent
     # TODO: Re-evaluate how to apply state modification if needed, state_modifier removed due to API change
     agent = create_react_agent(
-        llm, tools, state_modifier=_modify_state_messages, checkpointer=MemorySaver()
+        llm,
+        tools,
+        state_modifier=_modify_state_messages,  # type: ignore
+        checkpointer=MemorySaver(),
     )
 
     return agent
