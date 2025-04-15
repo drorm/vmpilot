@@ -765,6 +765,52 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../project/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Project Plugin
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../branch-manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Branch Manager Plugin
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1019,7 +1065,24 @@
 <span class="normal"><a href="#__codelineno-0-23">23</a></span>
 <span class="normal"><a href="#__codelineno-0-24">24</a></span>
 <span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="gh"># Available plugins</span>
+<span class="normal"><a href="#__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#__codelineno-0-43">43</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="gh"># Available plugins</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="gh"># Codemap</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4"></a>directory: codemap
@@ -1045,6 +1108,23 @@
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="k">-</span><span class="w"> </span>Provides guidance for the VMPilot testing ecosystem as part of the CI/CD workflow
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="k">-</span><span class="w"> </span>Includes unit tests, end-to-end tests, and coverage analysis requirements
 <a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="k">-</span><span class="w"> </span>Testing is an integral part of development, not an optional activity
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="gh"># Project</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a>directory: project
+<a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="k">-</span><span class="w"> </span>Manages project-specific configuration through the .vmpilot directory structure
+<a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="k">-</span><span class="w"> </span>Creates and maintains project context files (like project.md) that persist across conversations
+<a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="k">-</span><span class="w"> </span>Provides a framework for project documentation and setup
+<a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="k">-</span><span class="w"> </span>Streamlines the onboarding experience for new projects
+<a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="k">-</span><span class="w"> </span>Automatically includes project.md in the system prompt for each conversation
+<a id="__codelineno-0-36" name="__codelineno-0-36"></a>
+<a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="gh"># Branch Manager</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38"></a>
+<a id="__codelineno-0-39" name="__codelineno-0-39"></a>directory: branch_manager
+<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="k">-</span><span class="w"> </span>Automates the process of creating git branches for GitHub issues
+<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="k">-</span><span class="w"> </span>Ensures consistent branch naming conventions across the project
+<a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="k">-</span><span class="w"> </span>Integrates with GitHub to fetch issue details and create appropriate branches
+<a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="k">-</span><span class="w"> </span>Streamlines the workflow when starting work on a new issue
 </code></pre></div></td></tr></table></div></p>
 <h2 id="managing-plugins">Managing Plugins</h2>
 <p>Enabling or disabling plugins is straightforward - simply add or remove their entries from the main README.md file.</p>

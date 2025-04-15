@@ -679,6 +679,52 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/project/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Project Plugin
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/branch-manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Branch Manager Plugin
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -858,6 +904,12 @@
 <li><a href="#4-troubleshooting">4. Troubleshooting</a></li>
 </ul>
 </li>
+<li><a href="#5-project-configuration-setup">5. Project Configuration Setup</a><ul>
+<li><a href="#51-project-directory-structure">5.1 Project Directory Structure</a></li>
+<li><a href="#52-initial-project-setup">5.2 Initial Project Setup</a></li>
+<li><a href="#53-project-description-file">5.3 Project Description File</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -1013,6 +1065,33 @@ Create a new user on OpenWebUI which, as the first user, will make you the admin
 <li>Try a simple command like "Show me /home"</li>
 </ol>
 <h3 id="4-troubleshooting">4. Troubleshooting</h3>
+<h2 id="5-project-configuration-setup">5. Project Configuration Setup</h2>
+<p>After installing VMPilot, you'll want to set up project-specific configuration for each of your projects. </p>
+<h3 id="51-project-directory-structure">5.1 Project Directory Structure</h3>
+<p>When you start using VMPilot with a new project, it will check for the existence of the <code>.vmpilot</code> directory structure:</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-9-1">1</a></span>
+<span class="normal"><a href="#__codelineno-9-2">2</a></span>
+<span class="normal"><a href="#__codelineno-9-3">3</a></span>
+<span class="normal"><a href="#__codelineno-9-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1"></a>your-project/
+<a id="__codelineno-9-2" name="__codelineno-9-2"></a>└── .vmpilot/
+<a id="__codelineno-9-3" name="__codelineno-9-3"></a>    └── prompts/
+<a id="__codelineno-9-4" name="__codelineno-9-4"></a>        └── project.md
+</code></pre></div></td></tr></table></div>
+<h3 id="52-initial-project-setup">5.2 Initial Project Setup</h3>
+<p>VMPilot will guide you through the setup process when you first use it with a project:</p>
+<ol>
+<li>Start a chat session in your project directory:Simply make a request like "do pwd"</li>
+<li>VMPilot will detect if the <code>.vmpilot</code> directory structure is missing</li>
+<li>You'll be presented with options:</li>
+<li>Create standard project files from a template</li>
+<li>Skip project setup</li>
+<li>When you choose to create standard project files, VMPilot will offer to:</li>
+<li>Analyze existing files and create a customized project description</li>
+<li>Let you do it manually</li>
+</ol>
+<h3 id="53-project-description-file">5.3 Project Description File</h3>
+<p>The <code>project.md</code> file contains essential information about your project that's included in the system prompt for each conversation. This helps VMPilot understand your project's context, structure, and requirements.</p>
+<p>For more details on project configuration, see the <a href="../plugins/project/">Project Plugin</a> documentation.</p>
 <p>Common issues and solutions:</p>
 <ol>
 <li>
