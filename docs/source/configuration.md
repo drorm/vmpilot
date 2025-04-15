@@ -3,6 +3,8 @@
 ## Overview
 VMPilot features a flexible configuration system that allows you to customize your environment, LLM providers, and model parameters. This guide explains all available configuration options and how to set them up.
 
+VMPilot also supports project-specific configuration through the `.vmpilot` directory structure. See the [Project Plugin](plugins/project.md) documentation for details on how to set up and customize project-specific settings.
+
 ## Applying Configuration Changes
 After modifying the `config.ini` file, you must restart the VMPilot server for the changes to take effect.
 ## Docker Install: Configuration File Location
@@ -39,6 +41,8 @@ The `config.ini` file is organized into the following sections:
 | default_project | Default project directory for git operations and file access | ~/vmpilot |
 | tool_output_lines | Number of lines shown in tool output | 15 |
 | pricing_display | Controls how pricing information is displayed (disabled, total_only, or detailed) | detailed |
+
+> **Note:** The `default_project` setting is used when no workspace-specific project is defined. For multi-branch development, you can override this by setting `$PROJECT_ROOT=/path/to/project` in each workspace's system prompt. When a project directory is set, VMPilot will check for the `.vmpilot/prompts/project.md` file and include it in the system prompt. See [Multi-Branch Workspace Support](tips.md#multi-branch-workspace-support) and [Project Plugin](plugins/project.md) for details.
 
 ### Pricing Settings [pricing]
 | Setting | Description | Default |

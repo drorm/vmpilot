@@ -112,9 +112,6 @@ async def process_command(
     # Create a Chat object for this session - chat_id is determined internally
     chat = Chat()
 
-    # Change to the project directory
-    chat.change_to_project_dir()
-
     # Create pipeline call parameters
     body = create_mock_body(temperature=temperature, debug=debug)
     messages = create_mock_messages(command)
@@ -356,9 +353,6 @@ def main() -> None:
         except KeyboardInterrupt:
             print("\nOperation canceled by user.")
             sys.exit(130)  # Standard exit code for SIGINT
-        except Exception as e:
-            print(f"Error executing command: {str(e)}", file=sys.stderr)
-            sys.exit(1)
         finally:
             # Stop coverage and save data if enabled
             # Always append the coverage data

@@ -4,12 +4,14 @@ Handles chat IDs, project directories, and session management.
 """
 
 import logging
+import os
 import secrets
 import string
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
 from . import config, env
+from .project import Project
 
 logger = logging.getLogger(__name__)
 
@@ -36,23 +38,22 @@ class Chat:
             output_callback: Optional callback function for sending output.
         """
         # Set initial project directory value
-        self.project_dir = ""
         self.messages = messages or []
         self.output_callback = output_callback
-
-        # Extract project directory from messages if provided
-        if system_prompt_suffix:
-            logger.debug(f"Using system prompt suffix: {system_prompt_suffix}")
-            extracted_dir = env.extract_project_dir(system_prompt_suffix)
-            if extracted_dir:
-                self.project_dir = extracted_dir
-
+        self.new_chat = False
+        self.done = False
         # Get or generate chat_id
         self.chat_id = self._determine_chat_id(self.messages, output_callback)
 
-        # For tests: change directory now during initialization
-        # This matches the behavior expected by the tests
-        self.change_to_project_dir()
+        # Check project setup
+        project = Project(system_prompt_suffix, self.output_callback)
+
+        if self.new_chat:
+            project.check_project_structure()
+            if project.done():
+                # If it's a new project and the check sends a message to the user, no need to continue
+                self.done = True
+                return
 
         if self.chat_id:
             logger.debug(f"Using chat_id: {self.chat_id}")
@@ -73,7 +74,7 @@ class Chat:
     def _determine_chat_id(
         self,
         messages: Optional[List[Dict[str, str]]],
-        output_callback: Optional[Callable[[Dict], None]],
+        output_callback: Callable[[Dict], None],
     ) -> str:
         """
         Extract an existing chat_id if present, or generate a new one if needed.
@@ -88,8 +89,10 @@ class Chat:
         # Try to extract an existing chat_id from messages
         extracted_id = self._extract_chat_id_from_messages(messages)
         if extracted_id:
+            self.new_chat = False
             return extracted_id
 
+        self.new_chat = True
         # If no existing chat_id found, generate a new one
         new_chat_id = self._generate_chat_id()
         logger.debug(f"Generated new chat_id: {new_chat_id}")
@@ -153,7 +156,7 @@ class Chat:
         return None
 
     # Compatibility methods for tests
-    def extract_project_dir(self, system_prompt_suffix: str = None) -> Optional[str]:
+    def extract_project_dir(self, system_prompt_suffix: str) -> Optional[str]:
         """
         Extract project directory from system message if present.
         This is a compatibility method for tests - actual implementation is in env.py.

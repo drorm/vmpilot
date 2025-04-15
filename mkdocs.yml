@@ -24,12 +24,13 @@ nav:
         - Github issue: examples/github-issue.md
         - Todo App 1: examples/todo1.md
         - Todo App 2: examples/todo2.md
-        - Unit Testing: examples/unit_testing_example.md
     - Plugins:
         - Overview: plugins/overview.md
-        - GitHub Plugin: plugins/github.md
+        - GitHub Issues: plugins/github.md
         - Testing Plugin: plugins/testing.md
         - Documentation Plugin: plugins/documentation.md
+        - Project Plugin: plugins/project.md
+        - Branch Manager Plugin: plugins/branch-manager.md
     - VMPilot Prompting: prompting.md
     - Tips: tips.md
     - CLI Interface: cli.md

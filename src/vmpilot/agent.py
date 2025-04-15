@@ -190,6 +190,8 @@ async def create_agent(
                 model=model,
                 temperature=temperature,
                 timeout=30,
+                google_api_key=api_key,  # type: ignore
+                request_timeout=30,  # type: ignore
             )
         except Exception as e:
             logging.error(f"Error creating Google AI LLM: {str(e)}")
@@ -201,7 +203,10 @@ async def create_agent(
     # Create React agent
     # TODO: Re-evaluate how to apply state modification if needed, state_modifier removed due to API change
     agent = create_react_agent(
-        llm, tools, state_modifier=_modify_state_messages, checkpointer=MemorySaver()
+        llm,
+        tools,
+        state_modifier=_modify_state_messages,  # type: ignore
+        checkpointer=MemorySaver(),
     )
 
     return agent
@@ -273,6 +278,19 @@ async def process_messages(
             system_prompt_suffix=system_prompt_suffix,
         )
         logger.debug(f"Using chat_id: {chat.chat_id}")
+
+        # Check if project structure is invalid and user needs to make a choice
+        if hasattr(chat, "done") and chat.done is True:
+            logger.info(
+                "Project structure is invalid. Ending chat to allow user to choose an option."
+            )
+            # Add a placeholder assistant message to ensure proper display
+            if output_callback:
+                # Message already sent through the chat output callback
+                pass
+            # Return early with just the existing messages
+            return messages
+
     except Exception as e:
         logger.error(f"Error creating Chat object: {e}")
         raise
@@ -290,7 +308,7 @@ async def process_messages(
     )
 
     # Initialize usage tracking for this exchange with the current provider
-    usage = Usage(provider=config.default_provider)
+    usage = Usage(provider=provider)
 
     # Check Git repository status and handle dirty_repo_action
     if not exchange.check_git_status():
@@ -584,6 +602,9 @@ async def process_messages(
                 message = f" I've done {recursion_limit} steps in a row. Type *continue* if you'd like me to keep going."
                 logger.info(message)
             # Handle specific tool_use/tool_result error
+            elif "Request timed out" in error_message:
+                logger.error(f"Request timed out: {e}")
+                message = f"Request timed out: {str(e)}"
             elif (
                 "Messages containing `tool_use` blocks must be followed by a user message with `tool_result` blocks"
                 in error_message
@@ -594,7 +615,7 @@ async def process_messages(
             else:
                 logger.error(f"Error in agent stream: {e}")
                 logger.error("".join(traceback.format_tb(e.__traceback__)))
-                logger.error(f"messages: {formatted_messages}")
+                logger.debug(f"messages: {formatted_messages}")
                 message = f"Error in agent stream: {str(e)}"
 
             # Complete the Exchange with error information

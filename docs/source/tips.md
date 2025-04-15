@@ -49,6 +49,42 @@ The multi-project support feature simplifies working with multiple codebases:
 5. **Improved plugin functionality**:
    Plugins like GitHub Issues will automatically operate in the correct repository context based on the current project directory.
 
+## Multi-Branch Workspace Support
+
+VMPilot allows you to work on multiple branches or features simultaneously through workspace management:
+
+### Setting Up Multiple Workspaces for Parallel Development
+
+1. **Create separate workspaces for different branches**:
+   ```
+   Workspace 1: claude-proj1
+   $PROJECT_ROOT=~/proj1
+   
+   Workspace 2: claude-proj2
+   $PROJECT_ROOT=~/proj2
+   ```
+
+2. **Switch between workspaces** using the OpenWebUI workspace dropdown to instantly change context.
+
+3. **Work on different branches simultaneously**:
+   - Each workspace maintains its own repository context
+   - You can have the same project in different directories to work on different branches
+   - Perfect isolation between features/branches
+
+### Example Workflow
+
+1. Create two workspaces in OpenWebUI:
+   - `feature-a` with `$PROJECT_ROOT=~/project-feature-a`
+   - `feature-b` with `$PROJECT_ROOT=~/project-feature-b`
+
+2. Clone your repository to both directories and check out different branches in each.
+
+3. Work in the `feature-a` workspace on one feature branch, then switch to the `feature-b` workspace to work on another feature branch.
+
+4. Use standard Git operations to keep branches in sync with the remote repository.
+
+This approach provides clean separation between feature work while maintaining context awareness through OpenWebUI's workspace feature and standard Git practices.
+
 # Using OpenWebUI
 
 ## Use Workspaces
