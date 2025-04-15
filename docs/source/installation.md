@@ -184,6 +184,40 @@ To verify your installation:
 
 ### 4. Troubleshooting
 
+## 5. Project Configuration Setup
+
+After installing VMPilot, you'll want to set up project-specific configuration for each of your projects. 
+
+### 5.1 Project Directory Structure
+
+When you start using VMPilot with a new project, it will check for the existence of the `.vmpilot` directory structure:
+
+```
+your-project/
+└── .vmpilot/
+    └── prompts/
+        └── project.md
+```
+
+### 5.2 Initial Project Setup
+
+VMPilot will guide you through the setup process when you first use it with a project:
+
+1. Start a chat session in your project directory:Simply make a request like "do pwd"
+2. VMPilot will detect if the `.vmpilot` directory structure is missing
+3. You'll be presented with options:
+   - Create standard project files from a template
+   - Skip project setup
+4. When you choose to create standard project files, VMPilot will offer to:
+   - Analyze existing files and create a customized project description
+   - Let you do it manually
+
+### 5.3 Project Description File
+
+The `project.md` file contains essential information about your project that's included in the system prompt for each conversation. This helps VMPilot understand your project's context, structure, and requirements.
+
+For more details on project configuration, see the [Project Plugin](plugins/project.md) documentation.
+
 Common issues and solutions:
 
 1. Connection refused:

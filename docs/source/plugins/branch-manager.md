@@ -40,7 +40,7 @@ Example: `feature/65-implement-vmpilot-prompts`
 
 ### Creating a Branch for an Issue
 
-To create a branch for a GitHub issue, just ask VMPilot to use the Branch Manager Plugin to create the branch for the issue number you provide. 
+To create a branch for a GitHub issue, just ask VMPilot to use the Branch Manager Plugin to create the branch for the issue number you provide.
 
 
 ## Workflow Integration

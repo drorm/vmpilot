@@ -53,9 +53,10 @@ directory: testing
 
 directory: project
 - Manages project-specific configuration through the .vmpilot directory structure
-- Creates and maintains project context files that persist across conversations
+- Creates and maintains project context files (like project.md) that persist across conversations
 - Provides a framework for project documentation and setup
 - Streamlines the onboarding experience for new projects
+- Automatically includes project.md in the system prompt for each conversation
 
 # Branch Manager
 
