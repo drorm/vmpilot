@@ -153,7 +153,7 @@ class Chat:
         return None
 
     # Compatibility methods for tests
-    def extract_project_dir(self, system_prompt_suffix: str = None) -> Optional[str]:
+    def extract_project_dir(self, system_prompt_suffix: str) -> Optional[str]:
         """
         Extract project directory from system message if present.
         This is a compatibility method for tests - actual implementation is in env.py.
