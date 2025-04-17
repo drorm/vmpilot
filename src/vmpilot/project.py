@@ -98,7 +98,8 @@ def get_chat_info():
     return ""
 
 
-from typing import Optional, Callable
+from typing import Callable, Optional
+
 
 class Project:
     """
@@ -108,7 +109,11 @@ class Project:
     that provide context about the project and current work.
     """
 
-    def __init__(self, system_prompt_suffix: str, output_callback: Optional[Callable[[dict], None]]):
+    def __init__(
+        self,
+        system_prompt_suffix: str,
+        output_callback: Optional[Callable[[dict], None]],
+    ):
         self.output_callback = output_callback
         self.finish_chat = False
         self.project_root = None
