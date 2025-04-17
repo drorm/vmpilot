@@ -46,7 +46,8 @@ class Chat:
         self.chat_id = self._determine_chat_id(self.messages, output_callback)
 
         # Check project setup
-        project = Project(system_prompt_suffix, self.output_callback)
+        project = Project(system_prompt_suffix or "", self.output_callback)
+        self.project = project
 
         if self.new_chat:
             project.check_project_structure()
@@ -74,7 +75,7 @@ class Chat:
     def _determine_chat_id(
         self,
         messages: Optional[List[Dict[str, str]]],
-        output_callback: Callable[[Dict], None],
+        output_callback: Optional[Callable[[Dict], None]],
     ) -> str:
         """
         Extract an existing chat_id if present, or generate a new one if needed.
@@ -168,7 +169,8 @@ class Chat:
             Project directory if found, None otherwise
         """
         if system_prompt_suffix:
-            extracted = env.extract_project_dir(system_prompt_suffix)
+            extracted = self.project.extract_project_dir(system_prompt_suffix)
+            extracted = None
             if extracted:
                 self.project_dir = extracted
             return extracted

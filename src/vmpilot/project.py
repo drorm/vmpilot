@@ -98,6 +98,8 @@ def get_chat_info():
     return ""
 
 
+from typing import Optional, Callable
+
 class Project:
     """
     Class to manage project-specific configuration and operations.
@@ -106,7 +108,7 @@ class Project:
     that provide context about the project and current work.
     """
 
-    def __init__(self, system_prompt_suffix: str, output_callback: callable):
+    def __init__(self, system_prompt_suffix: str, output_callback: Optional[Callable[[dict], None]]):
         self.output_callback = output_callback
         self.finish_chat = False
         self.project_root = None
@@ -184,7 +186,8 @@ class Project:
                 )
 
                 # Set environment variable with expanded path
-                os.environ["PROJECT_ROOT"] = expanded_dir
+                if expanded_dir is not None:
+                    os.environ["PROJECT_ROOT"] = expanded_dir
                 self.project_root = expanded_dir
                 self.change_to_project_dir()
                 return
@@ -204,24 +207,28 @@ class Project:
         """
 
         # Check if directory exists
-        if not os.path.exists(self.project_root):
-            error = f"Project directory {project_root} does not exist. See https://vmpdocs.a1.lingastic.org/user-guide/?h=project+directory#project-directory-configuration "
+        if not (self.project_root and os.path.exists(self.project_root)):
+            error = f"Project directory {self.project_root} does not exist. See https://vmpdocs.a1.lingastic.org/user-guide/?h=project+directory#project-directory-configuration "
             logger.error(error)
             raise Exception(error)
 
         # Check if it's a directory
-        if not os.path.isdir(self.project_root):
+        if not (self.project_root and os.path.isdir(self.project_root)):
             error_msg = f"Failed to change to project directory {self.project_root}: Not a directory"
             logger.error(error_msg)
             raise Exception(error_msg)
 
         # Try to change to the directory
         try:
-            os.chdir(self.project_root)
-            logger.debug(f"Changed to project directory: {self.project_root}")
+            if self.project_root:
+                os.chdir(self.project_root)
+                logger.debug(f"Changed to project directory: {self.project_root}")
+            else:
+                raise Exception("Project root is not set")
 
             # Update environment variable in case it was self.project_root
-            os.environ["PROJECT_ROOT"] = self.project_root
+            if self.project_root is not None:
+                os.environ["PROJECT_ROOT"] = self.project_root
 
             return True
         except PermissionError:
