@@ -4,6 +4,10 @@
 
 This guide provides step-by-step instructions for setting up VMPilot in your environment.
 
+> [!CAUTION]
+> Only run this if you have enough knowledge about the security implications of running arbitrary commands in your virtual machine.
+> **Never run this directly on your personal machine**. You are letting the AI/LLM pilot run commands in your machine and it can be dangerous.
+
 # Prerequisites
 
 Before you begin, ensure you have:
@@ -20,31 +24,31 @@ For secure access setup, we recommend you complete the [DNS and SSL Setup](dns_s
 VMPilot is available as a Docker container from GitHub Container Registry (ghcr.io). Note that this is an Ubuntu based container. If you'd like to use a different distribution, you need to install VMPilot manually.
 Follow these steps to install and run VMPilot in a Docker container:
 
-1. Pull the latest VMPilot image:
+1. You have two options to install VMPilot:
+
+Download the installation script first, review it, and then run it:
+
 ```bash
-docker pull ghcr.io/drorm/vmpilot:latest
+# Download the installation script
+curl -sSL https://raw.githubusercontent.com/drorm/vmpilot/main/bin/install.sh -o install_vmpilot.sh
+
+# Review the script and make any necessary changes
+# For example, you may want to change the target directory (VMPILOT_DIR)
+nano install_vmpilot.sh
+
+# Make the script executable
+chmod +x install_vmpilot.sh
+
+# Run the installation script
+./install_vmpilot.sh
 ```
 
-2. Run the container (Docker will automatically create the required volumes):
-```bash
-docker run -d \
-  --name vmpilot \
-  --security-opt no-new-privileges=true \
-  -p 9099:9099 \
-  -v "vmpilot_config:/app/config:ro" \
-  -v "vmpilot_data:/app/data" \
-  -e VMPILOT_CONFIG=/app/config/config.ini \
-  -e PYTHONUNBUFFERED=1 \
-  -e LOG_LEVEL=INFO \
-  --restart unless-stopped \
-  ghcr.io/drorm/vmpilot:latest
-```
+This script will:
+- Create the necessary directories at the specified location (default is `$HOME/.vmpilot/`)
+- Pull the latest VMPilot image from GitHub Container Registry
+- Start the container with proper configuration
+- Copy the default configuration file
 
-This will:
-- Start VMPilot in pipeline mode on port 9099
-- Mount persistent volumes for configuration and data
-- Apply security settings
-- Configure automatic restart
 
 4. Verify the container is running:
 ```bash
@@ -56,7 +60,7 @@ The Docker container works out of the box without any initial configuration chan
 2. Add your API keys (OpenAI and/or Anthropic) in the OpenWebUI pipeline configuration
 
 Optional Configuration:
-- If you want to customize VMPilot's behavior, you can modify the config file at `/var/lib/docker/volumes/vmpilot_config/_data/config.ini`
+- If you want to customize VMPilot's behavior, you can modify the config file at `$HOME/.vmpilot/config/config.ini`
 - When using the VMPilot CLI interface (not open-webui), you will need to set up a password as described in the Security section
 
 Note: Most users won't need to modify config.ini unless they have specific requirements for customization.
@@ -179,6 +183,40 @@ To verify your installation:
 
 
 ### 4. Troubleshooting
+
+## 5. Project Configuration Setup
+
+After installing VMPilot, you'll want to set up project-specific configuration for each of your projects. 
+
+### 5.1 Project Directory Structure
+
+When you start using VMPilot with a new project, it will check for the existence of the `.vmpilot` directory structure:
+
+```
+your-project/
+└── .vmpilot/
+    └── prompts/
+        └── project.md
+```
+
+### 5.2 Initial Project Setup
+
+VMPilot will guide you through the setup process when you first use it with a project:
+
+1. Start a chat session in your project directory:Simply make a request like "do pwd"
+2. VMPilot will detect if the `.vmpilot` directory structure is missing
+3. You'll be presented with options:
+   - Create standard project files from a template
+   - Skip project setup
+4. When you choose to create standard project files, VMPilot will offer to:
+   - Analyze existing files and create a customized project description
+   - Let you do it manually
+
+### 5.3 Project Description File
+
+The `project.md` file contains essential information about your project that's included in the system prompt for each conversation. This helps VMPilot understand your project's context, structure, and requirements.
+
+For more details on project configuration, see the [Project Plugin](plugins/project.md) documentation.
 
 Common issues and solutions:
 

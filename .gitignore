@@ -1,5 +1,3 @@
-sh
-
 __pycache__/
 *.py[cod]
 *$py.class
@@ -29,6 +27,15 @@ ENV/
 .vscode/
 *.swp
 .DS_Store
-
+.coverage*
 #PipeLine specific
 valves.json
+
+# python coverage
+.coverage*
+htmlcov/
+
+# Keep reports directory but ignore contents (managed by reports/.gitignore)
+reports/*
+!reports/.gitignore
+!reports/README.md

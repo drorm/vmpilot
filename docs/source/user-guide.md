@@ -5,13 +5,16 @@ VMpilot is a powerful tool that enables collaboration with Large Language Models
 
 ## Basic Usage
 VMPilot comes with three core tools out of the box:
+
 1. **Shell Tool**: Executes shell commands and scripts
 2. **File Editing Tool**: Modifies existing files
 3. **File Creation Tool**: Creates new files with specified content
 
+Obviously, using the shell tool, the LLM can do everything it needs to do. Editing files is hard for LLMS, so the file editing tool provides better structure for that. The file creation tool mostly provides good error reporting and structure for creating files.
+
 ### Security Note
 > [!CAUTION]
-> VMPilot operates with your user permissions. The LLM can execute any command available to your user account, including:
+> VMPilot operates with the user permissions. The LLM can execute any command available to the user account, including:
 > - Reading and writing files
 > - Installing packages
 > - Running system commands
@@ -56,26 +59,66 @@ The program has been created successfully and works as expected! The script:
 ````
 
 ### Notes
-- The LLM tends to be a bit verbose and has a bias towards action. It will, as is often the case with LLMs, try its best to answer your question, or perform the task you've asked it to do, rather than ask for clarification. You can change that by asking it to just discuss the task or ask for clarification.
+- The LLM tends to be a bit verbose and has a bias towards action. It will, as is often the case with LLMs, try its best to answer your question, or perform the task you've asked it to do, rather than ask for clarification. You can change that by asking it to just discuss the task or ask for clarification. You can also, in your prompt, change its behavior.
 
-- It can perform several operation to accomplish a task. In our case, it created the script, and ran it to verify that it works.
+- It typically performs several operations to accomplish a task. In our case, it created the script, and ran it to verify that it works.
 
 - Outputs are fenced in the appropriate language for easy reading.
 
 - The LLM will often provide additional information about the task it performed, such as the location of the file it created, the contents of the file, and the output of any commands it ran.
 
+- With the multi-project support feature, you no longer need to explicitly tell the LLM where your project is located in each prompt. Configure it once in your workspace system prompt with `$PROJECT_ROOT=/path/to/your/project` and VMPilot will automatically maintain the correct context.
+
 # Choosing the provider
 
-We support multiple providers such as OpenAI and Anthropic. You can choose the provider you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.
+We support Anthropic primarily, but you can also try OpenAI. You choose the provider you want to use in the OpenWebUI interface on the top left. This is quite similar to how you would choose a model in OpenAI's interface. We recommend however that you use Workspaces since they allow you to both choose the model and prompt you want to use.
+
+# Working on a Project
+
+VMPilot is designed to work with projects and git repos. A project is a directory containing all the files and resources for your project, typically a git repository. VMPilot can work with multiple projects simultaneously, allowing you to switch between them easily.
+
+**VMPilot automatically performs a 'cd' to the project directory when starting a chat**, ensuring all file paths, shell commands, and operations are relative to the project directory.
+
+## Project Directory Configuration
+
+There are two ways to specify which project directory VMPilot should use:
+
+1. **Default Project Directory**: Set in `config.ini` using the `default_project` setting under the `[general]` section. This is used when no specific project is identified in a workspace.
+
+2. **Workspace-Specific Project Directory**: Specify the project root in your workspace system prompt using:
+   ```
+   $PROJECT_ROOT=/path/to/your/project
+   ```
+
+## Multi-Branch and Multi-Project Development
+
+VMPilot supports working on multiple branches, projects, or features simultaneously through workspace management:
+
+1. Create separate workspaces for different branches/features/projects
+2. Configure each workspace with its own project directory
+3. Switch between workspaces to seamlessly work on different branches
+
+For example:
+```
+Workspace 1: feature-a
+$PROJECT_ROOT=~/project-feature-a
+
+Workspace 2: feature-b
+$PROJECT_ROOT=~/project-feature-b
+```
+
+This provides complete isolation between different features while maintaining full context awareness. For detailed instructions, see the [Multi-Branch Workspace Support](tips.md#multi-branch-workspace-support) section in the Tips guide.
 
 # Additional Features
 
 ## Plugins
-VMPilot supports various plugins to extend its functionality. See the [Plugins](plugins.md) documentation for details about available plugins and how to use them.
+VMPilot supports various plugins to extend its functionality. See the [Plugins](plugins/overview.md) documentation for details about available plugins and how to use them.
 
 Some key plugins include:
 
-- [GitHub Issues](github_issues.md) - Manage GitHub issues directly from VMPilot
+- [GitHub Issues](plugins/github.md) - Manage GitHub issues directly from VMPilot
+- [Documentation](plugins/documentation.md) - Create clear, concise, and user-friendly documentation
+- [Testing](plugins/testing.md) - Create comprehensive tests for VMPilot components (unit tests, end-to-end tests, coverage analysis)
 - Code Map - Generate code documentation automatically. This is a work in progress.
 
 ## Tips and Best Practices

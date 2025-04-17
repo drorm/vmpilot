@@ -15,6 +15,8 @@ nav:
     - Installation: installation.md
     - Configuration: configuration.md
     - User Guide: user-guide.md
+    - Coding: coding.md
+    - Git Tracking: git-tracking.md
     - Examples:
         - Overview: examples/index.md
         - Hello World: examples/hello-world.md
@@ -22,11 +24,18 @@ nav:
         - Github issue: examples/github-issue.md
         - Todo App 1: examples/todo1.md
         - Todo App 2: examples/todo2.md
-    - Plugins: plugins.md
+    - Plugins:
+        - Overview: plugins/overview.md
+        - GitHub Issues: plugins/github.md
+        - Testing Plugin: plugins/testing.md
+        - Documentation Plugin: plugins/documentation.md
+        - Project Plugin: plugins/project.md
+        - Branch Manager Plugin: plugins/branch-manager.md
     - VMPilot Prompting: prompting.md
     - Tips: tips.md
-    - GitHub: github_issues.md
     - CLI Interface: cli.md
+    - DNS and SSL: dns_ssl_setup.md
+    - Release Process: release-process.md
 
 markdown_extensions:
   - pymdownx.highlight:

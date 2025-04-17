@@ -227,7 +227,15 @@ def _format_messages(
                             )
                         else:
                             block.pop("text", None)
-                            block["cache_control"] = {"type": "ephemeral"}
+                            # Only add cache_control if it's present in message.additional_kwargs
+                            if (
+                                hasattr(message, "additional_kwargs")
+                                and "cache_control" in message.additional_kwargs
+                            ):
+                                block["cache_control"] = message.additional_kwargs[
+                                    "cache_control"
+                                ]
+                                # print(f"added cache_control to tool_use block: {block}")
                             content.append(block)
                     elif block["type"] == "text":
                         text = block.get("text", "")
@@ -246,7 +254,10 @@ def _format_messages(
                             hasattr(message, "additional_kwargs")
                             and "cache_control" in message.additional_kwargs
                         ):
-                            block["cache_control"] = {"type": "ephemeral"}
+                            # print(f"added cache_control to text block: {block}")
+                            block["cache_control"] = message.additional_kwargs[
+                                "cache_control"
+                            ]
                     elif block["type"] == "tool_result":
                         tool_content = _format_messages(
                             [HumanMessage(block["content"])]
@@ -273,9 +284,11 @@ def _format_messages(
                             hasattr(message, "additional_kwargs")
                             and "cache_control" in message.additional_kwargs
                         ):
-                            content_block["cache_control"] = message.additional_kwargs[
-                                "cache_control"
-                            ]
+                            # Create a new block with cache_control if needed
+                            if isinstance(block, dict):
+                                block["cache_control"] = message.additional_kwargs[
+                                    "cache_control"
+                                ]
                         content.append(block)
                 else:
                     raise ValueError(

@@ -85,6 +85,17 @@ body:
       placeholder: E.g., Browser console logs showing error details.
 
   - type: textarea
+    id: relevant_files
+    attributes:
+      label: Relevant Files
+      description: List the files that are related to this bug. This helps in quickly identifying the affected components.
+      placeholder: |
+        E.g.:
+        - src/vmpilot/agent.py
+        - src/vmpilot/tools/shelltool.py
+        - tests/test_agent.py
+
+  - type: textarea
     id: additional_information
     attributes:
       label: Additional Information

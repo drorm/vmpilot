@@ -1,0 +1,9 @@
+#!/bin/bash
+
+echo "Pre-commit hook is running!"
+
+# Use direct path to the lint.sh script
+/home/dror/vmpilot/sh/lint.sh
+
+# Exit with the same status as the lint script
+exit $?

@@ -2,7 +2,9 @@
 
 PATH="$HOME/.local/bin:$PATH"
 MYPY_CACHE_DIR="/tmp/mypy_cache"
-cd /home/dror/vmpilot
+# Get the git root directory instead of hardcoding the path
+GIT_ROOT=$(git rev-parse --show-toplevel)
+cd "$GIT_ROOT"
 
 set -e
 echo "Running linting checks..."
@@ -22,14 +24,5 @@ if [ $? -ne 0 ]; then
     echo "Error: Import sorting check failed."
     exit 1
 fi
-
-# Run mypy
-# echo "Running type checking with mypy..."
-# mypy .
-# if [ $? -ne 0 ]; then
-    # echo "Error: Type checking failed."
-    # exit 1
-# fi
-
 
 echo "✅ All linting checks passed!"

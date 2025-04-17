@@ -5,19 +5,32 @@ date: 2024-12-02
 version: 0.2
 license: MIT
 description: A pipeline that enables using an LLM to execute commands via LangChain
-environment_variables: ANTHROPIC_API_KEY
+environment_variables: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
 """
 
-import asyncio
+# Configure logging early
 import logging
 import os
+
+# Import and use custom logging configuration
+from vmpilot.logging_config import configure_logging
+
+configure_logging()
+
+# Set up module logger
+logger = logging.getLogger(__name__)
+
+import asyncio
 import queue
 import threading
 import traceback
-from typing import Dict, Generator, Iterator, List, Union, Optional
-
 from datetime import datetime
+from typing import Dict, Generator, Iterator, List, Optional, Union
+
 from pydantic import BaseModel
+
+# Now import other modules after logging is configured
+from vmpilot.chat import Chat
 
 # Import tool output truncation setting
 from vmpilot.config import (
@@ -31,21 +44,6 @@ from vmpilot.config import (
     parser,
 )
 
-# Set up logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# Create handlers
-stream_handler = logging.StreamHandler()
-
-# Create formatters and add it to handlers
-log_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-stream_handler.setFormatter(log_format)
-
-# Add handlers to the logger
-logger.addHandler(stream_handler)
-logger.propagate = False
-
 
 class Pipeline:
     # Provider management at Pipeline level
@@ -53,15 +51,11 @@ class Pipeline:
     _api_key: str = ""  # Set based on active provider
     chat_id: str = None
 
-    async def inlet(self, body: dict, user: Optional[dict] = None) -> dict:
-        # Store chat_id as instance variable for use in pipe
-        self.chat_id = body.get("chat_id")
-        return body
-
     class Valves(BaseModel):
         # Private storage for properties
         anthropic_api_key: str = ""
         openai_api_key: str = ""
+        google_api_key: str = ""
         _provider: Provider = Provider(DEFAULT_PROVIDER)
 
         # Model configuration (inherited from config)
@@ -79,24 +73,35 @@ class Pipeline:
 
         # Property for anthropic_api_key with setter that updates state
         @property
-        def anthropic_api_key(self) -> str:
+        def anthropic_key(self) -> str:
             return self.anthropic_api_key
 
-        @anthropic_api_key.setter
-        def anthropic_api_key(self, value: str):
+        @anthropic_key.setter
+        def anthropic_key(self, value: str):
             self.anthropic_api_key = value
             if self.provider == Provider.ANTHROPIC:
                 self._update_api_key()
 
         # Property for openai_api_key with setter that updates state
         @property
-        def openai_api_key(self) -> str:
+        def openai_key(self) -> str:
             return self.openai_api_key
 
-        @openai_api_key.setter
-        def openai_api_key(self, value: str):
+        @openai_key.setter
+        def openai_key(self, value: str):
             self.openai_api_key = value
             if self.provider == Provider.OPENAI:
+                self._update_api_key()
+
+        # Property for google_api_key with setter that updates state
+        @property
+        def google_key(self) -> str:
+            return self.google_api_key
+
+        @google_key.setter
+        def google_api_key(self, value: str):
+            self.google_api_key = value
+            if self.provider == Provider.GOOGLE:
                 self._update_api_key()
 
         def __init__(self, **data):
@@ -106,6 +111,8 @@ class Pipeline:
                 self.anthropic_api_key = data["anthropic_api_key"]
             if "openai_api_key" in data:
                 self.openai_api_key = data["openai_api_key"]
+            if "google_api_key" in data:
+                self.google_api_key = data["google_api_key"]
             if "provider" in data:
                 self._provider = data["provider"]
             self._sync_with_config()
@@ -121,12 +128,18 @@ class Pipeline:
 
         def _update_api_key(self):
             """Update API key based on current provider"""
-            Pipeline._provider = self.provider
-            Pipeline._api_key = (
-                self.anthropic_api_key
-                if self.provider == Provider.ANTHROPIC
-                else self.openai_api_key
-            )
+            try:
+                Pipeline._provider = self.provider
+                if self.provider == Provider.ANTHROPIC:
+                    Pipeline._api_key = self.anthropic_api_key
+                elif self.provider == Provider.OPENAI:
+                    Pipeline._api_key = self.openai_api_key
+                elif self.provider == Provider.GOOGLE:
+                    Pipeline._api_key = self.google_api_key
+                else:
+                    logger.error(f"Unknown provider: {self.provider}")
+            except Exception as e:
+                logger.error(f"Error updating API key: {str(e)}")
 
     def __init__(self):
         self.name = parser.get("pipeline", "name")
@@ -140,6 +153,9 @@ class Pipeline:
             ),
             openai_api_key=os.getenv(
                 "OPENAI_API_KEY", "To use OpenAI, enter your API key here"
+            ),
+            google_api_key=os.getenv(
+                "GOOGLE_API_KEY", "To use Google, enter your API key here"
             ),
             provider=Provider(DEFAULT_PROVIDER),
         )
@@ -168,7 +184,10 @@ class Pipeline:
 
     def set_model(self, model: str):
         """Set the model and validate against current provider"""
-        if config.validate_model(model, self.valves.provider):
+        # ModelConfig has no validate_model attribute, use config module function instead
+        if hasattr(config, "validate_model") and config.validate_model(
+            model, self.valves.provider
+        ):
             self.valves.model = model
         else:
             raise ValueError(f"Unsupported model: {model}")
@@ -186,6 +205,11 @@ class Pipeline:
                 "name": "OpenAI (GPT-4o)",
                 "description": "Execute commands using OpenAI's GPT-4o model",
             },
+            {
+                "id": "google",
+                "name": "Google AI",
+                "description": "Execute commands using Google AI",
+            },
         ]
 
         # Only show models with valid API keys
@@ -196,6 +220,9 @@ class Pipeline:
     ) -> Union[str, Generator, Iterator]:
         """Execute bash commands through an LLM with tool integration."""
         logger.debug(f"Full body keys: {list(body.keys())}")
+        logger.debug(f"Messages: {messages}")
+        logger.debug(f"num messages: {len(messages)}")
+
         # Disable logging if requested (e.g. when running from CLI)
         if body.get("disable_logging"):
             # Disable all logging at the root level
@@ -268,6 +295,8 @@ class Pipeline:
                     "type": "ephemeral"
                 }
 
+            # Message truncation is now handled by the Chat class in agent.py
+
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
             def generate_responses():
@@ -305,17 +334,46 @@ class Pipeline:
                     for output in outputs:
                         output_lines = str(output).splitlines()
                         truncated_output = "\n".join(output_lines[:TOOL_OUTPUT_LINES])
-                        if len(output_lines) > TOOL_OUTPUT_LINES:
+                        if len(output_lines) > (TOOL_OUTPUT_LINES + 1):
                             # we use 4 backticks to escape the 3 backticks that might be in the markdown
                             truncated_output += f"\n...\n````\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
+                        else:
+                            truncated_output += "\n"
                         output_queue.put(truncated_output)
+
+                # Chat object creation and management is now handled in agent.py
 
                 """ Run the sampling loop in a separate thread while waiting for responses """
 
                 def run_loop():
+                    loop = None
                     try:
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
+
+                        # Set exception handler for the loop to catch unhandled exceptions
+                        def handle_exception(loop, context):  # pragma: no cover
+                            exception = context.get("exception")
+                            if exception:
+                                if "TCPTransport closed=True" in str(
+                                    exception
+                                ) or "unable to perform operation" in str(exception):
+                                    logger.info(
+                                        "Ignoring expected httpx connection cleanup exception. This is OK. For more info: https://github.com/drorm/vmpilot/issues/35"
+                                    )
+                                else:
+                                    message = f"Caught asyncio exception: {exception}"
+                                    logger.error(message)
+                                    logger.error(
+                                        "".join(
+                                            traceback.format_tb(exception.__traceback__)
+                                        )
+                                    )
+                            else:
+                                logger.error(f"Asyncio error: {context['message']}")
+
+                        loop.set_exception_handler(handle_exception)
+
                         logger.debug(f"body: {body}")
                         loop.run_until_complete(
                             process_messages(
@@ -330,15 +388,30 @@ class Pipeline:
                                 temperature=TEMPERATURE,
                                 disable_logging=body.get("disable_logging", False),
                                 recursion_limit=RECURSION_LIMIT,
-                                thread_id=self.chat_id,
                             )
                         )
-                    except Exception as e:
-                        logger.error(f"Error in sampling loop: {e}")
+                    except Exception as e:  # pragma: no cover
+                        logger.error(f"Error: {e}")
                         logger.error("".join(traceback.format_tb(e.__traceback__)))
                     finally:
                         loop_done.set()
-                        loop.close()
+                        # Safely close the loop
+                        if loop:  # pragma: no cover
+                            try:
+                                # Cancel all running tasks
+                                pending = asyncio.all_tasks(loop)
+                                for task in pending:
+                                    task.cancel()
+
+                                # Allow tasks to respond to cancellation
+                                if pending:
+                                    loop.run_until_complete(
+                                        asyncio.gather(*pending, return_exceptions=True)
+                                    )
+
+                                loop.close()
+                            except Exception as e:
+                                logger.warning(f"Error during loop cleanup: {e}")
 
                 # Start the sampling loop in a separate thread
                 thread = threading.Thread(target=run_loop)
@@ -375,14 +448,17 @@ class Pipeline:
                 for msg in generate_responses():
                     output_parts.append(msg)
                 result = (
-                    "\n\n".join(part.strip() for part in output_parts)
+                    "\n\n".join(
+                        str(part).strip() if hasattr(part, "strip") else str(part)
+                        for part in output_parts
+                    )
                     if output_parts
                     else "Command executed successfully"
                 )
                 logger.debug(f"Non-streaming result: {result}")
                 return result
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             error_msg = f"Error in pipe: {str(e)}"
             logger.error(error_msg, exc_info=True)
             return error_msg
