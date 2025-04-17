@@ -176,60 +176,6 @@ class Chat:
             return extracted
         return None
 
-    def change_to_project_dir(self):
-        """
-        Ensure the project directory exists and is a directory before changing to it.
-        This is a compatibility method for tests - actual implementation is in env.py.
-
-        Direct implementation for tests - doesn't use env.py to ensure test compatibility
-        """
-        import os
-
-        # For tests: if the PROJECT_ROOT environment variable is set, use it
-        # This is a workaround for tests that don't set project_dir
-        if not self.project_dir and "PROJECT_ROOT" in os.environ:
-            self.project_dir = os.environ["PROJECT_ROOT"]
-            logger.debug(f"Using PROJECT_ROOT from environment: {self.project_dir}")
-
-        # Use the project_dir that was set in __init__
-        expanded_dir = os.path.expanduser(self.project_dir)
-        logger.debug(
-            f"Changing to project directory: {expanded_dir} (original: {self.project_dir})"
-        )
-
-        # In test environment, skip directory validation if running under pytest
-        if "PYTEST_CURRENT_TEST" in os.environ and not expanded_dir:
-            logger.debug("Skipping directory validation in test environment")
-            return
-
-        # Check if directory exists
-        if not os.path.exists(expanded_dir):
-            error = f"Project directory {self.project_dir} does not exist. See https://vmpdocs.a1.lingastic.org/user-guide/?h=project+directory#project-directory-configuration "
-            logger.error(error)
-            raise Exception(error)
-
-        # Check if it's a directory
-        if not os.path.isdir(expanded_dir):
-            error_msg = f"Failed to change to project directory {self.project_dir}: Not a directory"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-
-        # Try to change to the directory
-        try:
-            os.chdir(expanded_dir)
-            logger.info(f"Changed to project directory: {expanded_dir}")
-
-            # For tests, update env variable
-            os.environ["PROJECT_ROOT"] = expanded_dir
-        except PermissionError:
-            error_msg = f"Failed to change to project directory {self.project_dir}: Permission denied"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-        except Exception as e:
-            error_msg = f"Failed to change to project directory {self.project_dir}: {e}"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-
     def should_truncate_messages(self, messages):
         """
         Determine if messages should be truncated based on chat context.

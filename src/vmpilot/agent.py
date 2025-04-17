@@ -27,7 +27,7 @@ from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
 from vmpilot.exchange import Exchange
-from vmpilot.init_agent import create_agent, modify_state_messages
+from vmpilot.init_agent import create_agent
 from vmpilot.prompt import get_system_prompt
 from vmpilot.request import send_request
 from vmpilot.setup_shell import SetupShellTool
