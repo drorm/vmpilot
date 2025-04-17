@@ -16,17 +16,24 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, Union
+
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.runnables import Runnable
+
+
 async def send_request(
-    agent,
-    chat,
-    exchange,
-    recursion_limit,
-    formatted_messages: list,
-    output_callback,
-    tool_output_callback,
-    usage,
-):
+    agent: Runnable,
+    chat: Any,
+    exchange: Any,
+    recursion_limit: int,
+    formatted_messages: List[Union[HumanMessage, AIMessage]],
+    output_callback: Callable[[Dict[str, Any]], None],
+    tool_output_callback: Callable[[Dict[str, Any], str], None],
+    usage: Any,
+) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
     collected_tool_calls = []
+    response = None  # Initialize response variable
     try:
         async for agent_response in agent.astream(
             {"messages": formatted_messages},
@@ -159,6 +166,9 @@ async def send_request(
                 output_callback(
                     {"type": "text", "text": f"Error processing response: {str(e)}"}
                 )
+        # Make sure response is properly initialized before returning
+        if not "response" in locals():
+            response = None
         return (response, collected_tool_calls)
     except Exception as e:  # pragma: no cover
         from langchain_core.messages import AIMessage, HumanMessage
@@ -190,3 +200,6 @@ async def send_request(
         exchange.complete(AIMessage(content=error_content), collected_tool_calls)
 
         output_callback({"type": "text", "text": f"{message}"})
+
+        # Return a tuple to match the function's return type
+        return (None, collected_tool_calls)
