@@ -9,10 +9,11 @@ These tests verify that the agent can:
 
 import asyncio
 import os
+import uuid
+from typing import Any, Dict, List
+
 import pytest
 from pytest import mark
-import uuid
-from typing import Dict, List, Any
 
 from vmpilot.agent import process_messages
 from vmpilot.config import Provider

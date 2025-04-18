@@ -169,6 +169,15 @@ class GitConfig(BaseModel):
     )
 
 
+class DatabaseConfig(BaseModel):
+    """Database configuration"""
+
+    path: str = Field(
+        default="/app/data/vmpilot.db", description="Path to SQLite database file"
+    )
+    enabled: bool = Field(default=True, description="Enable database persistence")
+
+
 class ModelConfig(BaseModel):
     """Global model configuration"""
 
@@ -177,6 +186,7 @@ class ModelConfig(BaseModel):
     git_config: GitConfig = Field(default_factory=GitConfig)
     pricing: Dict[Provider, ModelPricing] = Field(default_factory=dict)
     pricing_display: PricingDisplay = Field(default=PricingDisplay.DETAILED)
+    database_config: DatabaseConfig = Field(default_factory=DatabaseConfig)
 
     def __init__(self):
         try:
@@ -274,12 +284,22 @@ class ModelConfig(BaseModel):
                     f"Invalid pricing_display value: {pricing_display_str}. Using 'detailed' instead."
                 )
 
+            # Initialize database configuration
+            db_config = None
+            if parser.has_section("database"):
+                db_section = parser["database"]
+                db_config = DatabaseConfig(
+                    path=db_section.get("path", fallback="/app/data/vmpilot.db"),
+                    enabled=db_section.getboolean("enabled", fallback=True),
+                )
+
             super().__init__(
                 providers=providers,
                 default_provider=Provider(default_provider),
                 git_config=git_config or GitConfig(),
                 pricing=pricing,
                 pricing_display=pricing_display,
+                database_config=db_config or DatabaseConfig(),
             )
 
         except Exception as e:
@@ -291,6 +311,7 @@ class ModelConfig(BaseModel):
                 git_config=GitConfig(),
                 pricing={},  # Empty pricing dictionary
                 pricing_display=PricingDisplay.DETAILED,  # Default to detailed display
+                database_config=DatabaseConfig(),  # Default database config
             )
 
     def get_provider_config(
