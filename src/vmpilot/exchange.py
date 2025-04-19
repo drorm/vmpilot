@@ -183,71 +183,23 @@ class Exchange:
 
         # Save to database if we have a complete exchange
         if self.assistant_message:
-            try:
-                # Import here to avoid circular imports
-                from vmpilot.config import config
-                from vmpilot.db.connection import get_db_connection
-                from vmpilot.db.crud import ConversationRepository
+            # Extract content for user and assistant messages
+            user_content = (
+                self.user_message
+                if isinstance(self.user_message, str)
+                else getattr(self.user_message, "content", "")
+            )
+            assistant_content = getattr(self.assistant_message, "content", "")
 
-                # Only proceed if database is enabled in config
-                if (
-                    not hasattr(config, "database_config")
-                    or not config.database_config.enabled
-                ):
-                    logger.debug(
-                        f"Database persistence is disabled, skipping save for chat_id: {self.chat_id}"
-                    )
-                    return
+            # Use the centralized database persistence function
+            from vmpilot.agent_memory import save_exchange_to_database
 
-                # Convert messages to serializable format
-                serializable_messages = []
-                for msg in updated_messages:
-                    try:
-                        if hasattr(msg, "model_dump"):
-                            # Use model_dump (Pydantic v2)
-                            serializable_messages.append(msg.model_dump())
-                        elif hasattr(msg, "dict"):
-                            # Fallback for older Pydantic versions
-                            serializable_messages.append(msg.dict())
-                        else:
-                            # Fallback for non-Pydantic objects
-                            serializable_messages.append(
-                                {
-                                    "type": msg.__class__.__name__,
-                                    "content": getattr(msg, "content", ""),
-                                    "role": getattr(msg, "type", "unknown"),
-                                }
-                            )
-                    except Exception as e:
-                        logger.warning(f"Error serializing message: {e}")
-                        # Fallback serialization
-                        serializable_messages.append(
-                            {
-                                "type": msg.__class__.__name__,
-                                "content": getattr(msg, "content", ""),
-                                "role": "unknown",
-                            }
-                        )
-
-                # Save to database
-                repo = ConversationRepository()
-
-                # Debug logging
-                logger.debug(
-                    f"Saving {len(serializable_messages)} messages to database for chat_id: {self.chat_id}"
-                )
-                for i, msg in enumerate(serializable_messages):
-                    content = (
-                        msg.get("content", "") if isinstance(msg, dict) else str(msg)
-                    )
-                    logger.debug(f"Message {i}: {content[:50]}...")
-
-                repo.save_chat_history(self.chat_id, serializable_messages)
-                logger.debug(
-                    f"Saved full chat history to database for chat_id: {self.chat_id}"
-                )
-            except Exception as e:
-                logger.error(f"Error saving chat history to database: {e}")
+            save_exchange_to_database(
+                chat_id=self.chat_id,
+                messages=updated_messages,
+                user_message=user_content,
+                assistant_message=assistant_content,
+            )
 
         logger.debug(f"Saved conversation state for chat_id: {self.chat_id}")
 
