@@ -5,7 +5,7 @@ show_usage() {
     echo "Usage: cli.sh [OPTIONS] COMMAND"
     echo
     echo "Options:"
-    echo "  -c, --chat [ID]       Enable chat mode with optional chat ID"
+    echo "  -c, --chat [CHAT_ID]  Enable chat mode with optional chat ID"
     echo "  -f, --file FILE       Process commands from a file"
     echo "  -v, --verbose         Enable verbose output with INFO level logging"
     echo "  -d, --debug           Enable debug mode with detailed logging"

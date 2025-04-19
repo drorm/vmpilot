@@ -55,6 +55,28 @@ def initialize_db() -> None:
     for sql in SCHEMA_SQL:
         cursor.execute(sql)
 
+    # Verify chat_histories table exists
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='chat_histories'"
+    )
+    if not cursor.fetchone():
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.warning("chat_histories table does not exist, creating it now")
+        cursor.execute(
+            """
+        CREATE TABLE IF NOT EXISTS chat_histories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id TEXT NOT NULL,
+            full_history TEXT NOT NULL,        -- JSON serialized complete chat history
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            message_count INTEGER NOT NULL,    -- Number of messages in the history
+            FOREIGN KEY (chat_id) REFERENCES chats(id)
+        );
+        """
+        )
+
     connection.commit()
 
 

@@ -279,7 +279,22 @@ class ConversationRepository:
 
         result = cursor.fetchone()
         if result and result["full_history"]:
-            return json.loads(result["full_history"])
+            try:
+                history = json.loads(result["full_history"])
+                # Log the history to help with debugging
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.debug(
+                    f"Retrieved history from database for {chat_id}: {len(history)} messages"
+                )
+                return history
+            except json.JSONDecodeError as e:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error decoding chat history JSON: {e}")
+                return None
         return None
 
     def get_chats(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:

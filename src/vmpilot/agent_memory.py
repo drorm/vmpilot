@@ -93,10 +93,43 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
                 # Convert serialized messages back to LangChain message objects
                 messages = []
                 for msg in history:
-                    if msg.get("role") == "human" or msg.get("type") == "HumanMessage":
+                    # Check for different formats of messages
+                    if (
+                        msg.get("role") == "human"
+                        or msg.get("type") == "human"
+                        or msg.get("type") == "HumanMessage"
+                    ):
                         messages.append(HumanMessage(content=msg.get("content", "")))
-                    elif msg.get("role") == "ai" or msg.get("type") == "AIMessage":
+                    elif (
+                        msg.get("role") == "ai"
+                        or msg.get("type") == "ai"
+                        or msg.get("type") == "AIMessage"
+                    ):
                         messages.append(AIMessage(content=msg.get("content", "")))
+                    # Handle nested content structure
+                    elif (
+                        isinstance(msg.get("content"), list)
+                        and len(msg.get("content", [])) > 0
+                    ):
+                        # Handle messages with content as a list of content items
+                        content_text = ""
+                        for content_item in msg.get("content", []):
+                            if isinstance(content_item, dict) and content_item.get(
+                                "text"
+                            ):
+                                content_text += content_item.get("text", "")
+                            elif isinstance(content_item, str):
+                                content_text += content_item
+
+                        if msg.get("type") == "human":
+                            messages.append(HumanMessage(content=content_text))
+                        else:
+                            messages.append(AIMessage(content=content_text))
+
+                # Add more detailed logging about the message formats
+                logger.warning(
+                    f"Converted {len(history)} database messages to {len(messages)} LangChain messages"
+                )
 
                 # Save to in-memory cache for future access
                 save_conversation_state(thread_id, messages, {})
