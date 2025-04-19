@@ -32,4 +32,15 @@ SCHEMA_SQL = [
         FOREIGN KEY (chat_id) REFERENCES chats(id)
     );
     """,
+    """
+    -- Chat histories table to store complete conversation histories
+    CREATE TABLE IF NOT EXISTS chat_histories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chat_id TEXT NOT NULL,
+        full_history TEXT NOT NULL,        -- JSON serialized complete chat history
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        message_count INTEGER NOT NULL,    -- Number of messages in the history
+        FOREIGN KEY (chat_id) REFERENCES chats(id)
+    );
+    """,
 ]

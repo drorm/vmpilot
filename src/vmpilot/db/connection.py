@@ -29,7 +29,11 @@ def get_db_path() -> Path:
         default_path = Path.home() / ".vmpilot" / "vmpilot.db"
 
     # Get path from config or use default
-    db_path_str = config.get("database", "path", fallback=str(default_path))
+    db_path_str = (
+        config.database_config.path
+        if hasattr(config, "database_config")
+        else str(default_path)
+    )
     db_path = Path(db_path_str)
 
     # Ensure directory exists
@@ -65,11 +69,20 @@ def get_db_connection() -> sqlite3.Connection:
 
     if _db_connection is None:
         db_path = get_db_path()
+
+        # Check if the database file exists
+        db_exists = db_path.exists()
+
+        # Create connection
         _db_connection = sqlite3.connect(
             db_path,
             detect_types=sqlite3.PARSE_DECLTYPES,
             check_same_thread=False,  # Allow access from multiple threads
         )
         _db_connection.row_factory = sqlite3.Row
+
+        # Initialize database if it's a new database or doesn't have tables
+        if not db_exists:
+            initialize_db()
 
     return _db_connection

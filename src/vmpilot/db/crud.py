@@ -23,6 +23,11 @@ class ConversationRepository:
         """Initialize the repository with a database connection."""
         self.conn = get_db_connection()
 
+        # Ensure tables exist
+        from vmpilot.db.connection import initialize_db
+
+        initialize_db()
+
     def save_chat(
         self,
         chat_id: str,
@@ -215,6 +220,67 @@ class ConversationRepository:
             exchanges.append(exchange)
 
         return exchanges
+
+    def save_chat_history(
+        self, chat_id: str, full_history: List[Dict[str, Any]]
+    ) -> int:
+        """
+        Save the complete chat history for a chat.
+
+        This method stores the entire conversation history for faster retrieval
+        instead of reconstructing it from individual exchanges.
+
+        Args:
+            chat_id: The ID of the chat
+            full_history: The complete chat history as a list of message dictionaries
+
+        Returns:
+            int: The ID of the newly inserted chat history record
+        """
+        cursor = self.conn.cursor()
+
+        # Serialize the full history to JSON
+        serialized_history = json.dumps(full_history)
+        message_count = len(full_history)
+
+        cursor.execute(
+            """
+            INSERT INTO chat_histories 
+            (chat_id, full_history, message_count) 
+            VALUES (?, ?, ?)
+            """,
+            (chat_id, serialized_history, message_count),
+        )
+
+        self.conn.commit()
+        return cursor.lastrowid
+
+    def get_latest_chat_history(self, chat_id: str) -> Optional[List[Dict[str, Any]]]:
+        """
+        Get the most recent chat history for a chat.
+
+        Args:
+            chat_id: The ID of the chat
+
+        Returns:
+            Optional[List[Dict[str, Any]]]: The complete chat history as a list of message
+            dictionaries, or None if no history exists
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            SELECT full_history FROM chat_histories 
+            WHERE chat_id = ? 
+            ORDER BY timestamp DESC 
+            LIMIT 1
+            """,
+            (chat_id,),
+        )
+
+        result = cursor.fetchone()
+        if result and result["full_history"]:
+            return json.loads(result["full_history"])
+        return None
 
     def get_chats(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """
