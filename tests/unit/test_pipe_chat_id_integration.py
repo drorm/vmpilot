@@ -120,7 +120,7 @@ class TestPipeChatIDIntegration:
     def test_message_truncation_with_chat_id(self, mock_process_messages, pipeline):
         """Test that only the last message is kept when chat_id exists."""
         # Set a chat_id on the pipeline
-        pipeline.chat_id = "test123"
+        Pipeline.chat_id = "test123"
         # Initialize _chat attribute for the test with a valid system_prompt_suffix
         # Use a test directory that always exists
         with (
@@ -237,9 +237,9 @@ class TestPipeChatIDIntegration:
     @patch("vmpilot.agent.process_messages")
     def test_message_retention_without_chat_id(self, mock_process_messages, pipeline):
         """Test that all messages are kept when no chat_id exists."""
-        # Ensure no chat_id exists
-        if hasattr(pipeline, "chat_id"):
-            delattr(pipeline, "chat_id")
+        # Ensure no chat_id exists at the class level
+        Pipeline.chat_id = None
+
         # Initialize _chat attribute for the test with a valid system_prompt_suffix
         # Use a test directory that always exists
         with (
@@ -248,6 +248,8 @@ class TestPipeChatIDIntegration:
             patch("vmpilot.env.os.chdir"),
         ):
             pipeline._chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
+            # Ensure the chat object also has no chat_id
+            pipeline._chat.chat_id = None
 
         # Create test messages
         messages = [
@@ -347,9 +349,8 @@ class TestPipeChatIDIntegration:
     @patch("vmpilot.agent.process_messages")
     def test_chat_id_generation_in_pipe(self, mock_process_messages, pipeline):
         """Test that chat_id is generated in pipe method when needed."""
-        # Ensure no chat_id exists
-        if hasattr(pipeline, "chat_id"):
-            delattr(pipeline, "chat_id")
+        # Ensure no chat_id exists at the class level
+        Pipeline.chat_id = None
 
         # Create test messages (only system and user message)
         messages = [
@@ -367,6 +368,8 @@ class TestPipeChatIDIntegration:
             patch("vmpilot.env.os.chdir"),
         ):
             chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
+
+        # Check that the Chat object generates a chat_id
         assert chat.chat_id is not None
         assert len(chat.chat_id) > 0
 
@@ -383,5 +386,11 @@ class TestPipeChatIDIntegration:
             patch("vmpilot.env.os.chdir"),
         ):
             chat = Chat(system_prompt_suffix="$PROJECT_ROOT=/tmp")
-        chat.chat_id = body_chat_id
-        assert chat.chat_id == body_chat_id
+            # Set the chat_id after creation
+            chat.chat_id = body_chat_id
+
+            # Verify the chat_id is properly set
+            assert chat.chat_id == body_chat_id
+
+            # Also set the Pipeline class chat_id for consistency
+            Pipeline.chat_id = body_chat_id
