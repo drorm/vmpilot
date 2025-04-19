@@ -1,6 +1,6 @@
 """
-In-memory conversation state manager for VMPilot.
-This is a simple implementation to verify the caching fix approach.
+Conversation state manager for VMPilot.
+Provides both in-memory conversation state and integration with database persistence.
 """
 
 import logging
@@ -50,6 +50,8 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
     """
     Retrieve the conversation state for a given thread_id.
 
+    First checks in-memory state, and if not found, attempts to load from database.
+
     Args:
         thread_id: The unique identifier for the conversation thread
 
@@ -58,18 +60,54 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
         - List of LangChain messages representing the conversation state
         - Dictionary with cache token information
     """
-    if thread_id is None or thread_id not in conversation_states:
-        logger.debug(f"No conversation state found for thread_id: {thread_id}")
-        return [], {}
+    # First check in-memory cache
+    if thread_id is not None and thread_id in conversation_states:
+        state = conversation_states.get(thread_id, {"messages": [], "cache_info": {}})
+        messages = state.get("messages", [])
+        cache_info = state.get("cache_info", {})
 
-    state = conversation_states.get(thread_id, {"messages": [], "cache_info": {}})
-    messages = state.get("messages", [])
-    cache_info = state.get("cache_info", {})
+        logger.debug(
+            f"Retrieved in-memory conversation state for thread_id {thread_id}: {len(messages)} messages"
+        )
+        return messages, cache_info
 
-    logger.debug(
-        f"Retrieved conversation state for thread_id {thread_id}: {len(messages)} messages, cache_info: {cache_info}"
-    )
-    return messages, cache_info
+    if thread_id is not None:
+        try:
+            # Import here to avoid circular imports
+            from langchain_core.messages import AIMessage, HumanMessage
+
+            from vmpilot.config import config
+            from vmpilot.db.connection import get_db_connection
+            from vmpilot.db.crud import ConversationRepository
+
+            # Only attempt database retrieval if database is enabled in config
+            if hasattr(config, "database_config") and config.database_config.enabled:
+                repo = ConversationRepository()
+                history = repo.get_latest_chat_history(thread_id)
+            else:
+                history = None
+
+            if history:
+                # Convert serialized messages back to LangChain message objects
+                messages = []
+                for msg in history:
+                    if msg.get("role") == "human" or msg.get("type") == "HumanMessage":
+                        messages.append(HumanMessage(content=msg.get("content", "")))
+                    elif msg.get("role") == "ai" or msg.get("type") == "AIMessage":
+                        messages.append(AIMessage(content=msg.get("content", "")))
+
+                # Save to in-memory cache for future access
+                save_conversation_state(thread_id, messages, {})
+
+                logger.debug(
+                    f"Retrieved conversation state from database for thread_id {thread_id}: {len(messages)} messages"
+                )
+                return messages, {}
+        except Exception as e:
+            logger.error(f"Error retrieving conversation history from database: {e}")
+
+    logger.debug(f"No conversation state found for thread_id: {thread_id}")
+    return [], {}
 
 
 def update_cache_info(thread_id: str, cache_info: Dict[str, int]) -> None:

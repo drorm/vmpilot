@@ -16,7 +16,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from vmpilot.agent_memory import save_conversation_state
+from vmpilot.agent_memory import get_conversation_state, save_conversation_state
 from vmpilot.config import GitConfig, config
 from vmpilot.git_track import GitStatus, GitTracker
 
@@ -168,9 +168,87 @@ class Exchange:
         return False
 
     def save_state(self) -> None:
-        """Save the conversation state."""
-        # Call existing save_conversation_state with our data
-        save_conversation_state(self.chat_id, self.to_messages(), {})
+        """Save the conversation state and persist full chat history to database."""
+        # Get existing conversation state
+        current_messages, cache_info = get_conversation_state(self.chat_id)
+
+        # Add this exchange's messages to the history
+        updated_messages = list(
+            current_messages
+        )  # Create a copy to avoid modifying the original
+        updated_messages.extend(self.to_messages())
+
+        # Save to in-memory state
+        save_conversation_state(self.chat_id, updated_messages, cache_info)
+
+        # Save to database if we have a complete exchange
+        if self.assistant_message:
+            try:
+                # Import here to avoid circular imports
+                from vmpilot.config import config
+                from vmpilot.db.connection import get_db_connection
+                from vmpilot.db.crud import ConversationRepository
+
+                # Only proceed if database is enabled in config
+                if (
+                    not hasattr(config, "database_config")
+                    or not config.database_config.enabled
+                ):
+                    logger.debug(
+                        f"Database persistence is disabled, skipping save for chat_id: {self.chat_id}"
+                    )
+                    return
+
+                # Convert messages to serializable format
+                serializable_messages = []
+                for msg in updated_messages:
+                    try:
+                        if hasattr(msg, "model_dump"):
+                            # Use model_dump (Pydantic v2)
+                            serializable_messages.append(msg.model_dump())
+                        elif hasattr(msg, "dict"):
+                            # Fallback for older Pydantic versions
+                            serializable_messages.append(msg.dict())
+                        else:
+                            # Fallback for non-Pydantic objects
+                            serializable_messages.append(
+                                {
+                                    "type": msg.__class__.__name__,
+                                    "content": getattr(msg, "content", ""),
+                                    "role": getattr(msg, "type", "unknown"),
+                                }
+                            )
+                    except Exception as e:
+                        logger.warning(f"Error serializing message: {e}")
+                        # Fallback serialization
+                        serializable_messages.append(
+                            {
+                                "type": msg.__class__.__name__,
+                                "content": getattr(msg, "content", ""),
+                                "role": "unknown",
+                            }
+                        )
+
+                # Save to database
+                repo = ConversationRepository()
+
+                # Debug logging
+                logger.debug(
+                    f"Saving {len(serializable_messages)} messages to database for chat_id: {self.chat_id}"
+                )
+                for i, msg in enumerate(serializable_messages):
+                    content = (
+                        msg.get("content", "") if isinstance(msg, dict) else str(msg)
+                    )
+                    logger.debug(f"Message {i}: {content[:50]}...")
+
+                repo.save_chat_history(self.chat_id, serializable_messages)
+                logger.debug(
+                    f"Saved full chat history to database for chat_id: {self.chat_id}"
+                )
+            except Exception as e:
+                logger.error(f"Error saving chat history to database: {e}")
+
         logger.debug(f"Saved conversation state for chat_id: {self.chat_id}")
 
     def to_messages(self) -> List[Union[HumanMessage, AIMessage]]:
