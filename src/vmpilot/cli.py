@@ -31,7 +31,8 @@ logging.getLogger("vmpilot").setLevel(getattr(logging, log_level))
 
 # Explicitly silence specific loggers that might be noisy in CLI mode
 for logger_name in ["vmpilot.exchange", "vmpilot.agent", "vmpilot.agent_logging"]:
-    logging.getLogger(logger_name).setLevel(logging.INFO)
+    # set to INFO when debugging
+    logging.getLogger(logger_name).setLevel(logging.WARNING)
 
 
 # Add parent directory to Python path when running as script

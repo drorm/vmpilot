@@ -131,6 +131,27 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
                     f"Converted {len(history)} database messages to {len(messages)} LangChain messages"
                 )
 
+                # Apply modify_state_messages to manage cache_control properties
+                # Import here to avoid circular imports
+                from vmpilot.config import Provider as APIProvider
+                from vmpilot.config import config
+                from vmpilot.init_agent import modify_state_messages
+
+                # Get the current provider from config instead of relying on ContextVar
+                # This is more reliable when loading from database
+                try:
+                    # Create a state object similar to what the agent would use
+                    state = {"messages": messages}
+
+                    # Run the messages through modify_state_messages to properly handle cache_control
+                    messages = modify_state_messages(state)
+                    logger.debug(
+                        f"Applied cache_control modifications to {len(messages)} messages"
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not apply cache_control modifications: {e}")
+                    logger.warning(traceback.format_exc())
+
                 # Save to in-memory cache for future access
                 save_conversation_state(thread_id, messages, {})
 

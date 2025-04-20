@@ -4,7 +4,6 @@ LangChain-based implementation for VMPilot's agent functionality.
 
 import logging
 import traceback
-from contextvars import ContextVar
 from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage
@@ -25,7 +24,7 @@ from vmpilot.agent_memory import (
 from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
-from vmpilot.config import config
+from vmpilot.config import config, current_provider, prompt_suffix
 from vmpilot.exchange import Exchange
 from vmpilot.init_agent import create_agent
 from vmpilot.prompt import get_system_prompt
@@ -52,13 +51,6 @@ logger = logging.getLogger(__name__)
 # Flag to enable beta features in Anthropic API
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
-
-# The system prompt that's passed on from webui.
-prompt_suffix: ContextVar[Optional[Any]] = ContextVar("prompt_suffix", default=None)
-# The current provider (Anthropic/OpenAI)
-current_provider: ContextVar[Optional[APIProvider]] = ContextVar(
-    "current_provider", default=None
-)
 
 """
 Process user's message through the agent and handle outputs
@@ -115,6 +107,11 @@ async def process_messages(
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
 
+    logger.info(f"Setting current provider to {provider}")
+    # Set prompt suffix and provider
+    prompt_suffix.set(system_prompt_suffix)
+    current_provider.set(provider)
+
     # Create or retrieve Chat object to handle conversation state
     from .chat import Chat
 
@@ -142,10 +139,6 @@ async def process_messages(
     except Exception as e:
         logger.error(f"Error creating Chat object: {e}")
         raise
-
-    # Set prompt suffix and provider
-    prompt_suffix.set(system_prompt_suffix)
-    current_provider.set(provider)
 
     # Create an Exchange object to track this user-LLM interaction with Git tracking
     user_message = messages[-1] if messages else {"role": "user", "content": ""}

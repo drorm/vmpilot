@@ -1,5 +1,4 @@
 import logging
-from contextvars import ContextVar
 from typing import Any, Optional
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -13,7 +12,7 @@ from vmpilot.agent_logging import log_conversation_messages
 from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
-from vmpilot.config import config
+from vmpilot.config import config, current_provider, prompt_suffix
 from vmpilot.prompt import get_system_prompt
 from vmpilot.tools.setup_tools import setup_tools
 
@@ -24,13 +23,6 @@ logger = logging.getLogger(__name__)
 # Flag to enable beta features in Anthropic API
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
-
-# The system prompt that's passed on from webui.
-prompt_suffix: ContextVar[Optional[Any]] = ContextVar("prompt_suffix", default=None)
-# The current provider (Anthropic/OpenAI)
-current_provider: ContextVar[Optional[APIProvider]] = ContextVar(
-    "current_provider", default=None
-)
 
 
 """
@@ -47,9 +39,10 @@ def modify_state_messages(state: AgentState):
     messages = state["messages"]
 
     # Get current provider
+    # If provider is None or not Anthropic, return messages as is
     provider = current_provider.get()
-
-    if provider != APIProvider.ANTHROPIC:
+    logger.debug(f"In modify_state_messages - Current provider: {provider}")
+    if provider is None or provider != APIProvider.ANTHROPIC:
         return state["messages"]
 
     # If the provider is Anthropic, add cache control to messages. https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching

@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 from configparser import ConfigParser
+from contextvars import ContextVar
 from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -398,6 +399,14 @@ DEFAULT_PROVIDER = parser.get("general", "default_provider")
 TOOL_OUTPUT_LINES = parser.getint("general", "tool_output_lines")
 DEFAULT_PROJECT = os.path.expanduser(
     parser.get("general", "default_project", fallback="~/vmpilot")
+)
+
+# The system prompt that's passed on from webui.
+prompt_suffix: ContextVar[Optional[Any]] = ContextVar("prompt_suffix", default=None)
+
+# The current provider (Anthropic/OpenAI) - this is shared across modules
+current_provider: ContextVar[Optional[Provider]] = ContextVar(
+    "current_provider", default=None
 )
 
 # Inference parameters
