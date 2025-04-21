@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from vmpilot.config import config
-from vmpilot.db.simplified_models import SCHEMA_SQL
+from vmpilot.db.models import SCHEMA_SQL
 
 # Singleton connection instance
 _db_connection: Optional[sqlite3.Connection] = None
@@ -28,13 +28,14 @@ def get_db_path() -> Path:
     if not os.path.exists("/app/data"):
         default_path = Path.home() / ".vmpilot" / "vmpilot.db"
 
-    # Get path from config or use default
-    db_path_str = (
-        config.database_config.path
-        if hasattr(config, "database_config")
-        else str(default_path)
-    )
-    db_path = Path(db_path_str)
+    # Get path from config
+    if hasattr(config, "database_config"):
+        db_path_str = config.database_config.path
+    else:
+        db_path_str = str(default_path)
+
+    # Expand user directory if needed
+    db_path = Path(os.path.expanduser(db_path_str))
 
     # Ensure directory exists
     db_path.parent.mkdir(parents=True, exist_ok=True)

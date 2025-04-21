@@ -18,10 +18,12 @@ logger = logging.getLogger(__name__)
 
 # Initialize the database when the module is imported
 try:
-    if hasattr(config, "database_config") and config.database_config.enabled:
+    if config.is_database_enabled():
         logger.info("Initializing SQLite database for conversation persistence")
         initialize_db()
         logger.info("Database initialization complete")
+    else:
+        logger.info("Database persistence is disabled in configuration")
 except Exception as e:
     logger.error(f"Error initializing database: {e}")
     # Don't raise the exception - allow the application to continue without database

@@ -22,7 +22,8 @@ SCHEMA_SQL = [
     -- Chat histories table to store complete conversation histories
     CREATE TABLE IF NOT EXISTS chat_histories (
         chat_id TEXT NOT NULL,             -- Foreign key to chats table
-        full_history TEXT NOT NULL,        -- JSON serialized message history
+        messages TEXT NOT NULL,            -- JSON serialized message history
+        cache_info TEXT NOT NULL,          -- JSON serialized cache information
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (chat_id) REFERENCES chats(id)
     );

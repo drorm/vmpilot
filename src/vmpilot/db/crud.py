@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class ConversationRepository:
-    """Repository for conversation data operations with simplified approach."""
+    """Repository for conversation data operations."""
 
     def __init__(self):
         """Initialize the repository with a database connection."""
@@ -30,19 +30,19 @@ class ConversationRepository:
             # Convert each message to a serializable format
             serializable = []
             for msg in messages:
-                # Use built-in serialization methods if available
+                # Start with a basic representation
+                msg_dict = {
+                    "type": msg.__class__.__name__,
+                    "content": getattr(msg, "content", ""),
+                }
+
+                # Use built-in serialization methods if available to get additional fields
                 if hasattr(msg, "model_dump"):  # Pydantic v2
-                    serializable.append(msg.model_dump())
+                    msg_dict.update(msg.model_dump())
                 elif hasattr(msg, "dict"):  # Pydantic v1
-                    serializable.append(msg.dict())
-                else:
-                    # Fallback serialization for non-Pydantic objects
-                    serializable.append(
-                        {
-                            "type": msg.__class__.__name__,
-                            "content": getattr(msg, "content", ""),
-                        }
-                    )
+                    msg_dict.update(msg.dict())
+
+                serializable.append(msg_dict)
 
             # Serialize to JSON
             return json.dumps(serializable)
@@ -67,17 +67,41 @@ class ConversationRepository:
             # Convert each serialized message back to appropriate LangChain message type
             messages = []
             for item in data:
+                # Check for explicit type field
                 msg_type = item.get("type", "")
+
+                # If type is not explicitly defined, try to determine from class name
+                if not msg_type and "type_name" in item:
+                    msg_type = item["type_name"]
+
+                # Fall back to trying to determine from the structure
+                if not msg_type:
+                    # Try to determine the type from the structure
+                    if "role" in item:
+                        role = item.get("role", "").lower()
+                        if role == "user":
+                            msg_type = "HumanMessage"
+                        elif role == "assistant":
+                            msg_type = "AIMessage"
+                        elif role == "system":
+                            msg_type = "SystemMessage"
+                        elif role == "tool":
+                            msg_type = "ToolMessage"
+
+                # Get content
                 content = item.get("content", "")
 
+                # Normalize message type for comparison
+                msg_type_lower = msg_type.lower()
+
                 # Create appropriate message type
-                if msg_type == "HumanMessage":
+                if "human" in msg_type_lower:
                     messages.append(HumanMessage(content=content))
-                elif msg_type == "AIMessage":
+                elif "ai" in msg_type_lower or "assistant" in msg_type_lower:
                     messages.append(AIMessage(content=content))
-                elif msg_type == "SystemMessage":
+                elif "system" in msg_type_lower:
                     messages.append(SystemMessage(content=content))
-                elif msg_type == "ToolMessage":
+                elif "tool" in msg_type_lower:
                     messages.append(ToolMessage(content=content))
                 else:
                     logger.warning(f"Unknown message type: {msg_type}")
@@ -118,7 +142,7 @@ class ConversationRepository:
         # Use INSERT OR REPLACE to handle both new and existing entries
         cursor.execute(
             """
-            INSERT OR REPLACE INTO conversation_states
+            INSERT OR REPLACE INTO chat_histories
             (chat_id, messages, cache_info, updated_at)
             VALUES (?, ?, ?, CURRENT_TIMESTAMP)
             """,
@@ -151,7 +175,7 @@ class ConversationRepository:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            SELECT messages, cache_info FROM conversation_states
+            SELECT messages, cache_info FROM chat_histories
             WHERE chat_id = ?
             """,
             (chat_id,),
@@ -191,7 +215,7 @@ class ConversationRepository:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            UPDATE conversation_states
+            UPDATE chat_histories
             SET cache_info = ?, updated_at = CURRENT_TIMESTAMP
             WHERE chat_id = ?
             """,
@@ -205,3 +229,26 @@ class ConversationRepository:
             logger.warning(
                 f"Cannot update cache info: no state exists in database for chat_id {chat_id}"
             )
+
+    def clear_conversation_state(self, chat_id: str) -> None:
+        """
+        Clear the conversation state for a given chat_id from the database.
+
+        Args:
+            chat_id: The unique identifier for the conversation thread
+        """
+        if chat_id is None:
+            logger.warning("Cannot clear conversation state: chat_id is None")
+            return
+
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            DELETE FROM chat_histories
+            WHERE chat_id = ?
+            """,
+            (chat_id,),
+        )
+
+        self.conn.commit()
+        logger.debug(f"Cleared conversation state from database for chat_id {chat_id}")
