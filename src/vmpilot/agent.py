@@ -17,11 +17,6 @@ from langgraph.prebuilt.chat_agent_executor import AgentState
 from pydantic import SecretStr as PydanticSecretStr
 
 from vmpilot.agent_logging import log_conversation_messages
-from vmpilot.agent_memory import (
-    clear_conversation_state,
-    get_conversation_state,
-    save_conversation_state,
-)
 from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
@@ -34,6 +29,11 @@ from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
 from vmpilot.tools.setup_tools import setup_tools
+from vmpilot.unified_memory import (
+    clear_conversation_state,
+    get_conversation_state,
+    save_conversation_state,
+)
 from vmpilot.usage import Usage
 
 # Configure logging
