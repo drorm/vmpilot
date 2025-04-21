@@ -29,6 +29,7 @@ class Chat:
         messages=None,
         output_callback=None,
         system_prompt_suffix=None,
+        chat_id=None,
     ):
         """
         Initialize a chat session.
@@ -36,14 +37,23 @@ class Chat:
         Args:
             messages: Optional list of chat messages to extract information from.
             output_callback: Optional callback function for sending output.
+            system_prompt_suffix: Optional system prompt suffix.
+            chat_id: Optional chat ID to continue a specific conversation.
         """
         # Set initial project directory value
         self.messages = messages or []
         self.output_callback = output_callback
         self.new_chat = False
         self.done = False
-        # Get or generate chat_id
-        self.chat_id = self._determine_chat_id(self.messages, output_callback)
+
+        # If chat_id is explicitly provided, use it
+        if chat_id:
+            self.chat_id = chat_id
+            self.new_chat = False
+            logger.debug(f"Using provided chat_id: {chat_id}")
+        else:
+            # Otherwise, extract from messages or generate a new one
+            self.chat_id = self._determine_chat_id(self.messages, output_callback)
 
         # Check project setup
         project = Project(system_prompt_suffix or "", self.output_callback)
