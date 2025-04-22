@@ -38,11 +38,11 @@ async def send_request(
         async for agent_response in agent.astream(
             {"messages": formatted_messages},
             config=RunnableConfig(
+                recursion_limit=recursion_limit,
                 configurable={
                     "thread_id": chat.chat_id,  # Use the chat_id directly from the Chat object
                     "run_name": f"vmpilot-run-{chat.chat_id}",
-                    "recursion_limit": recursion_limit,
-                }
+                },
             ),
             stream_mode="values",
         ):
