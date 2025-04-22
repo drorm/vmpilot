@@ -14,14 +14,14 @@ from vmpilot.config import config
 logger = logging.getLogger(__name__)
 
 # Determine which implementation to use based on config
+use_database = True
 try:
-    use_database = getattr(config, "database", {}).get("enabled", False)
-    logger.info(f"Database enabled: {use_database}")
-except (AttributeError, KeyError):
-    logger.warning("Database configuration not found, defaulting to in-memory storage.")
-    use_database = False
-
-use_database = True  # hardcode for testing
+    use_database = config.is_database_enabled()
+    logger.info(f"Database persistence enabled: {use_database}")
+except Exception as e:
+    logger.warning(
+        f"Error checking database configuration, defaulting to sqlite-memory storage: {e}"
+    )
 if use_database:
     logger.info("Using database storage for conversation state")
     from vmpilot.persistent_memory import (

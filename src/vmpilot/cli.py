@@ -135,11 +135,21 @@ async def process_command(
     """Main CLI execution flow"""
     try:
         from vmpilot.chat import Chat
+        from vmpilot.config import config
         from vmpilot.vmpilot import Pipeline
+
+        # Initialize database if enabled
+        if config.is_database_enabled():
+            import vmpilot.db
     except ImportError:
         # Fallback to relative imports if the module is part of a package
         from .chat import Chat
+        from .config import config
         from .vmpilot import Pipeline
+
+        # Initialize database if enabled
+        if config.is_database_enabled():
+            from . import db
     # Create pipeline with configuration
     pipeline = Pipeline()
 
@@ -212,6 +222,12 @@ async def process_command(
 def main() -> None:
     """Main entry point for the CLI application."""
     from vmpilot.config import TEMPERATURE, CommitMessageStyle, Provider, config
+
+    # Import logging configuration
+    from vmpilot.logging_config import configure_logging
+
+    # Configure logging first
+    configure_logging()
 
     parser = argparse.ArgumentParser(
         description="VMPilot CLI",
