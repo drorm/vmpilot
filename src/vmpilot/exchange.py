@@ -18,7 +18,6 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from vmpilot.config import GitConfig, config
 from vmpilot.git_track import GitStatus, GitTracker
-from vmpilot.unified_memory import save_conversation_state
 
 logger = logging.getLogger(__name__)
 
@@ -140,9 +139,6 @@ class Exchange:
             logger.error(f"Error committing changes: {e}")
             # Continue with the exchange even if commit fails
 
-        # Save conversation state
-        self.save_state()
-
         return self
 
     def commit_changes(self) -> bool:
@@ -166,12 +162,6 @@ class Exchange:
                 logger.warning(f"Failed to commit changes: {commit_msg}")
                 return False
         return False
-
-    def save_state(self) -> None:
-        """Save the conversation state."""
-        # Call existing save_conversation_state with our data
-        save_conversation_state(self.chat_id, self.to_messages(), {})
-        logger.debug(f"Saved conversation state for chat_id: {self.chat_id}")
 
     def to_messages(self) -> List[Union[HumanMessage, AIMessage]]:
         """Convert exchange to message format for conversation state.
