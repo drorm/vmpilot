@@ -26,86 +26,22 @@ class ConversationRepository:
 
     def serialize_messages(self, messages: List[BaseMessage]) -> str:
         """Serialize a list of BaseMessage objects to JSON string."""
+        from langchain_core.messages import messages_to_dict
+
         try:
-            # Convert each message to a serializable format
-            serializable = []
-            for msg in messages:
-                # Start with a basic representation
-                msg_dict = {
-                    "type": msg.__class__.__name__,
-                    "content": getattr(msg, "content", ""),
-                }
-
-                # Use built-in serialization methods if available to get additional fields
-                if hasattr(msg, "model_dump"):  # Pydantic v2
-                    msg_dict.update(msg.model_dump())
-                elif hasattr(msg, "dict"):  # Pydantic v1
-                    msg_dict.update(msg.dict())
-
-                serializable.append(msg_dict)
-
-            # Serialize to JSON
+            serializable = messages_to_dict(messages)
             return json.dumps(serializable)
         except Exception as e:
             logger.error(f"Error serializing messages: {e}")
-            # Return empty list as fallback
             return "[]"
 
     def deserialize_messages(self, json_str: str) -> List[BaseMessage]:
         """Deserialize JSON string back to list of BaseMessage objects."""
+        from langchain_core.messages import messages_from_dict
+
         try:
-            from langchain_core.messages import (
-                AIMessage,
-                HumanMessage,
-                SystemMessage,
-                ToolMessage,
-            )
-
-            # Parse JSON
             data = json.loads(json_str)
-
-            # Convert each serialized message back to appropriate LangChain message type
-            messages = []
-            for item in data:
-                # Check for explicit type field
-                msg_type = item.get("type", "")
-
-                # If type is not explicitly defined, try to determine from class name
-                if not msg_type and "type_name" in item:
-                    msg_type = item["type_name"]
-
-                # Fall back to trying to determine from the structure
-                if not msg_type:
-                    # Try to determine the type from the structure
-                    if "role" in item:
-                        role = item.get("role", "").lower()
-                        if role == "user":
-                            msg_type = "HumanMessage"
-                        elif role == "assistant":
-                            msg_type = "AIMessage"
-                        elif role == "system":
-                            msg_type = "SystemMessage"
-                        elif role == "tool":
-                            msg_type = "ToolMessage"
-
-                # Get content
-                content = item.get("content", "")
-
-                # Normalize message type for comparison
-                msg_type_lower = msg_type.lower()
-
-                # Create appropriate message type
-                if "human" in msg_type_lower:
-                    messages.append(HumanMessage(content=content))
-                elif "ai" in msg_type_lower or "assistant" in msg_type_lower:
-                    messages.append(AIMessage(content=content))
-                elif "system" in msg_type_lower:
-                    messages.append(SystemMessage(content=content))
-                elif "tool" in msg_type_lower:
-                    messages.append(ToolMessage(content=content))
-                else:
-                    logger.warning(f"Unknown message type: {msg_type}")
-
+            messages = messages_from_dict(data)
             return messages
         except Exception as e:
             logger.error(f"Error deserializing messages: {e}")
