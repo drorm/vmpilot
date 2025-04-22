@@ -38,6 +38,14 @@ def save_conversation_state(
     if cache_info is None:
         _, existing_cache_info = _repo.get_conversation_state(thread_id)
         cache_info = existing_cache_info or {}
+    else:
+        # Merge with existing cache_info if it exists
+        _, existing_cache_info = _repo.get_conversation_state(thread_id)
+        if existing_cache_info:
+            # Use the new cache_info but preserve any existing keys not in the new one
+            for key, value in existing_cache_info.items():
+                if key not in cache_info:
+                    cache_info[key] = value
 
     # Save to database
     _repo.save_conversation_state(thread_id, messages, cache_info)
@@ -65,6 +73,14 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
 
     # Get from database
     messages, cache_info = _repo.get_conversation_state(thread_id)
+
+    from vmpilot.init_agent import modify_state_messages
+
+    # Create a state object similar to what the agent would use
+    state = {"messages": messages}
+
+    # Run the messages through modify_state_messages to properly handle cache_control
+    messages = modify_state_messages(state)
 
     logger.debug(
         f"Retrieved conversation state from database for thread_id {thread_id}: {len(messages)} messages, cache_info: {cache_info}"
