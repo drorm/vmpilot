@@ -111,8 +111,10 @@ class ConversationRepository:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            SELECT messages, cache_info FROM chat_histories
+            SELECT messages, cache_info
+            FROM chat_histories
             WHERE chat_id = ?
+            order by updated_at desc limit 1
             """,
             (chat_id,),
         )
