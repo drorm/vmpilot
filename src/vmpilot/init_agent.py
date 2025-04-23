@@ -140,9 +140,9 @@ async def create_agent(
             },
         )
     elif provider == APIProvider.OPENAI:
-        # Only set temperature=1 for o3-mini model
+        # Only set temperature=1 for o4-mini model
         provider_config = config.get_provider_config(APIProvider.OPENAI)
-        model_temperature = 1 if model == "o3-mini" else temperature
+        model_temperature = 1 if model == "o4-mini" else temperature
 
         llm = ChatOpenAI(
             model=model,
