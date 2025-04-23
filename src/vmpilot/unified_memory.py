@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 use_database = True
 try:
     use_database = config.is_database_enabled()
-    logger.info(f"Database persistence enabled: {use_database}")
+    logger.debug(f"Database persistence enabled: {use_database}")
 except Exception as e:
     logger.warning(
         f"Error checking database configuration, defaulting to sqlite-memory storage: {e}"

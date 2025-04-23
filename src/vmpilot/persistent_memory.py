@@ -86,7 +86,7 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
     # Run the messages through modify_state_messages to properly handle cache_control
     messages = list(modify_state_messages(state))
 
-    logger.info(
+    logger.debug(
         f"Retrieved conversation state from database for thread_id {thread_id}: {len(messages)} messages, cache_info: {cache_info}"
     )
     return messages, cache_info
