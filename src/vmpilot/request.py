@@ -8,7 +8,6 @@ from .agent_logging import (
     log_message_content,
     log_message_processing,
     log_message_received,
-    log_token_usage,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -20,6 +19,25 @@ from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, U
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.runnables import Runnable
+
+
+def log_token_usage(message: Any) -> None:
+    """Log token usage and related metadata"""
+    response_metadata = getattr(message, "response_metadata", {})
+    usage = response_metadata.get("usage", {})
+
+    # if there's no usage data, return
+    if not usage:
+        return
+
+    # Log token usage in single line format
+    logger.info(
+        "TOKEN_USAGE: {'cache_creation_input_tokens': %d, 'cache_read_input_tokens': %d, 'input_tokens': %d, 'output_tokens': %d}",
+        usage.get("cache_creation_input_tokens", 0),
+        usage.get("cache_read_input_tokens", 0),
+        usage.get("input_tokens", 0),
+        usage.get("output_tokens", 0),
+    )
 
 
 async def send_request(
@@ -56,7 +74,7 @@ async def send_request(
 
                     # Log message receipt and usage for all message types
                     log_message_received(message)
-                    log_token_usage(message, "info")
+                    log_token_usage(message)
 
                     # Add tokens to usage tracker
                     usage.add_tokens(message)
