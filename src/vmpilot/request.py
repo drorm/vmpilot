@@ -178,6 +178,10 @@ async def send_request(
         if "Recursion limit" in error_message and "reached" in error_message:
             message = f" I've done {recursion_limit} steps in a row. Type *continue* if you'd like me to keep going."
             logger.info(message)
+            return (
+                response,
+                collected_tool_calls,
+            )  # This is not a real error, just a limit, so we treat it as a normal response
         # Handle specific tool_use/tool_result error
         elif "Request timed out" in error_message:
             logger.error(f"Request timed out: {e}")
