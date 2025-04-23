@@ -74,9 +74,11 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
     # Get from database
     messages, cache_info = _repo.get_conversation_state(thread_id)
 
-    from vmpilot.init_agent import modify_state_messages
-    from langgraph.prebuilt.chat_agent_executor import AgentState
     from typing import cast
+
+    from langgraph.prebuilt.chat_agent_executor import AgentState
+
+    from vmpilot.init_agent import modify_state_messages
 
     # Create a state object similar to what the agent would use
     state = cast(AgentState, {"messages": messages})
