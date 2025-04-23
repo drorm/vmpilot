@@ -37,6 +37,7 @@ VMPilot is a chat-based AI development agent that operates directly in your virt
   - Conversation history and context management
   - Workspace organization and customization
   - Support for multiple LLM providers
+  - Supports continuous CLI chat sessions with the `-c` flag when data is stored in SQLite
 
 ## Quick Start Guide
 

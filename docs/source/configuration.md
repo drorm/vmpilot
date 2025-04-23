@@ -86,6 +86,12 @@ The `config.ini` file is organized into the following sections:
 | commit_prefix | Prefix added to all commit messages | [VMPilot] |
 | author | Author name and email for Git commits | VMPilot <vmpilot@example.com> |
 
+### Database Settings [database]
+| Setting | Description | Default |
+|---------|-------------|---------|
+| enabled | Enable or disable database persistence for conversations | false |
+| path | Path to SQLite database file | /app/data/vmpilot.db |
+
 ## Example Configuration
 ```ini
 [general]
@@ -128,7 +134,19 @@ provider = anthropic
 temperature = 0.7
 commit_prefix = [VMPilot]
 author = VMPilot <vmpilot@example.com>
+
+[database]
+enabled = true
+path = /app/data/vmpilot.db
 ```
+
+## Database Settings [database]
+| Setting | Description | Default |
+|---------|-------------|---------|
+| enabled | Enable or disable database persistence for conversations | false |
+| path | Path to SQLite database file | /app/data/vmpilot.db |
+
+> **Note:** When database persistence is enabled, VMPilot stores all conversations in a SQLite database, allowing chat history to persist across server restarts. This is particularly useful for maintaining context in long-running development sessions and supporting the CLI's chat mode with the `-c` flag across multiple invocations. For Docker installations, the database is stored in the `vmpilot_data` volume by default.
 
 ## Environment Variables
 - VMPILOT_CONFIG: Optional path to configuration file
