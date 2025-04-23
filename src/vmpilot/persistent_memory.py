@@ -4,7 +4,7 @@ This module provides the same interface as agent_memory.py but uses a database b
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from langchain_core.messages import BaseMessage
 

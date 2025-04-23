@@ -4,9 +4,6 @@ This module provides a single interface that can use either in-memory or databas
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
-
-from langchain_core.messages import BaseMessage
 
 from vmpilot.config import config
 

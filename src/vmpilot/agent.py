@@ -3,21 +3,10 @@ LangChain-based implementation for VMPilot's agent functionality.
 """
 
 import logging
-import traceback
-from contextvars import ContextVar
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.runnables.config import RunnableConfig
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.prebuilt import create_react_agent
-from langgraph.prebuilt.chat_agent_executor import AgentState
-from pydantic import SecretStr as PydanticSecretStr
 
-from vmpilot.agent_logging import log_conversation_messages
-from vmpilot.caching.chat_models import ChatAnthropic
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config, current_provider, prompt_suffix
@@ -25,10 +14,6 @@ from vmpilot.exchange import Exchange
 from vmpilot.init_agent import create_agent
 from vmpilot.prompt import get_system_prompt
 from vmpilot.request import send_request
-from vmpilot.setup_shell import SetupShellTool
-from vmpilot.tools.create_file import CreateFileTool
-from vmpilot.tools.edit_tool import EditTool
-from vmpilot.tools.setup_tools import setup_tools
 from vmpilot.unified_memory import (
     clear_conversation_state,
     get_conversation_state,
@@ -38,10 +23,7 @@ from vmpilot.usage import Usage
 
 # Configure logging
 from .agent_logging import (
-    log_message_content,
     log_message_processing,
-    log_message_received,
-    log_token_usage,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -340,7 +322,7 @@ async def process_messages(
         exchange.complete(AIMessage(content="Error occurred during processing"), [])
 
     # Log the total token usage and cost for this exchange
-    total_usage, cost = usage.get_cost_summary()
+    usage.get_cost_summary()
 
     # Get cost message from usage module - it will handle display settings internally
     cost_message = usage.get_cost_message()

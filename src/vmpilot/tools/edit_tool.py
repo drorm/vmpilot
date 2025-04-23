@@ -5,7 +5,7 @@
 
 import logging
 from pathlib import Path
-from typing import Optional, Type
+from typing import Type
 
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field

@@ -12,9 +12,7 @@ import asyncio
 import logging
 import os
 import sys
-import uuid
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 # Third-party imports (conditionally loaded)
 try:
@@ -58,7 +56,7 @@ def create_mock_body(temperature: float = 0.7, debug: bool = False) -> Dict:
     Returns:
         A dictionary containing the configuration for the pipeline request
     """
-    from vmpilot.config import MAX_TOKENS, TOOL_OUTPUT_LINES, config
+    from vmpilot.config import MAX_TOKENS, TOOL_OUTPUT_LINES
 
     return {
         "temperature": temperature,
@@ -135,27 +133,19 @@ async def process_command(
     """Main CLI execution flow"""
     try:
         from vmpilot.chat import Chat
-        from vmpilot.config import config
         from vmpilot.vmpilot import Pipeline
 
-        # Initialize database if enabled
-        if config.is_database_enabled():
-            import vmpilot.db
     except ImportError:
         # Fallback to relative imports if the module is part of a package
         from .chat import Chat
-        from .config import config
         from .vmpilot import Pipeline
 
-        # Initialize database if enabled
-        if config.is_database_enabled():
-            from . import db
     # Create pipeline with configuration
     pipeline = Pipeline()
 
     # Create a Chat object for this session
     # If chat_id is provided, use it to continue that chat
-    chat = Chat(chat_id=chat_id)
+    Chat(chat_id=chat_id)
 
     # Create pipeline call parameters
     body = create_mock_body(temperature=temperature, debug=debug)
@@ -221,7 +211,7 @@ async def process_command(
 
 def main() -> None:
     """Main entry point for the CLI application."""
-    from vmpilot.config import TEMPERATURE, CommitMessageStyle, Provider, config
+    from vmpilot.config import TEMPERATURE, Provider, config
 
     # Import logging configuration
     from vmpilot.logging_config import configure_logging

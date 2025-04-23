@@ -4,13 +4,10 @@ Handles chat IDs, project directories, and session management.
 """
 
 import logging
-import os
 import secrets
 import string
-from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional
 
-from . import config, env
 from .project import Project
 
 logger = logging.getLogger(__name__)

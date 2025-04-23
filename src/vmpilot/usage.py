@@ -8,7 +8,7 @@ between the user and the AI assistant.
 import logging
 from typing import Any, Dict, Tuple
 
-from vmpilot.config import ModelPricing, PricingDisplay, Provider, config
+from vmpilot.config import Provider, config
 
 logger = logging.getLogger(__name__)
 

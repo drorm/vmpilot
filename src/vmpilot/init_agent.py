@@ -1,4 +1,3 @@
-import functools
 import logging
 from contextvars import ContextVar
 from typing import Any, Optional
@@ -118,11 +117,6 @@ async def create_agent(
         if provider_config.beta_flags:
             betas.extend([flag for flag in provider_config.beta_flags.keys()])
 
-        headers = {
-            "anthropic-beta": ",".join(betas),
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-        }
         system_content: dict[str, Any] = {
             "type": "text",
             "text": get_system_prompt()
@@ -149,7 +143,6 @@ async def create_agent(
         # Only set temperature=1 for o3-mini model
         provider_config = config.get_provider_config(APIProvider.OPENAI)
         model_temperature = 1 if model == "o3-mini" else temperature
-        from pydantic import SecretStr
 
         llm = ChatOpenAI(
             model=model,

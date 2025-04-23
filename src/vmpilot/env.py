@@ -5,11 +5,6 @@ Handles environment variables, project roots, and directory management.
 
 import logging
 import os
-import re
-from pathlib import Path
-from typing import Dict, List, Optional, Union
-
-from . import config
 
 logger = logging.getLogger(__name__)
 

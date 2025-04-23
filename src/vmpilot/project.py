@@ -62,9 +62,6 @@ def get_chat_info():
     """
     project_root = get_project_root()
     script_path = os.path.join(project_root, VMPILOT_DIR, SCRIPTS_DIR, NEW_CHAT_SH)
-    fallback_path = os.path.join(
-        project_root, VMPILOT_DIR, PROMPTS_DIR, CURRENT_ISSUE_MD
-    )
 
     # First try the dynamic script if it exists
     if os.path.exists(script_path) and os.access(script_path, os.X_OK):

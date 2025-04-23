@@ -5,12 +5,11 @@ Uses configuration from config.ini in the root directory.
 
 import logging
 import os
-import sys
 from configparser import ConfigParser
 from contextvars import ContextVar
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 

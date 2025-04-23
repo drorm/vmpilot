@@ -7,8 +7,7 @@ storing and retrieving chats and messages in a SQLite database.
 
 import json
 import logging
-import sqlite3
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from langchain_core.messages import BaseMessage
 
