@@ -59,17 +59,19 @@ class EditTool(BaseTool):
             for edit in edits:
                 file_path = Path(
                     edit[0]
-                )  # First element of edit tuple is the file path
+                ).expanduser()  # First element of edit tuple is the file path, expand ~ if present
+                logger.debug(f"Checking file path: {file_path}")
                 if not file_path.exists():
                     raise FileNotFoundError(f"File not found: {file_path}")
 
             # Apply the edits directly to the files
             for file_path, original, replacement in edits:
-                with open(file_path, "r") as f:
+                file = Path(file_path).expanduser()
+                with open(file, "r") as f:
                     content = f.read()
-                new_content = do_replace(file_path, content, original, replacement)
+                new_content = do_replace(file, content, original, replacement)
                 if new_content is not None:
-                    with open(file_path, "w") as f:
+                    with open(file, "w") as f:
                         f.write(new_content)
                 else:
                     return "No matches found"
