@@ -155,7 +155,8 @@ Create a new user on OpenWebUI which, as the first user, will make you the admin
 1. Click on Admin Panel
 1. Click on connections
 1. Add VMPilot Connection:
-  - URL: http://localhost:9099 and the password
+  - URL: http://localhost:9099 (it's important to include "http://" - otherwise it defaults to https and will result in an error)
+  - Key: 0p3n-w3bu! (this is the default key)
   - Click "Save"
 
 4. Enable the pipeline:
