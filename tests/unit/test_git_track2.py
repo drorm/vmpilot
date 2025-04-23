@@ -6,7 +6,8 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import vmpilot.config
-from vmpilot.config import Provider as APIProvider, CommitMessageStyle, GitConfig
+from vmpilot.config import CommitMessageStyle, GitConfig
+from vmpilot.config import Provider as APIProvider
 from vmpilot.git_track import GitStatus, GitTracker
 
 

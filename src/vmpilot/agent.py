@@ -22,9 +22,7 @@ from vmpilot.unified_memory import (
 from vmpilot.usage import Usage
 
 # Configure logging
-from .agent_logging import (
-    log_message_processing,
-)
+from .agent_logging import log_message_processing
 
 logging.basicConfig(level=logging.INFO)
 # Set logging levels for specific loggers

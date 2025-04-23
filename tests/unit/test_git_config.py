@@ -13,7 +13,8 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 
-from vmpilot.config import Provider as APIProvider, CommitMessageStyle, GitConfig
+from vmpilot.config import CommitMessageStyle, GitConfig
+from vmpilot.config import Provider as APIProvider
 from vmpilot.git_track import GitTracker
 
 

@@ -4,10 +4,7 @@ import traceback
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables.config import RunnableConfig
 
-from .agent_logging import (
-    log_message_content,
-    log_message_received,
-)
+from .agent_logging import log_message_content, log_message_received
 
 logging.basicConfig(level=logging.INFO)
 # Set logging levels for specific loggers
