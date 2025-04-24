@@ -50,21 +50,5 @@ class TestDatabaseShutdown:
         assert "Error closing database connection" in mock_logger.error.call_args[0][0]
 
 
-# Skip CLI tests since they require more complex mocking
-@pytest.mark.skip(reason="These tests require more complex mocking of CLI components")
-class TestCLIDatabaseCleanup:
-    """Test cases for CLI database cleanup."""
-
-    def test_cli_database_cleanup(self):
-        """Test that the CLI cleans up the database connection on exit."""
-        # This would be implemented using a different approach to mock the CLI components
-        pass
-
-    def test_cli_database_cleanup_with_error(self):
-        """Test handling errors during database connection cleanup in CLI."""
-        # This would be implemented using a different approach to mock the CLI components
-        pass
-
-
 if __name__ == "__main__":
     unittest.main()
