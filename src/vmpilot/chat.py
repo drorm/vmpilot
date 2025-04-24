@@ -117,7 +117,7 @@ class Chat:
         self._db_new_chat(new_chat_id, messages)
         return new_chat_id
 
-    def _db_new_chat(self, chat_id: str, messages: List[Dict[str, str]]):
+    def _db_new_chat(self, chat_id: str, messages: Optional[List[Dict[str, str]]]):
         """
         Create a new chat record in the database.
 

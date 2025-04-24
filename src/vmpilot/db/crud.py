@@ -24,7 +24,7 @@ class ConversationRepository:
         """Initialize the repository with a database connection."""
         self.conn = get_db_connection()
 
-    def create_chat(self, chat_id: str, initial_request: str) -> None:
+    def create_chat(self, chat_id: str, initial_request: Optional[str] = None) -> None:
         """
         Create a new chat record with initial context information.
 

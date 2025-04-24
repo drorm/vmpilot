@@ -3,7 +3,7 @@ Utility functions for VMPilot.
 """
 
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 
 def extract_text_from_message_content(content: Any) -> str:
@@ -64,7 +64,7 @@ def serialize_for_storage(data: Any) -> str:
         JSON string representation
     """
     if data is None:
-        return None
+        return ""
 
     if isinstance(data, str):
         return data
