@@ -51,8 +51,18 @@ jobs:
         mkdir -p ~/.anthropic
         mkdir -p ~/.openai
         mkdir -p ~/vmpilot
+        mkdir -p ~/.vmpilot
         # Make sure the environment knows where the project directory is
         echo "VMPILOT_PROJECT_DIR=~/vmpilot" >> $GITHUB_ENV
+        
+    - name: Create test config.ini
+      run: |
+        # Create a config.ini file specifically for CI testing
+        cp src/vmpilot/config.ini ~/.vmpilot/config.ini
+        # Update the database path to use a location GitHub Actions can write to
+        sed -i 's|path = /app/data/vmpilot.db|path = ~/.vmpilot/vmpilot.db|g' ~/.vmpilot/config.ini
+        # Set environment variable to use this config file
+        echo "VMPILOT_CONFIG=~/.vmpilot/config.ini" >> $GITHUB_ENV
 
     - name: Run tests
       run: |
