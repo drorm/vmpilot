@@ -69,16 +69,13 @@ class TestDatabaseConnection(unittest.TestCase):
         )
         self.assertIsNotNone(cursor.fetchone())
 
-        # Check that chat_histories table exists
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='chat_histories'"
-        )
-        self.assertIsNotNone(cursor.fetchone())
-
-        # Check that the chat_histories table has the correct columns
-        cursor.execute("PRAGMA table_info(chat_histories)")
+        # The chat_histories table no longer exists in the updated schema
+        # We now have a single chats table with all the necessary columns
+        
+        # Check that the chats table has the correct columns
+        cursor.execute("PRAGMA table_info(chats)")
         columns = {row[1] for row in cursor.fetchall()}
-        expected_columns = {"chat_id", "messages", "cache_info", "updated_at"}
+        expected_columns = {"chat_id", "initial_request", "project_root", "messages", "cache_info", "updated_at"}
 
         # Verify the columns match our updated schema
         self.assertSetEqual(expected_columns, columns)
