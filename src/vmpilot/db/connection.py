@@ -63,10 +63,12 @@ def get_db_path() -> Path:
     except (PermissionError, FileNotFoundError):
         # If we can't create the directory (e.g., in CI environment),
         # fall back to user's home directory
-        logger.warning(f"Could not create directory {db_path.parent}, falling back to home directory")
+        logger.warning(
+            f"Could not create directory {db_path.parent}, falling back to home directory"
+        )
         db_path = Path.home() / ".vmpilot" / "vmpilot.db"
         db_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     return db_path
 
 
