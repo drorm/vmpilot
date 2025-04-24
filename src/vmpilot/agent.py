@@ -88,7 +88,6 @@ async def process_messages(
         logging.getLogger("asyncio").setLevel(logging.ERROR)
         logger.setLevel(logging.ERROR)
 
-    logger.info(f"Setting current provider to {provider}")
     # Set prompt suffix and provider
     prompt_suffix.set(system_prompt_suffix)
     current_provider.set(provider)
