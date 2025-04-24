@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.12">
     
     
       
@@ -26,7 +26,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.4af4bdda.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.2afb09e1.min.css">
       
       
 
@@ -1146,7 +1146,7 @@ In the last example, we used backticks to execute a command and pass its output 
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1"></a>cli.sh<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>.3<span class="w"> </span><span class="s2">&quot;Write a Python function to calculate factorial&quot;</span>
 </code></pre></div></td></tr></table></div></p>
 <h3 id="chat-mode">Chat Mode</h3>
-<p>Chat mode maintains conversation context across multiple commands, allowing for follow-up questions and references to previous interactions.</p>
+<p>Chat mode maintains conversation context across multiple commands, allowing for follow-up questions and references to previous interactions. With database persistence enabled, conversation context is preserved even between separate CLI invocations.</p>
 <p>Examples:
 <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Bash</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1"> 1</a></span>
 <span class="normal"><a href="#__codelineno-4-2"> 2</a></span>
@@ -1159,17 +1159,20 @@ In the last example, we used backticks to execute a command and pass its output 
 <span class="normal"><a href="#__codelineno-4-9"> 9</a></span>
 <span class="normal"><a href="#__codelineno-4-10">10</a></span>
 <span class="normal"><a href="#__codelineno-4-11">11</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="c1"># Start a chat session</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;List all Python files&quot;</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2"></a>cli.sh<span class="w"> </span><span class="s2">&quot;List all Python files&quot;</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4"></a><span class="c1"># Continue the same chat session</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Explain what these files do&quot;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4"></a><span class="c1"># Continue the same chat session (works across different terminal sessions). Where 12345 is the chat ID that shows in the output of the first command</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span><span class="m">12345</span><span class="w"> </span><span class="s2">&quot;Explain what these files do&quot;</span>
 <a id="__codelineno-4-6" name="__codelineno-4-6"></a>
 <a id="__codelineno-4-7" name="__codelineno-4-7"></a><span class="c1"># Specify a custom chat ID</span>
 <a id="__codelineno-4-8" name="__codelineno-4-8"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span>my_session_123<span class="w"> </span><span class="s2">&quot;Show system information&quot;</span>
 <a id="__codelineno-4-9" name="__codelineno-4-9"></a>
-<a id="__codelineno-4-10" name="__codelineno-4-10"></a><span class="c1"># Combine with file input for batch processing with context</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11"></a>cli.sh<span class="w"> </span>-f<span class="w"> </span>commands.txt<span class="w"> </span>-c
+<a id="__codelineno-4-10" name="__codelineno-4-10"></a><span class="c1"># Continue the custom chat session later</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11"></a>cli.sh<span class="w"> </span>-c<span class="w"> </span>my_session_123<span class="w"> </span><span class="s2">&quot;Show memory usage&quot;</span>
 </code></pre></div></td></tr></table></div></p>
+<blockquote>
+<p><strong>Note:</strong> Chat persistence across CLI invocations requires database persistence to be enabled. See the <a href="../configuration/#database-settings-database">Database Configuration</a> section for details on how to enable this feature.</p>
+</blockquote>
 <h3 id="file-input-mode">File Input Mode</h3>
 <p>The file input mode allows you to provide a file containing multiple commands, with each command on a separate line. VMPilot will:
 1. It creates a unique chat ID for the session, unless you specify one
