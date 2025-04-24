@@ -49,8 +49,8 @@ echo "Simple question test passed!"
 echo "Testing file modification..."
 OUTPUT=$("$SCRIPT_DIR/run_cli.sh" -t 0 -p "$PROVIDER" "Change 'test file' to 'evaluation file' in $TEST_FILE")
 
-# Verify the change
-if grep -q "This is a evaluation file for Google Gemini model testing." "$TEST_FILE"; then
+# Verify the change - allow for both "a" or "an" before "evaluation file"
+if grep -q "This is an\? evaluation file for Google Gemini model testing." "$TEST_FILE"; then
     echo "File modification test passed!"
 else
     echo "ERROR: Expected modification not found in file"
