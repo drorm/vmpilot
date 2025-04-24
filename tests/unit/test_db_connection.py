@@ -139,8 +139,11 @@ class TestDatabaseConnectionManagement(unittest.TestCase):
 
     @patch("vmpilot.db.connection.config")
     @patch("os.path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_get_db_path_permission_error(self, mock_mkdir, mock_exists, mock_config):
+    @patch("vmpilot.db.connection.Path.mkdir")
+    @patch("vmpilot.db.connection.Path.home")
+    def test_get_db_path_permission_error(
+        self, mock_home, mock_mkdir, mock_exists, mock_config
+    ):
         """Test get_db_path handles permission errors correctly."""
         # Stop the path patcher to test the real function
         self.path_patcher.stop()
@@ -150,14 +153,18 @@ class TestDatabaseConnectionManagement(unittest.TestCase):
         delattr(mock_config, "database_config")  # Ensure we use the default path
         mock_exists.return_value = False  # /app/data doesn't exist
 
-        # Mock that mkdir raises PermissionError when trying to create the directory
-        mock_mkdir.side_effect = PermissionError("Permission denied")
+        # Create a fake home directory
+        fake_home = Path(self.temp_dir.name) / "home" / "testuser"
+        mock_home.return_value = fake_home
+
+        # Mock mkdir to raise PermissionError on first call
+        mock_mkdir.side_effect = [PermissionError("Permission denied"), None]
 
         # Call the function under test
         path = get_db_path()
 
         # Verify that it falls back to home directory
-        self.assertEqual(path, Path.home() / ".vmpilot" / "vmpilot.db")
+        self.assertEqual(path, fake_home / ".vmpilot" / "vmpilot.db")
 
         # Restart the path patcher for other tests
         self.mock_get_path = self.path_patcher.start()
@@ -165,9 +172,10 @@ class TestDatabaseConnectionManagement(unittest.TestCase):
 
     @patch("vmpilot.db.connection.config")
     @patch("os.path.exists")
-    @patch("pathlib.Path.mkdir")
+    @patch("vmpilot.db.connection.Path.mkdir")
+    @patch("vmpilot.db.connection.Path.home")
     def test_get_db_path_file_not_found_error(
-        self, mock_mkdir, mock_exists, mock_config
+        self, mock_home, mock_mkdir, mock_exists, mock_config
     ):
         """Test get_db_path handles FileNotFoundError correctly."""
         # Stop the path patcher to test the real function
@@ -178,14 +186,18 @@ class TestDatabaseConnectionManagement(unittest.TestCase):
         delattr(mock_config, "database_config")  # Ensure we use the default path
         mock_exists.return_value = False  # /app/data doesn't exist
 
-        # Mock that mkdir raises FileNotFoundError when trying to create the directory
-        mock_mkdir.side_effect = FileNotFoundError("No such file or directory")
+        # Create a fake home directory
+        fake_home = Path(self.temp_dir.name) / "home" / "testuser"
+        mock_home.return_value = fake_home
+
+        # Mock mkdir to raise FileNotFoundError on first call
+        mock_mkdir.side_effect = [FileNotFoundError("No such file or directory"), None]
 
         # Call the function under test
         path = get_db_path()
 
         # Verify that it falls back to home directory
-        self.assertEqual(path, Path.home() / ".vmpilot" / "vmpilot.db")
+        self.assertEqual(path, fake_home / ".vmpilot" / "vmpilot.db")
 
         # Restart the path patcher for other tests
         self.mock_get_path = self.path_patcher.start()
