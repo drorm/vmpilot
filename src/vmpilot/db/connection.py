@@ -43,7 +43,7 @@ def get_db_path() -> Path:
     # Default location in the data directory
     default_path = Path("/app/data/vmpilot.db")
 
-    # Check if running locally (not in Docker)
+    # Check if running locally (not in Docker) or if /app/data is not accessible
     if not os.path.exists("/app/data"):
         default_path = Path.home() / ".vmpilot" / "vmpilot.db"
 
@@ -57,9 +57,16 @@ def get_db_path() -> Path:
     # Expand user directory if needed
     db_path = Path(os.path.expanduser(db_path_str))
 
-    # Ensure directory exists
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-
+    try:
+        # Ensure directory exists
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+    except (PermissionError, FileNotFoundError):
+        # If we can't create the directory (e.g., in CI environment),
+        # fall back to user's home directory
+        logger.warning(f"Could not create directory {db_path.parent}, falling back to home directory")
+        db_path = Path.home() / ".vmpilot" / "vmpilot.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+    
     return db_path
 
 
