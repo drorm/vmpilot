@@ -111,30 +111,33 @@ class ConversationRepository:
             logger.warning("Cannot save conversation state: chat_id is None")
             return
 
-        # Default empty cache_info if None
-        if cache_info is None:
-            cache_info = {}
+        try:
+            # Default empty cache_info if None
+            if cache_info is None:
+                cache_info = {}
 
-        # Serialize messages and cache_info
-        serialized_messages = self.serialize_messages(messages)
-        serialized_cache_info = json.dumps(cache_info)
+            # Serialize messages and cache_info
+            serialized_messages = self.serialize_messages(messages)
+            serialized_cache_info = json.dumps(cache_info)
 
-        cursor = self.conn.cursor()
+            cursor = self.conn.cursor()
 
-        # Use INSERT OR REPLACE to handle both new and existing entries
-        cursor.execute(
-            """
-            INSERT OR REPLACE INTO chats
-            (chat_id, messages, cache_info, updated_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-            """,
-            (chat_id, serialized_messages, serialized_cache_info),
-        )
+            # Use INSERT OR REPLACE to handle both new and existing entries
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO chats
+                (chat_id, messages, cache_info, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                """,
+                (chat_id, serialized_messages, serialized_cache_info),
+            )
 
-        self.conn.commit()
-        logger.debug(
-            f"Saved conversation state to database for chat_id {chat_id}: {len(messages)} messages"
-        )
+            self.conn.commit()
+            logger.debug(
+                f"Saved conversation state to database for chat_id {chat_id}: {len(messages)} messages"
+            )
+        except Exception as e:
+            logger.error(f"Error saving conversation state to database: {e}")
 
     def get_conversation_state(
         self, chat_id: str
@@ -154,38 +157,58 @@ class ConversationRepository:
             logger.warning("Cannot retrieve conversation state: chat_id is None")
             return [], {}
 
-        cursor = self.conn.cursor()
-        cursor.execute(
-            """
-            SELECT messages, cache_info
-            FROM chats
-            WHERE chat_id = ?
-            order by updated_at desc limit 1
-            """,
-            (chat_id,),
-        )
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                SELECT messages, cache_info
+                FROM chats
+                WHERE chat_id = ?
+                order by updated_at desc limit 1
+                """,
+                (chat_id,),
+            )
 
-        result = cursor.fetchone()
-        if result:
-            # Deserialize messages and cache_info
-            serialized_messages = result[0]
-            if not serialized_messages:
-                # Initial chat has no messages
+            result = cursor.fetchone()
+            if result:
+                # Deserialize messages and cache_info
+                serialized_messages = result[0]
+                serialized_cache_info = result[1]
+
+                # Handle empty or None message data
+                if serialized_messages is None or not serialized_messages:
+                    # Initial chat has no messages or NULL value
+                    logger.debug(
+                        f"Retrieved empty messages for chat_id {chat_id}, returning empty list"
+                    )
+                    return [], {}
+
+                # Handle empty or None cache info
+                if serialized_cache_info is None or not serialized_cache_info:
+                    cache_info = {}
+                else:
+                    try:
+                        cache_info = json.loads(serialized_cache_info)
+                    except json.JSONDecodeError as e:
+                        logger.error(
+                            f"Error decoding cache info: {e}, using empty dict"
+                        )
+                        cache_info = {}
+
+                # Deserialize messages
+                messages = self.deserialize_messages(serialized_messages)
+
                 logger.debug(
-                    f"Retrieved empty messages for chat_id {chat_id}, returning empty list"
+                    f"Retrieved conversation state from database for chat_id {chat_id}: {len(messages)} messages"
+                )
+                return messages, cache_info
+            else:
+                logger.debug(
+                    f"No conversation state found in database for chat_id: {chat_id}"
                 )
                 return [], {}
-            messages = self.deserialize_messages(result[0])
-            cache_info = json.loads(result[1])
-
-            logger.debug(
-                f"Retrieved conversation state from database for chat_id {chat_id}: {len(messages)} messages"
-            )
-            return messages, cache_info
-        else:
-            logger.debug(
-                f"No conversation state found in database for chat_id: {chat_id}"
-            )
+        except Exception as e:
+            logger.error(f"Error retrieving conversation state from database: {e}")
             return [], {}
 
     def update_cache_info(self, chat_id: str, cache_info: Dict[str, int]) -> None:

@@ -219,6 +219,9 @@ def main() -> None:
     # Configure logging first
     configure_logging()
 
+    # Import database module for cleanup
+    from vmpilot.db import close_db_connection
+
     parser = argparse.ArgumentParser(
         description="VMPilot CLI",
         epilog="Examples:\n"
@@ -415,6 +418,13 @@ def main() -> None:
                 cov.save()
     else:
         parser.error("Either a command or an input file (-f/--file) must be specified")
+
+    # Ensure database connection is closed on exit
+    try:
+        close_db_connection()
+        logging.debug("Database connection closed on CLI exit")
+    except Exception as e:
+        logging.error(f"Error closing database connection: {e}")
 
 
 if __name__ == "__main__":

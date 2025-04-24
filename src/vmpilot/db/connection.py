@@ -11,12 +11,26 @@ from typing import Optional
 from vmpilot.config import config
 from vmpilot.db.models import SCHEMA_SQL
 
-logging.basicConfig(level=logging.INFO)
-# Set logging levels for specific loggers
+# Create a logger instance without modifying the root logger configuration
 logger = logging.getLogger(__name__)
 
 # Singleton connection instance
 _db_connection: Optional[sqlite3.Connection] = None
+
+
+def close_db_connection() -> None:
+    """
+    Close the database connection if it's open.
+    This should be called when the application is shutting down.
+    """
+    global _db_connection
+    if _db_connection is not None:
+        try:
+            logger.info("Closing database connection")
+            _db_connection.close()
+            _db_connection = None
+        except Exception as e:
+            logger.error(f"Error closing database connection: {e}")
 
 
 def get_db_path() -> Path:
@@ -36,10 +50,9 @@ def get_db_path() -> Path:
     # Get path from config
     if hasattr(config, "database_config"):
         db_path_str = config.database_config.path
-        logger.info(f"loaded database_config: {db_path_str}")
     else:
-        logger.info(f"using default database_config")
         db_path_str = str(default_path)
+    logger.info(f"Using database path: {db_path_str}")
 
     # Expand user directory if needed
     db_path = Path(os.path.expanduser(db_path_str))

@@ -125,28 +125,37 @@ class Chat:
             chat_id: The unique identifier for the chat
             messages: List of chat messages
         """
-        from vmpilot.db.crud import ConversationRepository
+        try:
+            from vmpilot.config import config
+            from vmpilot.db.crud import ConversationRepository
 
-        # Get the first user message if available
-        initial_request = None
-        if messages and len(messages) > 0:
-            for message in messages:
-                if message.get("role") == "user":
-                    content = message.get("content")
-                    # Import the utility function
-                    from vmpilot.utils import extract_text_from_message_content
+            # Skip if database is disabled
+            if not config.is_database_enabled():
+                logger.debug("Database persistence is disabled, skipping chat creation")
+                return
 
-                    initial_request = extract_text_from_message_content(content)
-                    break
-        logger.debug(f"Initial request: {initial_request}")
+            # Get the first user message if available
+            initial_request = None
+            if messages and len(messages) > 0:
+                for message in messages:
+                    if message.get("role") == "user":
+                        content = message.get("content")
+                        # Import the utility function
+                        from vmpilot.utils import extract_text_from_message_content
 
-        # truncate the initial request to 100 characters
-        if initial_request and len(initial_request) > 100:
-            initial_request = initial_request[:100]
+                        initial_request = extract_text_from_message_content(content)
+                        break
+            logger.debug(f"Initial request: {initial_request}")
 
-        # Create a record in the database
-        repo = ConversationRepository()
-        repo.create_chat(chat_id, initial_request)
+            # truncate the initial request to 100 characters
+            if initial_request and len(initial_request) > 100:
+                initial_request = initial_request[:100]
+
+            # Create a record in the database
+            repo = ConversationRepository()
+            repo.create_chat(chat_id, initial_request)
+        except Exception as e:
+            logger.error(f"Error creating chat record in database: {e}")
 
     def _extract_chat_id_from_messages(
         self, messages: Optional[List[Dict[str, str]]]
