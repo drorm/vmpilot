@@ -114,7 +114,39 @@ class Chat:
                 }
             )
 
+        self._db_new_chat(new_chat_id, messages)
         return new_chat_id
+
+    def _db_new_chat(self, chat_id: str, messages: List[Dict[str, str]]):
+        """
+        Create a new chat record in the database.
+
+        Args:
+            chat_id: The unique identifier for the chat
+            messages: List of chat messages
+        """
+        from vmpilot.db.crud import ConversationRepository
+
+        # Get the first user message if available
+        initial_request = None
+        if messages and len(messages) > 0:
+            for message in messages:
+                if message.get("role") == "user":
+                    content = message.get("content")
+                    # Import the utility function
+                    from vmpilot.utils import extract_text_from_message_content
+
+                    initial_request = extract_text_from_message_content(content)
+                    break
+        logger.debug(f"Initial request: {initial_request}")
+
+        # truncate the initial request to 100 characters
+        if initial_request and len(initial_request) > 100:
+            initial_request = initial_request[:100]
+
+        # Create a record in the database
+        repo = ConversationRepository()
+        repo.create_chat(chat_id, initial_request)
 
     def _extract_chat_id_from_messages(
         self, messages: Optional[List[Dict[str, str]]]

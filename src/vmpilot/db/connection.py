@@ -2,6 +2,7 @@
 SQLite connection management for VMPilot.
 """
 
+import logging
 import os
 import sqlite3
 from pathlib import Path
@@ -9,6 +10,10 @@ from typing import Optional
 
 from vmpilot.config import config
 from vmpilot.db.models import SCHEMA_SQL
+
+logging.basicConfig(level=logging.INFO)
+# Set logging levels for specific loggers
+logger = logging.getLogger(__name__)
 
 # Singleton connection instance
 _db_connection: Optional[sqlite3.Connection] = None
@@ -31,7 +36,9 @@ def get_db_path() -> Path:
     # Get path from config
     if hasattr(config, "database_config"):
         db_path_str = config.database_config.path
+        logger.info(f"loaded database_config: {db_path_str}")
     else:
+        logger.info(f"using default database_config")
         db_path_str = str(default_path)
 
     # Expand user directory if needed

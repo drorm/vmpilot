@@ -7,6 +7,7 @@ storing and retrieving chats and messages in a SQLite database.
 
 import json
 import logging
+import os
 from typing import Dict, List, Optional, Tuple
 
 from langchain_core.messages import BaseMessage
@@ -22,6 +23,52 @@ class ConversationRepository:
     def __init__(self):
         """Initialize the repository with a database connection."""
         self.conn = get_db_connection()
+
+    def create_chat(self, chat_id: str, initial_request: str) -> None:
+        """
+        Create a new chat record with initial context information.
+
+        Args:
+            chat_id: The unique identifier for the chat
+            initial_request: The first user message that started the chat (optional)
+            project_root: Path to the project directory (optional)
+        """
+
+        # Check if this chat already exists with message data
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            SELECT chat_id FROM chats WHERE chat_id = ? AND messages IS NOT NULL
+            """,
+            (chat_id,),
+        )
+
+        # If the chat already exists with message data, don't overwrite it
+        if cursor.fetchone():
+            logger.warning(
+                f"Chat {chat_id} already exists with message data, skipping creation"
+            )
+            return
+
+        # Use empty strings for NULL values to avoid database errors
+        initial_request = initial_request or ""
+        project_root = os.environ.get("PROJECT_ROOT") or ""
+
+        # Default empty values for required fields
+        empty_messages = ""
+        empty_cache_info = ""
+
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO chats
+            (chat_id, initial_request, project_root, messages, cache_info, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """,
+            (chat_id, initial_request, project_root, empty_messages, empty_cache_info),
+        )
+
+        self.conn.commit()
+        logger.debug(f"Created new chat record for chat_id {chat_id}")
 
     def serialize_messages(self, messages: List[BaseMessage]) -> str:
         """Serialize a list of BaseMessage objects to JSON string."""
@@ -77,7 +124,7 @@ class ConversationRepository:
         # Use INSERT OR REPLACE to handle both new and existing entries
         cursor.execute(
             """
-            INSERT OR REPLACE INTO chat_histories
+            INSERT OR REPLACE INTO chats
             (chat_id, messages, cache_info, updated_at)
             VALUES (?, ?, ?, CURRENT_TIMESTAMP)
             """,
@@ -111,7 +158,7 @@ class ConversationRepository:
         cursor.execute(
             """
             SELECT messages, cache_info
-            FROM chat_histories
+            FROM chats
             WHERE chat_id = ?
             order by updated_at desc limit 1
             """,
@@ -121,6 +168,13 @@ class ConversationRepository:
         result = cursor.fetchone()
         if result:
             # Deserialize messages and cache_info
+            serialized_messages = result[0]
+            if not serialized_messages:
+                # Initial chat has no messages
+                logger.debug(
+                    f"Retrieved empty messages for chat_id {chat_id}, returning empty list"
+                )
+                return [], {}
             messages = self.deserialize_messages(result[0])
             cache_info = json.loads(result[1])
 
@@ -152,7 +206,7 @@ class ConversationRepository:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            UPDATE chat_histories
+            UPDATE chats
             SET cache_info = ?, updated_at = CURRENT_TIMESTAMP
             WHERE chat_id = ?
             """,
@@ -181,7 +235,7 @@ class ConversationRepository:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            DELETE FROM chat_histories
+            DELETE FROM chats
             WHERE chat_id = ?
             """,
             (chat_id,),
