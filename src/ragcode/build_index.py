@@ -93,6 +93,10 @@ def main():
         logger.info("Index built successfully")
     except Exception as e:
         logger.error(f"Error building index: {str(e)}")
+        # show the traceback
+        import traceback
+
+        traceback.print_exc()
         sys.exit(1)
 
 

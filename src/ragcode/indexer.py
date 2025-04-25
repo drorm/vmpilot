@@ -89,7 +89,7 @@ def create_code_index(
     logger.info("Creating vector store index")
     # Using SimpleVectorStore as a temporary solution until llama-index-vector-stores-chroma is installed
     vector_store = SimpleVectorStore()
-    index = VectorStoreIndex.from_documents(
+    index = VectorStoreIndex(
         all_nodes,
         embed_model=embedding_model,
         vector_store=vector_store,
