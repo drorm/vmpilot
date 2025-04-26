@@ -11,18 +11,13 @@ llama-index>=0.10.7
 llama-index-core>=0.10.7
 llama-index-embeddings-openai>=0.1.5
 tree-sitter>=0.20.1
-```
-
-Optional dependencies for better performance:
-
-```
 llama-index-vector-stores-chroma>=0.1.1
 chromadb>=0.4.18
 ```
 
 ## Installation
 
-The core dependencies should already be installed with VMPilot. If you want to use the ChromaVectorStore for better persistence and performance, install:
+The core dependencies should already be installed with VMPilot. The system now uses Chroma as the vector store for better persistence and performance:
 
 ```bash
 pip install llama-index-vector-stores-chroma chromadb
@@ -54,30 +49,20 @@ Find the implementation of the ShellTool class
 ./bin/code_index.py ~/myproject
 ```
 
-## Troubleshooting
-
-### Module not found errors
-
-If you encounter any module not found errors, make sure your PYTHONPATH includes the src directory:
-
-```bash
-export PYTHONPATH="$PYTHONPATH:/path/to/vmpilot/src"
-```
-
 ### Import errors with llama_index
 
 The code has been updated to work with the current llama-index package structure. If you encounter import errors, it may be due to a version mismatch. Check your installed versions:
 
 ```bash
 pip list | grep llama-index
+pip list | grep chromadb
 ```
 
-### ChromaVectorStore not available
+### Using Chroma Vector Store
 
-If you want to use ChromaVectorStore for better persistence, install:
+The system now uses Chroma for vector storage, which provides:
+- Improved persistence of embeddings
+- Better performance for larger codebases
+- More robust querying capabilities
 
-```bash
-pip install llama-index-vector-stores-chroma chromadb
-```
-
-The system will fall back to SimpleVectorStore if ChromaVectorStore is not available, which works but doesn't provide the same level of persistence and performance.
+If you encounter any issues with Chroma, the system includes fallback mechanisms to ensure continued operation.

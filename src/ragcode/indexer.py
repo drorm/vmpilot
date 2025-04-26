@@ -8,14 +8,17 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
+import chromadb
 from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
 from llama_index.core.node_parser import CodeSplitter
 from llama_index.core.schema import Document
-
-# We need to install the llama-index-vector-stores-chroma package
-# For now, let's use a different approach with the available packages
-from llama_index.core.vector_stores import SimpleVectorStore
 from llama_index.embeddings.openai import OpenAIEmbedding
+
+# Using Chroma vector store
+from llama_index.vector_stores.chroma import ChromaVectorStore
+
+# Import our enhanced code splitter
+from ragcode.enhanced_code_splitter import EnhancedCodeSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +29,8 @@ def create_code_index(
     embedding_model: str = "text-embedding-3-small",
     file_extensions: List[str] = [".py", ".md", ".txt", ".json", ".yaml", ".yml"],
     languages: List[str] = ["python"],
-    chunk_lines: int = 40,
-    chunk_lines_overlap: int = 15,
+    chunk_lines: int = 200,
+    chunk_lines_overlap: int = 125,
 ) -> VectorStoreIndex:
     """
     Create a code index from source files.
@@ -55,7 +58,9 @@ def create_code_index(
     vector_store_path = Path(vector_store_dir)
     vector_store_path.mkdir(parents=True, exist_ok=True)
 
-    # Load documents with specified extensions
+    # Configure embedding model
+    embedding_model_obj = OpenAIEmbedding(model=embedding_model)
+    Settings.embed_model = embedding_model_obj
     documents = SimpleDirectoryReader(
         input_dir=source_dir,
         required_exts=file_extensions,
@@ -72,7 +77,7 @@ def create_code_index(
     all_nodes = []
     for language in languages:
         logger.info(f"Splitting code for language: {language}")
-        code_splitter = CodeSplitter(
+        code_splitter = EnhancedCodeSplitter(
             language=language,
             chunk_lines=chunk_lines,
             chunk_lines_overlap=chunk_lines_overlap,
@@ -85,15 +90,30 @@ def create_code_index(
             all_nodes.extend(nodes)
             logger.info(f"Created {len(nodes)} nodes for {language}")
 
-    # Create vector store and index
-    logger.info("Creating vector store index")
-    # Using SimpleVectorStore as a temporary solution until llama-index-vector-stores-chroma is installed
-    vector_store = SimpleVectorStore()
-    index = VectorStoreIndex(
-        all_nodes,
-        embed_model=embedding_model,
-        vector_store=vector_store,
+    # Create Chroma client and collection
+    logger.info("Creating Chroma vector store index")
+    chroma_client = chromadb.PersistentClient(path=str(vector_store_path))
+    chroma_collection = chroma_client.get_or_create_collection("code_chunks")
+
+    # Manually embed and add nodes into Chroma
+    logger.info("Generating embeddings and inserting into Chroma")
+    ids = [node.id_ for node in all_nodes]
+    documents = [node.get_content() for node in all_nodes]
+    metadatas = [node.metadata for node in all_nodes]
+    embeddings = embedding_model_obj.get_text_embedding_batch(documents)
+
+    chroma_collection.add(
+        documents=documents,
+        embeddings=embeddings,
+        metadatas=metadatas,
+        ids=ids,
     )
+
+    # Now create a ChromaVectorStore and wrap it
+    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+
+    # Build VectorStoreIndex wrapping around already inserted Chroma
+    index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
 
     # Save the index
     index.storage_context.persist(persist_dir=str(vector_store_path))

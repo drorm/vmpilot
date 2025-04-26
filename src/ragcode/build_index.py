@@ -74,7 +74,7 @@ def main():
 
     # Create vector store directory if it doesn't exist
     vector_store_path = Path(args.vector_store_dir)
-    vector_store_path.parent.mkdir(parents=True, exist_ok=True)
+    vector_store_path.mkdir(parents=True, exist_ok=True)
 
     # Build the index
     logger.info(f"Building code index from {args.source_dir}")

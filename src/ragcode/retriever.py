@@ -8,16 +8,17 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+import chromadb
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.language_models import LLM
 from langchain_core.retrievers import BaseRetriever
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import BaseRetriever as LlamaIndexRetriever
-
-# Temporary fix until llama-index-vector-stores-chroma is installed
-from llama_index.core.vector_stores import SimpleVectorStore
 from llama_index.embeddings.openai import OpenAIEmbedding
+
+# Using Chroma vector store
+from llama_index.vector_stores.chroma import ChromaVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -59,21 +60,44 @@ class CodeRetriever:
             # Temporary solution using loading from storage context instead of ChromaVectorStore
             self.embed_model = OpenAIEmbedding(model=embedding_model)
             try:
-                # Try to load from storage context
-                from llama_index.core import StorageContext, load_index_from_storage
-
-                storage_context = StorageContext.from_defaults(
-                    persist_dir=str(vector_store_path)
+                # Try to load using Chroma
+                chroma_client = chromadb.PersistentClient(path=str(vector_store_path))
+                chroma_collection = chroma_client.get_or_create_collection(
+                    "code_chunks"
                 )
-                self.index = load_index_from_storage(storage_context)
-            except Exception as e:
-                logger.error(f"Error loading index: {str(e)}")
-                # Fallback to empty index
-                self.vector_store = SimpleVectorStore()
+                vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+
                 self.index = VectorStoreIndex.from_vector_store(
-                    vector_store=self.vector_store,
+                    vector_store=vector_store,
                     embed_model=self.embed_model,
                 )
+            except Exception as e:
+                logger.error(f"Error loading index: {str(e)}")
+                # Fallback to empty Chroma index
+                try:
+                    chroma_client = chromadb.PersistentClient(
+                        path=str(vector_store_path)
+                    )
+                    chroma_collection = chroma_client.get_or_create_collection(
+                        "code_chunks"
+                    )
+                    vector_store = ChromaVectorStore(
+                        chroma_collection=chroma_collection
+                    )
+                    self.index = VectorStoreIndex.from_vector_store(
+                        vector_store=vector_store,
+                        embed_model=self.embed_model,
+                    )
+                except Exception as e2:
+                    logger.error(f"Error creating fallback index: {str(e2)}")
+                    # Last resort fallback
+                    from llama_index.core.vector_stores import SimpleVectorStore
+
+                    self.vector_store = SimpleVectorStore()
+                    self.index = VectorStoreIndex.from_vector_store(
+                        vector_store=self.vector_store,
+                        embed_model=self.embed_model,
+                    )
             self.retriever = self.index.as_retriever(similarity_top_k=similarity_top_k)
             self.is_initialized = True
         else:
@@ -119,18 +143,80 @@ class CodeRetriever:
             logger.info(f"Re-ranking {len(nodes)} nodes to top {self.rerank_top_n}")
             nodes = self._rerank_nodes(query, nodes, self.rerank_top_n)
 
-        # Convert to dictionaries
+        # Deduplicate results
+        deduplicated_nodes = self._deduplicate_nodes(nodes)
+
+        # Convert to dictionaries with enhanced information
         results = []
-        for node in nodes:
+        for node in deduplicated_nodes:
+            # Get code structure information from metadata
+            metadata = node.metadata
+            structure_info = self._extract_structure_info(metadata)
+
+            # Prepare the result with enhanced information
             results.append(
                 {
                     "content": node.text,
-                    "metadata": node.metadata,
+                    "metadata": metadata,
                     "score": node.score if hasattr(node, "score") else 0.0,
+                    "structure_info": structure_info,
                 }
             )
 
         return results
+
+    def _deduplicate_nodes(self, nodes):
+        """
+        Remove duplicate nodes based on content.
+
+        Args:
+            nodes: List of nodes to deduplicate
+
+        Returns:
+            List of deduplicated nodes
+        """
+        seen_content = set()
+        deduplicated = []
+
+        for node in nodes:
+            # Use a hash of the content as a deduplication key
+            content_hash = hash(node.text)
+            if content_hash not in seen_content:
+                seen_content.add(content_hash)
+                deduplicated.append(node)
+
+        return deduplicated
+
+    def _extract_structure_info(self, metadata):
+        """
+        Extract and format code structure information from metadata.
+
+        Args:
+            metadata: Node metadata
+
+        Returns:
+            Formatted structure information
+        """
+        structure_info = {}
+
+        # Extract code type and name
+        code_type = metadata.get("code_type", "")
+        if code_type == "class":
+            structure_info["type"] = "Class"
+            structure_info["name"] = metadata.get("class_name", "")
+            structure_info["parent_classes"] = metadata.get("parent_classes", "")
+        elif code_type == "function":
+            if metadata.get("is_method") == "true":
+                structure_info["type"] = "Method"
+            else:
+                structure_info["type"] = "Function"
+            structure_info["name"] = metadata.get("function_name", "")
+
+        # Add description if available
+        if "description" in metadata:
+            structure_info["description"] = metadata["description"]
+
+        return structure_info
 
     def _rerank_nodes(self, query: str, nodes: List, top_n: int) -> List:
         """
