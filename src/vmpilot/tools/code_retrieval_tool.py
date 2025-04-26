@@ -126,7 +126,7 @@ class CodeRetrievalTool(BaseTool):
                 return f"No code found matching query: {query}"
 
             # Format results
-            formatted_results = f"**Results for query: {query}**\n\n"
+            formatted_results = ""
 
             for i, result in enumerate(results, 1):
                 content = result["content"]
@@ -144,7 +144,7 @@ class CodeRetrievalTool(BaseTool):
                         title = f"{structure_info['type']} `{structure_info['name']}` in {title}"
 
                 # Format the code block with enhanced information
-                formatted_results += f"### Result {i}: {title} (Score: {score:.2f})\n"
+                formatted_results += f"**Result**: {title} (Score: {score:.2f})\n"
                 formatted_results += f"**Path:** {file_path}\n"
 
                 # Add structure information if available
@@ -161,16 +161,21 @@ class CodeRetrievalTool(BaseTool):
                             f"**Inherits from:** `{structure_info['parent_classes']}`\n"
                         )
 
+                formatted_results += f"\n```{language}\n{content}\n```\n\n"
                 # Add imports if available
                 if "imports" in metadata:
                     formatted_results += f"**Imports:** `{metadata['imports']}`\n"
 
-                formatted_results += f"\n```{language}\n{content}\n```\n\n"
-
-            return formatted_results
+            final_results = f"\n**RAG search:** {query}\n"
+            final_results += f"\n````markdown\n{formatted_results}\n````\n\n"
+            return final_results
 
         except Exception as e:
             logger.error(f"Error retrieving code for query '{query}': {str(e)}")
+            # show the traceback in the logs
+            import traceback
+
+            logger.error(traceback.format_exc())
             return f"Error retrieving code: {str(e)}"
 
     async def _arun(
