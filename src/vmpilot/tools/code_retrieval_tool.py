@@ -10,7 +10,7 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from vmpilot.ragcode.retriever import CodeRetriever
+from ragcode.retriever import CodeRetriever
 
 logger = logging.getLogger(__name__)
 
