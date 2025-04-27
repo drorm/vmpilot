@@ -5,11 +5,20 @@ Utility functions for code search tool.
 
 import fnmatch
 import json
+import logging
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
+
+# Set up logging
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stderr)
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s: %(message)s"))
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 
 def load_config(config_path: str) -> Dict[str, Any]:
@@ -101,9 +110,9 @@ def collect_files(
     project_root = os.path.abspath(project_root)
 
     # Debug information
-    print(f"DEBUG: Project root: {project_root}", file=os.sys.stderr)
-    print(f"DEBUG: Include patterns: {include_patterns}", file=os.sys.stderr)
-    print(f"DEBUG: Exclude patterns: {exclude_patterns}", file=os.sys.stderr)
+    logger.debug(f"Project root: {project_root}")
+    logger.debug(f"Include patterns: {include_patterns}")
+    logger.debug(f"Exclude patterns: {exclude_patterns}")
 
     # Track skipped files for debugging
     skipped_by_pattern = 0
@@ -144,10 +153,10 @@ def collect_files(
                 continue
 
     # Debug information
-    print(f"DEBUG: Files collected: {len(collected_files)}", file=os.sys.stderr)
-    print(f"DEBUG: Files skipped by pattern: {skipped_by_pattern}", file=os.sys.stderr)
-    print(f"DEBUG: Files skipped by size: {skipped_by_size}", file=os.sys.stderr)
-    print(f"DEBUG: Files skipped by error: {skipped_by_error}", file=os.sys.stderr)
+    logger.debug(f"Files collected: {len(collected_files)}")
+    logger.debug(f"Files skipped by pattern: {skipped_by_pattern}")
+    logger.debug(f"Files skipped by size: {skipped_by_size}")
+    logger.debug(f"Files skipped by error: {skipped_by_error}")
 
     return collected_files
 
@@ -211,14 +220,9 @@ def truncate_files_to_token_limit(
         current_tokens += tokens
 
     # Debug information
-    print(
-        f"DEBUG: Total tokens used: {current_tokens}/{max_tokens}", file=os.sys.stderr
-    )
-    print(f"DEBUG: Files included after truncation: {len(result)}", file=os.sys.stderr)
-    print(
-        f"DEBUG: Files skipped due to token limit: {len(skipped_files)}",
-        file=os.sys.stderr,
-    )
+    logger.debug(f"Total tokens used: {current_tokens}/{max_tokens}")
+    logger.debug(f"Files included after truncation: {len(result)}")
+    logger.debug(f"Files skipped due to token limit: {len(skipped_files)}")
 
     return result
 

@@ -5,12 +5,14 @@ Code Search CLI Tool - Searches code using Gemini API based on natural language 
 
 import argparse
 import json
+import logging
 import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import google.generativeai as genai
+import openai
 from utils import (
     collect_files,
     estimate_token_count,
@@ -18,6 +20,13 @@ from utils import (
     load_config,
     truncate_files_to_token_limit,
 )
+
+# Set up logging
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stderr)
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s: %(message)s"))
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 # Default configuration file path
 DEFAULT_CONFIG_PATH = os.path.join(
@@ -33,7 +42,7 @@ def setup_api(config: Dict[str, Any]) -> None:
         config: Configuration dictionary
     """
     api_config = config.get("api", {})
-    provider = api_config.get("provider", "gemini")
+    provider = api_config.get("provider", "openai")
 
     if provider == "gemini":
         # Check for API key in environment
@@ -42,6 +51,13 @@ def setup_api(config: Dict[str, Any]) -> None:
             raise ValueError("GEMINI_API_KEY environment variable is required")
 
         genai.configure(api_key=api_key)
+    elif provider == "openai":
+        # Check for API key in environment
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is required")
+
+        openai.api_key = api_key
     else:
         raise ValueError(f"Unsupported API provider: {provider}")
 
@@ -130,7 +146,7 @@ def search_code(
 
     # Collect files
     if verbose:
-        print(f"Collecting files from {project_root}...", file=sys.stderr)
+        logger.info(f"Collecting files from {project_root}...")
 
     files = collect_files(
         project_root=project_root,
@@ -141,7 +157,7 @@ def search_code(
     )
 
     if verbose:
-        print(f"Found {len(files)} files matching patterns.", file=sys.stderr)
+        logger.info(f"Found {len(files)} files matching patterns.")
 
     # Calculate total tokens before truncation
     total_tokens_before = sum(estimate_token_count(content) for _, content in files)
@@ -153,14 +169,14 @@ def search_code(
     total_tokens_after = sum(estimate_token_count(content) for _, content in files)
 
     if verbose:
-        print(f"Total tokens before truncation: {total_tokens_before}", file=sys.stderr)
-        print(f"Total tokens after truncation: {total_tokens_after}", file=sys.stderr)
-        print(f"Files included in search: {len(files)}", file=sys.stderr)
+        logger.info(f"Total tokens before truncation: {total_tokens_before}")
+        logger.info(f"Total tokens after truncation: {total_tokens_after}")
+        logger.info(f"Files included in search: {len(files)}")
         if len(files) > 0:
-            print("\nFiles included in search:", file=sys.stderr)
+            logger.info("\nFiles included in search:")
             for filepath, _ in files:
-                print(f"- {filepath}", file=sys.stderr)
-        print("", file=sys.stderr)
+                logger.info(f"- {filepath}")
+        logger.info("")
 
     # If no files found, return early
     if not files:
@@ -174,28 +190,40 @@ def search_code(
     # Construct prompt
     prompt = construct_prompt(query, files)
 
-    if verbose:
-        print(f"Sending query to Gemini API...", file=sys.stderr)
-
     # Call API
     try:
-        model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash-preview-04-17",
-            generation_config={
-                "temperature": temperature,
-                "top_p": top_p,
-            },
-        )
+        if api_config.get("provider", "openai") == "gemini":
+            if verbose:
+                logger.info(f"Sending query to Gemini API...")
+            model = genai.GenerativeModel(
+                model_name="gemini-2.5-flash-preview-04-17",
+                generation_config={
+                    "temperature": temperature,
+                    "top_p": top_p,
+                },
+            )
 
-        response = model.generate_content(prompt)
+            response = model.generate_content(prompt)
+            response_text = response.text
+
+        elif api_config.get("provider", "openai") == "openai":
+            if verbose:
+                logger.info(f"Sending query to OpenAI API...")
+            response = openai.chat.completions.create(
+                model="gpt-4.1-nano",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=temperature,
+                top_p=top_p,
+            )
+            response_text = response.choices[0].message.content
 
         if verbose:
-            print(f"Response received from API.", file=sys.stderr)
+            logger.info(f"Response received from API.")
 
         # Format results
         results = {
             "query": query,
-            "response": response.text,
+            "response": response_text,
             "files_searched": [f[0] for f in files],
         }
 
@@ -204,7 +232,7 @@ def search_code(
     except Exception as e:
         error_msg = str(e)
         if verbose:
-            print(f"Error from API: {error_msg}", file=sys.stderr)
+            logger.info(f"Error from API: {error_msg}")
 
         results = {
             "query": query,
@@ -271,7 +299,7 @@ def main():
         print(result)
 
     except Exception as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
+        logger.error(f"Error: {str(e)}")
         sys.exit(1)
 
 
