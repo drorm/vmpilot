@@ -46,16 +46,32 @@ def should_include_file(
     """
     # First check if file should be excluded
     for pattern in exclude_patterns:
-        if fnmatch.fnmatch(filepath, pattern):
+        if any(fnmatch.fnmatch(filepath, p) for p in _expand_pattern(pattern)):
             return False
 
     # Then check if file should be included
     for pattern in include_patterns:
-        if fnmatch.fnmatch(filepath, pattern):
+        if any(fnmatch.fnmatch(filepath, p) for p in _expand_pattern(pattern)):
             return True
 
     # If no include pattern matches, exclude the file
     return False
+
+
+def _expand_pattern(pattern: str) -> List[str]:
+    """
+    Expand a glob pattern to handle ** patterns correctly.
+
+    Args:
+        pattern: Glob pattern
+
+    Returns:
+        List of expanded patterns
+    """
+    # Handle basic file extension patterns
+    if pattern.startswith("*."):
+        return [pattern, f"**/{pattern}"]
+    return [pattern]
 
 
 def collect_files(
@@ -84,6 +100,16 @@ def collect_files(
     # Convert to absolute path
     project_root = os.path.abspath(project_root)
 
+    # Debug information
+    print(f"DEBUG: Project root: {project_root}", file=os.sys.stderr)
+    print(f"DEBUG: Include patterns: {include_patterns}", file=os.sys.stderr)
+    print(f"DEBUG: Exclude patterns: {exclude_patterns}", file=os.sys.stderr)
+
+    # Track skipped files for debugging
+    skipped_by_pattern = 0
+    skipped_by_size = 0
+    skipped_by_error = 0
+
     for root, _, files in os.walk(project_root):
         if len(collected_files) >= max_files:
             break
@@ -97,12 +123,14 @@ def collect_files(
 
             # Skip files that don't match patterns
             if not should_include_file(relpath, include_patterns, exclude_patterns):
+                skipped_by_pattern += 1
                 continue
 
             # Skip files that are too large
             try:
                 file_size = os.path.getsize(filepath)
                 if file_size > max_size_bytes:
+                    skipped_by_size += 1
                     continue
 
                 # Read file content
@@ -110,9 +138,16 @@ def collect_files(
                     content = f.read()
 
                 collected_files.append((relpath, content))
-            except Exception:
+            except Exception as e:
+                skipped_by_error += 1
                 # Skip files that can't be read
                 continue
+
+    # Debug information
+    print(f"DEBUG: Files collected: {len(collected_files)}", file=os.sys.stderr)
+    print(f"DEBUG: Files skipped by pattern: {skipped_by_pattern}", file=os.sys.stderr)
+    print(f"DEBUG: Files skipped by size: {skipped_by_size}", file=os.sys.stderr)
+    print(f"DEBUG: Files skipped by error: {skipped_by_error}", file=os.sys.stderr)
 
     return collected_files
 
@@ -120,7 +155,8 @@ def collect_files(
 def estimate_token_count(text: str) -> int:
     """
     Estimate the number of tokens in a text.
-    This is a simple estimation - approximately 4 characters per token.
+    This is a more accurate estimation - approximately 4 characters per token
+    but also accounting for whitespace and newlines.
 
     Args:
         text: Text to estimate tokens for
@@ -128,7 +164,14 @@ def estimate_token_count(text: str) -> int:
     Returns:
         Estimated token count
     """
-    return len(text) // 4
+    # Count words (better approximation than characters)
+    words = len(text.split())
+    # Add extra tokens for newlines and special characters
+    extra_tokens = text.count("\n") + sum(
+        1 for c in text if not c.isalnum() and not c.isspace()
+    )
+    # Estimate total - roughly 1 token per word plus extra tokens
+    return words + (extra_tokens // 4)
 
 
 def truncate_files_to_token_limit(
@@ -136,6 +179,8 @@ def truncate_files_to_token_limit(
 ) -> List[Tuple[str, str]]:
     """
     Truncate the list of files to fit within a token limit.
+    This implementation prioritizes including more files by taking
+    files in order of estimated token count (smallest first).
 
     Args:
         files: List of (file_path, content) tuples
@@ -144,19 +189,36 @@ def truncate_files_to_token_limit(
     Returns:
         Truncated list of files
     """
+    # Sort files by token count (smallest first)
+    files_with_tokens = [
+        (filepath, content, estimate_token_count(content))
+        for filepath, content in files
+    ]
+    files_with_tokens.sort(key=lambda x: x[2])
+
+    # Add files until we hit the token limit
     result = []
     current_tokens = 0
+    skipped_files = []
 
-    for filepath, content in files:
-        # Estimate tokens for this file
-        file_tokens = estimate_token_count(content)
-
-        # If adding this file would exceed the limit, stop
-        if current_tokens + file_tokens > max_tokens:
-            break
+    for filepath, content, tokens in files_with_tokens:
+        # If adding this file would exceed the limit, skip it
+        if current_tokens + tokens > max_tokens:
+            skipped_files.append((filepath, tokens))
+            continue
 
         result.append((filepath, content))
-        current_tokens += file_tokens
+        current_tokens += tokens
+
+    # Debug information
+    print(
+        f"DEBUG: Total tokens used: {current_tokens}/{max_tokens}", file=os.sys.stderr
+    )
+    print(f"DEBUG: Files included after truncation: {len(result)}", file=os.sys.stderr)
+    print(
+        f"DEBUG: Files skipped due to token limit: {len(skipped_files)}",
+        file=os.sys.stderr,
+    )
 
     return result
 
