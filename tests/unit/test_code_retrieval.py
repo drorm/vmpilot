@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from vmpilot.ragcode.indexer import create_code_index
-from vmpilot.ragcode.retriever import CodeRetriever
+from ragcode.indexer import create_code_index
+from ragcode.retriever import CodeRetriever
 from vmpilot.tools.code_retrieval_tool import CodeRetrievalTool
 
 

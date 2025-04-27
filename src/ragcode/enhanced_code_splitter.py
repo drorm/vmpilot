@@ -77,7 +77,7 @@ class EnhancedCodeSplitter(CodeSplitter):
         """
         structure_info = {}
 
-        # Detect if this is a class definition
+        # Detect if this is a class definition (check this first as it's more specific)
         class_match = re.search(r"class\s+(\w+)(?:\(([^)]*)\))?:", content)
         if class_match:
             structure_info["code_type"] = "class"
@@ -85,10 +85,14 @@ class EnhancedCodeSplitter(CodeSplitter):
             if class_match.group(2):
                 structure_info["parent_classes"] = class_match.group(2)
 
-        # Detect if this is a function definition
+        # Detect if this is a function definition (only set if not already a class)
         func_match = re.search(r"def\s+(\w+)\s*\(", content)
         if func_match:
-            structure_info["code_type"] = "function"
+            # Only set code_type to function if we haven't identified this as a class
+            if "code_type" not in structure_info:
+                structure_info["code_type"] = "function"
+
+            # Always record the function name if found (classes can contain methods)
             structure_info["function_name"] = func_match.group(1)
 
             # Check if it's a method (indented and/or has self parameter)
