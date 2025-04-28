@@ -2,8 +2,6 @@ import logging
 from contextvars import ContextVar
 from typing import Any, Optional
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
@@ -140,6 +138,8 @@ async def create_agent(
             },
         )
     elif provider == APIProvider.OPENAI:
+        from langchain_openai import ChatOpenAI
+
         # Only set temperature=1 for o4-mini model
         provider_config = config.get_provider_config(APIProvider.OPENAI)
         model_temperature = 1 if model == "o4-mini" else temperature
@@ -153,6 +153,7 @@ async def create_agent(
     elif provider == APIProvider.GOOGLE:
         # Create the Google AI LLM
         try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
 
             llm = ChatGoogleGenerativeAI(
                 model=model,
