@@ -1,6 +1,6 @@
 # Code Search Tool
 
-A standalone Python CLI tool for searching code using natural language queries and LLM (Gemini) for understanding and context.
+A standalone Python CLI tool for searching code using natural language queries and LLM (Gemini) for understanding and context. Designed to work both as a standalone tool and integrated with VMPilot.
 
 ## Overview
 
@@ -107,11 +107,46 @@ This is useful for debugging and understanding how the tool is processing your c
 
 ## VMPilot Integration
 
-This tool can be used with VMPilot by invoking it through the shell tool:
+This tool is fully integrated with VMPilot in two ways:
+
+### 1. As a SearchTool
+
+VMPilot includes a dedicated `search_code` tool that provides direct access to the code search functionality:
+
+```
+search_code:
+  query: "How does authentication work?"
+  project_root: "/path/to/project"  # Optional
+  output_format: "markdown"  # Optional
+  model: "gemini-1.5-pro"  # Optional
+```
+
+### 2. Through the CLI
+
+Alternatively, you can invoke the CLI directly using VMPilot's shell tool:
+
+```
+shell:
+  command: "python /path/to/codesearch/search.py --query 'How does authentication work?' --project-root /path/to/project"
+```
+
+### Using as a Python Module
+
+The code search functionality can also be imported and used programmatically:
 
 ```python
-# Example VMPilot integration
-shell_tool.run("python /path/to/codesearch/search.py --query 'How does authentication work?' --project-root /path/to/project")
+from codesearch.search import search_project_code
+
+# Search code and get results
+results = search_project_code(
+    query="How does the authentication system work?",
+    project_root="/path/to/project",
+    config_path="/path/to/config.yaml",  # Optional
+    output_format="markdown",  # Optional
+    model="gemini-1.5-pro"  # Optional
+)
+
+print(results)
 ```
 
 ## Troubleshooting
