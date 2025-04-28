@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import google.generativeai as genai
 import openai
 
+from codesearch.build_execute import build_search_prompt, execute_search
 from codesearch.utils import (
     collect_files,
     estimate_token_count,
