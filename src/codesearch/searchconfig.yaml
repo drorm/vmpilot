@@ -28,6 +28,8 @@ file_patterns:
     - "*.html"  # HTML files
     - "*.css"   # CSS files
     - "*.md"    # Markdown files
+    - "*.ini"   # INI files
+    - "*.yaml"  # YAML files
 
   # Files to exclude from search
   exclude:
