@@ -5,7 +5,7 @@
 # size limits for files, and API configuration for the LLM provider.
 general:
   # Base directory for the codebase
-  base_dir: "/home/dror/vmpilot/src/vmpilot"  # Path to the codebase
+  base_dir: "~/vmpilot/src/vmpilot"  # Path to the codebase
 
 # File Patterns
 file_patterns:

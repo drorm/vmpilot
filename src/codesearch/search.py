@@ -110,7 +110,7 @@ Now, please provide a comprehensive answer to the search query based on the prov
 
 def search_code(
     query: str,
-    project_root: str,
+    project_root: Optional[str],
     config: Dict[str, Any],
     output_format: str,
     verbose: bool = False,
@@ -120,7 +120,7 @@ def search_code(
 
     Args:
         query: The search query
-        project_root: Root directory of the project
+        project_root: Root directory of the project (optional, overrides config)
         config: Configuration dictionary
         output_format: Output format (json, text, markdown)
         verbose: Whether to print verbose information
@@ -128,6 +128,15 @@ def search_code(
     Returns:
         Formatted search results
     """
+    # Use project_root from arguments if provided, otherwise use base_dir from config
+    if not project_root:
+        project_root = config.get("general", {}).get("base_dir", ".")
+        # Expand ~ to home directory if present
+        project_root = os.path.expanduser(project_root)
+
+    if verbose:
+        logger.info(f"Using project root: {project_root}")
+
     # Extract configuration values
     file_patterns = config.get("file_patterns", {})
     include_patterns = file_patterns.get("include", ["*.py"])
@@ -196,7 +205,7 @@ def search_code(
             if verbose:
                 logger.info(f"Sending query to Gemini API...")
             model = genai.GenerativeModel(
-                model_name="gemini-2.5-flash-preview-04-17",
+                model_name="gemini-1.5-flash-8b",
                 generation_config={
                     "temperature": temperature,
                     "top_p": top_p,
@@ -252,8 +261,8 @@ def main():
         "--project-root",
         "-p",
         type=str,
-        default=".",
-        help="Root directory of the project",
+        default=None,
+        help="Root directory of the project (overrides config file)",
     )
     parser.add_argument(
         "--config",
@@ -266,7 +275,7 @@ def main():
         "--output-format",
         "-o",
         type=str,
-        default="markdown",  # Changed default to markdown
+        default=None,  # Will use config default if not specified
         choices=["json", "text", "markdown"],
         help="Output format (json, text, markdown)",
     )
@@ -286,12 +295,17 @@ def main():
         # Setup API
         setup_api(config)
 
+        # Use output format from config if not specified in args
+        output_format = args.output_format
+        if output_format is None:
+            output_format = config.get("output", {}).get("default_format", "markdown")
+
         # Search code
         result = search_code(
             query=args.query,
             project_root=args.project_root,
             config=config,
-            output_format=args.output_format,
+            output_format=output_format,
             verbose=args.verbose,
         )
 
