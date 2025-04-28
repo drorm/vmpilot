@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import google.generativeai as genai
 import openai
-from utils import (
+
+from codesearch.utils import (
     collect_files,
     estimate_token_count,
     format_output,
@@ -27,6 +28,95 @@ handler = logging.StreamHandler(sys.stderr)
 handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s: %(message)s"))
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
+
+
+def search_project_code(
+    query: str,
+    project_root: Optional[str] = None,
+    config_path: Optional[str] = None,
+    output_format: str = "markdown",
+    model: Optional[str] = None,
+) -> str:
+    """
+    Search code in a project using natural language queries.
+
+    This function is designed to be imported and used programmatically,
+    providing the same functionality as the CLI but as a Python function.
+
+    Args:
+        query: The natural language query to search for
+        project_root: Root directory of the project to search (defaults to current directory)
+        config_path: Path to the search configuration file (defaults to searchconfig.yaml in module directory)
+        output_format: Output format - "markdown", "json", or "text"
+        model: LLM model to use (overrides config setting)
+
+    Returns:
+        Formatted search results as a string
+    """
+    try:
+        # Set default project root if not provided
+        if project_root is None:
+            project_root = os.getcwd()
+        project_root = os.path.abspath(project_root)
+
+        # Set default config path if not provided
+        if config_path is None:
+            # Look for config in current directory first
+            if os.path.exists("searchconfig.yaml"):
+                config_path = "searchconfig.yaml"
+            else:
+                # Fall back to the config in the script's directory
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                config_path = os.path.join(script_dir, "searchconfig.yaml")
+
+        # Load configuration
+        config = load_config(config_path)
+
+        # Override model if specified
+        if model and "llm" in config:
+            config["llm"]["model"] = model
+
+        # Setup API
+        setup_api(config)
+
+        # Get files and build prompt
+        file_patterns = config.get("file_patterns", {})
+        include_patterns = file_patterns.get("include", ["*.py"])
+        exclude_patterns = file_patterns.get(
+            "exclude", ["**/node_modules/**", "**/.git/**"]
+        )
+        limits = config.get("limits", {})
+        max_file_size_kb = limits.get("max_file_size_kb", 500)
+        max_files = limits.get("max_files_to_include", 50)
+
+        # Collect files
+        files = collect_files(
+            project_root=project_root,
+            include_patterns=include_patterns,
+            exclude_patterns=exclude_patterns,
+            max_file_size_kb=max_file_size_kb,
+            max_files=max_files,
+        )
+
+        # Truncate files to fit token limit
+        max_total_tokens = limits.get("max_total_tokens", 8000)
+        files = truncate_files_to_token_limit(files, max_total_tokens)
+
+        # Build prompt and execute search
+        prompt = build_search_prompt(files, query, config)
+        result = execute_search(prompt, config)
+
+        # Add query and files searched to result
+        result["query"] = query
+        result["files_searched"] = [f[0] for f in files]
+
+        # Format the output
+        return format_output(result, output_format)
+
+    except Exception as e:
+        logger.error(f"Error in search_project_code: {str(e)}")
+        return f"Error searching code: {str(e)}"
+
 
 # Default configuration file path
 DEFAULT_CONFIG_PATH = os.path.join(
@@ -262,20 +352,20 @@ def main():
         "-p",
         type=str,
         default=None,
-        help="Root directory of the project (overrides config file)",
+        help="Root directory of the project to search",
     )
     parser.add_argument(
         "--config",
         "-c",
         type=str,
-        default=DEFAULT_CONFIG_PATH,
+        default=None,
         help="Path to configuration file",
     )
     parser.add_argument(
         "--output-format",
         "-o",
         type=str,
-        default=None,  # Will use config default if not specified
+        default="markdown",
         choices=["json", "text", "markdown"],
         help="Output format (json, text, markdown)",
     )
@@ -285,28 +375,36 @@ def main():
         action="store_true",
         help="Enable verbose output with file list and token counts",
     )
+    parser.add_argument(
+        "--model",
+        "-m",
+        type=str,
+        default=None,
+        help="LLM model to use (overrides config setting)",
+    )
 
     args = parser.parse_args()
 
     try:
-        # Load configuration
-        config = load_config(args.config)
+        # Set up logging level
+        if args.verbose:
+            logger.setLevel(logging.DEBUG)
+            logger.debug("Verbose mode enabled")
 
-        # Setup API
-        setup_api(config)
+        # Set environment variable for testing if needed (remove in production)
+        if "GEMINI_API_KEY" not in os.environ and "OPENAI_API_KEY" not in os.environ:
+            logger.warning(
+                "No API key found. Using dummy key for demonstration purposes."
+            )
+            os.environ["GEMINI_API_KEY"] = "dummy_key_for_testing"
 
-        # Use output format from config if not specified in args
-        output_format = args.output_format
-        if output_format is None:
-            output_format = config.get("output", {}).get("default_format", "markdown")
-
-        # Search code
-        result = search_code(
+        # Use the search_project_code function
+        result = search_project_code(
             query=args.query,
             project_root=args.project_root,
-            config=config,
-            output_format=output_format,
-            verbose=args.verbose,
+            config_path=args.config,
+            output_format=args.output_format,
+            model=args.model,
         )
 
         # Print result
