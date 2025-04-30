@@ -113,15 +113,13 @@ class GoogleSearchTool(BaseTool):
                 link = result.get("link", "No link")
                 snippet = result.get("snippet", "No description")
 
-                formatted_results.append(
-                    f"{i}. **{title}**\n   {snippet}\n   URL: {link}\n"
-                )
+                formatted_results.append(f"{i}. **{title}**\n   {snippet}\n   {link}\n")
 
             if not formatted_results:
                 return "No results found for your query."
 
             formatted_results = "\n".join(formatted_results)
-            formatted_results = f"\n````{formatted_results}\n````\n\n"
+            formatted_results = f"\n````markdown\n{formatted_results}\n````\n\n"
             return formatted_results
 
         except ConnectionError as e:
