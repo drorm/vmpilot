@@ -27,6 +27,7 @@ docker pull ghcr.io/drorm/vmpilot:latest
 echo "Starting VMPilot container..."
 docker run -d --name vmpilot --security-opt no-new-privileges=true \
   -p 9099:9099 \
+  -p 8080:8080 \
   -v "$VMPILOT_DIR/config:/app/config:ro" \
   -v "$VMPILOT_DIR/data:/app/data" \
   -e VMPILOT_CONFIG=/app/config/config.ini \
@@ -50,7 +51,13 @@ if docker ps | grep -q vmpilot; then
   echo "VMPilot has been successfully installed and is running!"
   echo "Configuration file: $VMPILOT_DIR/config/config.ini"
   echo "Data directory: $VMPILOT_DIR/data"
-  echo "VMPilot is accessible at http://localhost:9099"
+  echo "Open WebUI interface is accessible at http://localhost:8080"
+  echo "VMPilot pipeline server is running at http://localhost:9099"
+  echo ""
+  echo "Next steps:"
+  echo "1. Open http://localhost:8080 in your browser"
+  echo "2. Create a user account (first user becomes admin)"
+  echo "3. Add your API keys in the Admin Panel > Pipelines section"
 else
   echo "Error: VMPilot container failed to start."
   echo "Check logs with: docker logs vmpilot"
