@@ -1,7 +1,7 @@
-from typing import Any, Dict, Optional
-import os
 import logging
+import os
 from typing import Any, Dict, List, Optional, Type, Union
+
 from langchain_core.tools import BaseTool
 from langchain_google_community.search import GoogleSearchAPIWrapper
 from pydantic import BaseModel, Field, model_validator
@@ -63,7 +63,9 @@ class GoogleSearchTool(BaseTool):
             if not formatted_results:
                 return "No results found."
 
-            return "\n".join(formatted_results)
+            formatted_results = "\n".join(formatted_results)
+            formatted_results = f"\n````{formatted_results}\n````\n\n"
+            return formatted_results
 
         except Exception as e:
             return f"Error performing search: {str(e)}"
