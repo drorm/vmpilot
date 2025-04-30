@@ -6,6 +6,8 @@ from langchain_core.tools import BaseTool
 from langchain_google_community.search import GoogleSearchAPIWrapper
 from pydantic import BaseModel, Field
 
+from vmpilot.config import google_search_config
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,17 +37,24 @@ class GoogleSearchTool(BaseTool):
         """Initialize the Google Search tool."""
         super().__init__(**kwargs)
 
+        # Check if tool is enabled in configuration
+        if not google_search_config.enabled:
+            logger.info("Google Search Tool is disabled in configuration")
+            self.is_configured = False
+            self.search = None
+            return
+
         # Check if required environment variables are set
-        google_api_key = os.getenv("GOOGLE_API_KEY")
-        google_cse_id = os.getenv("GOOGLE_CSE_ID")
+        google_api_key = os.getenv(google_search_config.api_key_env)
+        google_cse_id = os.getenv(google_search_config.cse_id_env)
 
         if not google_api_key or not google_cse_id:
             logger.warning(
                 "Google Search Tool is not properly configured. "
                 "Missing required environment variables: "
-                f"{'GOOGLE_API_KEY' if not google_api_key else ''}"
+                f"{google_search_config.api_key_env if not google_api_key else ''}"
                 f"{' and ' if not google_api_key and not google_cse_id else ''}"
-                f"{'GOOGLE_CSE_ID' if not google_cse_id else ''}"
+                f"{google_search_config.cse_id_env if not google_cse_id else ''}"
             )
             self.is_configured = False
             self.search = None
@@ -56,6 +65,7 @@ class GoogleSearchTool(BaseTool):
             self.search = GoogleSearchAPIWrapper(
                 google_api_key=google_api_key,
                 google_cse_id=google_cse_id,
+                k=google_search_config.max_results,
             )
             self.is_configured = True
             logger.info("Google Search Tool initialized successfully")
@@ -72,10 +82,25 @@ class GoogleSearchTool(BaseTool):
         """Execute Google search."""
         # Check if the search tool is configured
         if not self.is_configured or self.search is None:
-            return (
-                "Google Search API is not properly configured. "
-                "Please check if GOOGLE_API_KEY and GOOGLE_CSE_ID environment variables are set."
-            )
+            if not google_search_config.enabled:
+                return (
+                    "Google Search is disabled in configuration. "
+                    "To enable it, set 'enabled = true' in the [google_search] section of config.ini."
+                )
+            else:
+                import os
+
+                missing_vars = []
+                if not os.getenv(google_search_config.api_key_env):
+                    missing_vars.append(google_search_config.api_key_env)
+                if not os.getenv(google_search_config.cse_id_env):
+                    missing_vars.append(google_search_config.cse_id_env)
+
+                return (
+                    "Google Search API is not properly configured. "
+                    f"The following environment variables are missing: {', '.join(missing_vars)}. "
+                    "Please set these variables to use Google Search."
+                )
 
         try:
             # Perform the search
