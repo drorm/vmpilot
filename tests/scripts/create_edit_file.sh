@@ -8,8 +8,9 @@ if [ -f "$test_file" ]; then
 fi
 
 
-# Step 1: Create the file with initial content using cli.sh
-output_create=$(/home/dror/vmpilot/bin/cli.sh -t 0 "create $test_file, hello world example")
+# Step 1: Create the file with initial content using the wrapper script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+output_create=$("$SCRIPT_DI"$SCRIPT_DIR/run_cli.sh"" -t 0 "create $test_file, hello world example")
 
 echo -e "Create command output:\n$output_create"
 # Verify the creation
@@ -21,7 +22,7 @@ else
 fi
 
 # Step 2: Change the content to say goodbye
-output_modify=$(/home/dror/vmpilot/bin/cli.sh -t 0 "change 'Hello' to 'Goodbye' in $test_file")
+output_modify=$("$SCRIPT_DI"$SCRIPT_DIR/run_cli.sh"" -t 0 "change 'Hello' to 'Goodbye' in $test_file")
 
 echo -e "Modify command output:\n$output_modify"
 # Verify the modification

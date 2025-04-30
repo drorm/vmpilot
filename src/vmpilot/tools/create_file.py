@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Type
+from typing import Type
 
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
@@ -55,7 +55,7 @@ class CreateFileTool(BaseTool):
                 raise FileExistsError(f"File already exists at: {path}")
 
             self._write_file(file_path, content)
-            return ""
+            return f"\n\n**Created {file_path}.**\n\n"
         except (FileError, FileExistsError, ValueError) as e:
             raise
         except Exception as e:

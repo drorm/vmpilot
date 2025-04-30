@@ -1,16 +1,12 @@
 """Tool for executing shell commands with proper output formatting."""
 
-import json
 import logging
-import platform
 import subprocess
-import warnings
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.language_models import BaseChatModel
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +59,8 @@ class ShellTool(BaseTool):
             # Format the output with the specified language and include the original command
             formatted_result = f"**$ {command}**\n"
             if result:
-                formatted_result += f"\n```{language}\n{result}\n```\n\n"
+                # we use 4 backticks to escape the 3 backticks that might be in the markdown
+                formatted_result += f"\n````{language}\n{result}\n````\n\n"
             return formatted_result
 
         except Exception as e:

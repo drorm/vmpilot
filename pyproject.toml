@@ -16,18 +16,25 @@ dependencies = [
     "fastapi>=0.100.0",
     "pygments>=2.15.0",
     "asyncio>=3.4.3",
+    "langchain>=0.3.22",
+    "anthropic>=0.49.0",
+    "langchain-openai>=0.3.11",
+    "langgraph>=0.0.20",
+    "langchain-anthropic>=0.3.10",
+    "langchain-core>=0.3.49",
+    "langchain-google-genai>=2.1.2"
 ]
 
 [project.optional-dependencies]
-pipeline = [
-    "langchain==0.3.14"
-]
 dev = [
     "pytest>=7.0.0",
+    "pytest-cov>=4.1.0",
+    "coverage>=7.3.0",
     "black>=23.0.0",
     "isort>=5.12.0",
     "flake8>=6.0.0",
-    "mypy>=1.0.0",
+    "mypy>=1.0.0",  # Keeping mypy for now during transition
+    "pyright>=1.1.358",  # Added pyright for faster type checking
 ]
 
 [project.urls]
@@ -45,3 +52,39 @@ multi_line_output = 3
 [tool.mypy]
 python_version = "3.11"
 strict = true
+cache_dir = "/tmp/mypy_cache"
+incremental = true
+exclude = [
+    "src/vmpilot/caching/chat_models.py",
+    "src/vmpilot/tools/edit_diff.py",
+    "tests/",  # Exclude tests for now until types are fixed
+    "build/",
+    "dist/"
+]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
+implicit_reexport = false
+namespace_packages = true
+explicit_package_bases = true
+
+# Plugin settings
+[[tool.mypy.overrides]]
+module = "pydantic.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "langchain.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "fastapi.*"
+follow_imports = "skip"
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"

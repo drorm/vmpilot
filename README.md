@@ -1,122 +1,90 @@
 # VMPilot
 
-> [!CAUTION]
-Only run this if you have enough knowledge about the security implications of running arbitrary commands in your virtual machine.
-**Never run this on your local machine**. You are letting the AI/LLM pilot run commands in your machine and it can be dangerous. Additionally, there is a risk that the AI might interact with the external world, and be taken over by an attacker.
+VMPilot is a chat-based AI development agent that operates directly in your virtual machine environment. It combines natural language understanding with the ability to perform complex development tasks - reading and modifying code, managing GitHub issues, and executing system commands. Powered by [OpenWebUI's](https://openwebui.com) rich chat interface, it provides an intuitive way to interact with your development environment through workspaces, advanced chat features, and support for multiple AI models.
 
-## Overview
+![VMPilot hello world](docs/source/examples/hello.png)
 
-VMPilot provides a way to interact with an AI agent to perform tasks in a virtual machine. It is focused on pair programming, where the AI can help you with coding tasks, but it can also be used for other tasks as well.
-While the UI is similar to the chat interface of OpenAI and other AI models (thanks to OpenWebUI), it provides advanced capabilities by executing multiple commands in the virtual machine to accomplish the requested task.
-It is is available as an Open WebUI Pipeline, or a cli.
+### Check out our [other Examples](https://drorm.github.io/vmpilot/examples/)
 
-It is inspired by [Claude Computer Use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use) and uses [OpenWebUI Pipelines](https://docs.anthropic.com/en/docs/build-with-claude/openwebui-pipelines).
+## Quick Start
+- [Documentation Site](https://drorm.github.io/vmpilot/)
+- [Installation Guide](https://drorm.github.io/vmpilot/installation/)
+- [Examples](https://drorm.github.io/vmpilot/examples/)
 
-## Features
+## Why VMPilot?
 
-### Core Features
-- The rich and advanced features of OpenWebUI 
-- Code Output Processing Automatic programming language detection,smart code fence wrapping 
-- Streaming Support. Support for both streaming and single-response modes
-- Tool Integration Structured tool output handling
-- Model Support
-  - Primarily tested with Claude 3.5 Sonnet
-  - OpenAI API gpt4-o support
-  - Extensible to other API providers
+While many AI coding assistants focus solely on code completion, VMPilot operates at the system level, providing comprehensive automation and assistance across your entire development cycle:
 
-## Installation
+🔹 **End-to-End Development Support**
 
-For a complete setup, follow these guides in order:
+- Helps you define and manage issues describing your requirements
+- Writes and modifies code based on issues
+- Creates and executes tests
+- Collaborates in writing documentation
+- Helps you with deployment and CI/CD
+- Understands project context and maintains consistency
 
-1. [DNS and SSL Setup](docs/dns_ssl_setup.md) - Optional, but highly recommended to configure secure access to your services
-2. [Installation Guide](docs/installation.md) - Full installation instructions including OpenWebUI and pipeline setup
-3. [Usage Guide](docs/usage.md) - Learn how to use VMPilot effectively
+🔹 **Full System Access**
 
-Quick start:
-1. Install dependencies (`pip install -r requirements.txt`)
-2. Configure the ANTHROPIC_API_KEY environment variable
-3. The pipeline runs on port 9099 by default
-4. Access through any OpenAI API-compatible client
+- Operates directly within your virtual machine environment
+- Manages files and system operations
+- Understands your entire development environment
 
-See the [Installation Guide](docs/installation.md) for detailed setup instructions.
+🔹 **Extensible Plugin Architecture**
 
-## Security Considerations
+- Built-in GitHub integration for issues and code management
+- Plugin system ready for custom workflow extensions
+- Future plugins planned for documentation and testing 
 
-- The pipeline has arbitrary code execution capabilities
-- Should only be used in trusted environments
-- Keep API keys secure
-- Follow standard security practices when exposing endpoints
+## Powerful Web Interface with OpenWebUI
 
-When using VMPilot with GitHub repositories, it's crucial to follow security best practices to protect your account and repositories:
+VMPilot leverages [OpenWebUI](https://openwebui.com) to provide a great development experience:
 
-### Use Fine-Grained Personal Access Tokens
+🚀 **Advanced Chat Interface**
+- Multi-modal conversation view with code highlighting
+- Real-time streaming responses
+- Conversation history and context management
+- Edit and refine prompts on the fly
+- Stop and control AI responses at any time
 
-Instead of using tokens with full repository access:
+⚙️ **Workspace Organization**
+- Create dedicated workspaces for different projects or tasks
+- Maintain separate contexts for frontend, backend, or different project development
+- Switch between different LLM providers (OpenAI, Anthropic) per conversation, or run them side by side
+- Save and reuse effective prompts and configurations
 
-1. Go to GitHub Settings > Developer Settings > Personal Access Tokens > Fine-grained tokens
-2. Create a new token with:
-   - Limited repository access (only select required repositories)
-   - Minimal permissions (e.g., only Contents:Read if just cloning)
-   - Set an expiration date
+🎛️ **Extensive Customization**
+- Fine-tune model parameters and behavior
+- Configure UI preferences and layout
+- Customize syntax highlighting and themes
+- Adjust token limits and other technical settings
 
-### Permission Scopes
+## Documentation
 
-Only grant the minimal permissions needed:
-- For read-only operations: `Contents: Read`
-- For cloning and pulling: `Contents: Read`
-- For committing changes: `Contents: Read & Write`
+Check out our documentation, including setup guides, architecture details, and usage examples on our [documentation site](https://drorm.github.io/vmpilot/).
 
-### Security Recommendations
+## Development Status
 
-- Never share tokens with full repository access
-- Regularly rotate access tokens
-- Monitor token usage in GitHub Security settings
-- Revoke tokens immediately if compromised
-- Use separate tokens for different purposes/repositories
+VMPilot is under active development. While it's suitable for general use, we're continuously adding features and improvements. Check our [GitHub Issues](https://github.com/drorm/vmpilot/issues) for current development status and planned features.
 
-### Token Environment Variables
+### Branching Strategy
 
-When configuring GitHub access:
+VMPilot follows a simplified Git Flow branching strategy:
+
+- `main` - Production-ready code, deployed to users
+- `dev` - Integration branch for development work
+- Feature branches - Individual features branched from `dev`
+
+All development work happens in feature branches, which are merged into `dev` via pull requests.
+
+### Development Setup
+
+#### Git Hooks
+
+We use Git hooks to ensure code quality. To set up the pre-commit hook that runs linting checks:
+
 ```bash
-# Use specific environment variables for different access levels
-GITHUB_READ_TOKEN=github_pat_xxx  # Read-only access
-GITHUB_WRITE_TOKEN=github_pat_yyy # Repository write access
+./.git-hooks/setup.sh
 ```
 
-This approach ensures that even if a token is compromised, the potential impact is limited to specific repositories and actions.
-
-## Error Handling
-
-The pipeline provides:
-- Detailed error messages
-- Exit code reporting
-- Syntax-highlighted error output
-- Proper cleanup on failures
-
-## Logging
-
-Comprehensive logging includes:
-- Tool execution details
-- API interactions
-- Error conditions
-- Performance metrics
-
-## Key Components
-
-### vmpilot.py
-
-The main pipeline implementation that:
-- Provides an OpenAI API-compatible endpoint
-- Handles message streaming
-- Manages tool execution
-- Features automatic code language detection and syntax highlighting
-- Supports both streaming and non-streaming responses
-
-### agent.py
-
-Core agent implementation that:
-- Manages interactions between LLMs and computer control tools
-- Supports multiple API providers (Anthropic, OpenAI)
-- Handles conversation context and tool execution
-- Implements prompt caching and optimization
-- Provides robust error handling
+This will install a pre-commit hook that runs formatting checks with black and isort before each commit.

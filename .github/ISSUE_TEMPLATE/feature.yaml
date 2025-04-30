@@ -2,18 +2,55 @@ name: Feature Request
 description: Suggest a new feature for the project.
 title: '[Feature Request] <Feature Title>'
 body:
-  - type: input
+  - type: markdown
+    attributes:
+      value: |
+        **Before submitting a report**:  
+        Please check the Issues or Discussions section to see if a similar issue or feature request has already been posted.
+        
+        This helps reduce duplicates and ensures we can respond efficiently to your request. Thank you!
+  - type: textarea
     id: description
     attributes:
       label: Feature Description
       description: Briefly describe the feature you'd like to add. What does it do? How does it improve the project?
+      placeholder: "E.g., Add dark mode support"
+    validations:
+      required: true
   - type: textarea
     id: motivation
     attributes:
       label: Motivation
       description: Why is this feature valuable to the project? How does it align with the project's goals?
+      placeholder: "E.g., This feature improves accessibility for users with visual impairments."
+    validations:
+      required: true
   - type: textarea
     id: implementation
     attributes:
-      label: Possible Implementation
+      label: Possible Implementation (Optional)
       description: Do you have ideas on how this feature could be implemented? Outline any approaches or technologies you think might be suitable.
+      placeholder: "E.g., Use a toggle in the settings menu and CSS custom properties."
+    validations:
+      required: false
+  - type: textarea
+    id: relevant_files
+    attributes:
+      label: Relevant Files
+      description: List the files that might need to be modified or are relevant to this feature request. This helps in planning the implementation.
+      placeholder: |
+        E.g.:
+        - src/vmpilot/agent.py
+        - src/vmpilot/tools/shelltool.py
+        - docs/user_guide.md
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Add any other context or screenshots about the feature request here.
+      placeholder: "E.g., Screenshot of similar implementation in another project."
+    validations:
+      required: true

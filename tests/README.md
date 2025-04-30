@@ -6,7 +6,7 @@ This directory contains the test suite for VMPilot. The tests use an innovative 
 ## Directory Structure
 ```
 tests/
-├── harness.sh         # Main test runner that sets up environment and runs all tests
+├── e2e_tests.sh       # Main test runner that sets up environment and runs all tests in parallel
 ├── scripts/           # Individual test scripts
 │   ├── ls_files.sh    # Tests file listing functionality
 │   ├── modify_file.sh # Tests file modification
@@ -20,17 +20,17 @@ tests/
 
 There are several ways to run the tests:
 
-1. To run all tests:
+1. To run all tests sequentially:
 ```bash
 cd /home/dror/vmpilot/tests
-./harness.sh
+e2e_tests.sh*
 ```
 
-2. To run specific test(s) using harness:
+3. To run specific test(s):
 ```bash
 cd /home/dror/vmpilot/tests
-./harness.sh scripts/ls_files.sh           # Run single test
-./harness.sh scripts/ls_files.sh scripts/modify_file.sh  # Run multiple tests
+./e2e_tests.sh scripts/ls_files.sh           # Run single test sequentially
+./e2e_tests.sh scripts/ls_files.sh scripts/modify_file.sh  # Run multiple tests in parallel
 ```
 
 3. To run a test script directly:
@@ -43,7 +43,7 @@ cd /home/dror/vmpilot/tests/scripts
 1. Create a new script in the `scripts/` directory
 2. Make it executable (`chmod +x`)
 3. Script should:
-   - Use TEST_DIR environment variable (set by harness.sh)
+   - Use TEST_DIR environment variable (set by e2e_tests.sh)
    - Use `-t 0` flag with cli.sh for consistent results
    - Return 0 for success, non-zero for failure
    - Clean up any temporary files it creates

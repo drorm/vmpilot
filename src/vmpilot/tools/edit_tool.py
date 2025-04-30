@@ -1,14 +1,16 @@
 #!/usr/bin/env python
+#
+# This file uses concepts from the Aider project (https://github.com/Aider-AI/aider)
+# which is licensed under the Apache License, Version 2.0
 
 import logging
 from pathlib import Path
-from typing import Optional, Type
+from typing import Type
 
-from aider import models
-from aider.coders.editblock_coder import EditBlockCoder, find_original_update_blocks
-from aider.io import InputOutput
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
+
+from .edit_diff import do_replace, find_original_update_blocks
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ class EditTool(BaseTool):
     - The path to the file(s) to edit on its own line
     - The diff blocks to apply to the file(s)
     - IMPORTANT: the "SEARCH" portion needs to **exactly** match the original content in the file. 
-    Note: this tool **cannot** be used to view files. Use the bash tool with commands like 'cat', 'head', 'tail', or 'less' for that.
+    Note: this tool **cannot** be used to view files. Use the shell tool with commands like 'cat', 'head', 'tail', or 'less' for that.
     """
 
     args_schema: Type[BaseModel] = AiderToolInput
@@ -57,29 +59,28 @@ class EditTool(BaseTool):
             for edit in edits:
                 file_path = Path(
                     edit[0]
-                )  # First element of edit tuple is the file path
+                ).expanduser()  # First element of edit tuple is the file path, expand ~ if present
+                logger.debug(f"Checking file path: {file_path}")
                 if not file_path.exists():
                     raise FileNotFoundError(f"File not found: {file_path}")
 
-            # Create EditBlockCoder instance
-            io = InputOutput(line_endings="platform")
-            main_model = models.Model(models.DEFAULT_MODEL_NAME)
-            editor = EditBlockCoder(main_model=main_model, io=io)
-
-            try:
-                editor.apply_edits(edits)
-                return ""
-            except ValueError as e:
-                if "SearchReplaceNoExactMatch" in str(e):
+            # Apply the edits directly to the files
+            for file_path, original, replacement in edits:
+                file = Path(file_path).expanduser()
+                with open(file, "r") as f:
+                    content = f.read()
+                new_content = do_replace(file, content, original, replacement)
+                if new_content is not None:
+                    with open(file, "w") as f:
+                        f.write(new_content)
+                else:
                     return "No matches found"
-                raise
-            except Exception as e:
-                error_message = f"Error: \n```\n{str(e)}\n```\n"
-                return error_message
+            return f"\n\n**Edited {file_path}.**\n\n"
 
         except FileNotFoundError:
             raise
         except ValueError:
+            logger.info(f"Error value in edit {content}")
             raise
 
     async def _arun(self, content: str) -> str:

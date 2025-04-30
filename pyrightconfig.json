@@ -1,0 +1,29 @@
+{
+  "include": ["src"],
+  "exclude": [
+    "**/__pycache__",
+    "src/vmpilot/caching/chat_models.py",
+    "src/vmpilot/tools/edit_diff.py",
+    "src/vmpilot/exchange.py",
+    "src/vmpilot/vmpilot.py",
+    "tests/",
+    "build/",
+    "dist/"
+  ],
+  "pythonVersion": "3.11",
+
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportOptionalMemberAccess": "warning",
+  "reportOptionalSubscript": "warning",
+  "reportOptionalCall": "warning",
+  "reportPrivateUsage": "none",
+  "useLibraryCodeForTypes": true,
+  "reportUnusedVariable": "error",
+  "reportUnusedImport": "error",
+  "reportUnusedFunction": "error",
+  "reportUnusedClass": "error",
+  "reportUnusedExpression": "error"
+}
+

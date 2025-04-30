@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      milestone_number:
+        description: 'Milestone number to release'
+        required: true
+        default: '1'
+      draft:
+        description: 'Create a draft release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write  # For creating releases and merging branches
+  packages: write  # For pushing to GHCR
+  issues: read     # For reading milestone and issue data
+  pull-requests: read  # For gathering PR information for release notes
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from milestone
+        id: get-version
+        run: |
+          # Check if the input is a number or a version string
+          if [[ "${{ github.event.inputs.milestone_number }}" =~ ^[0-9]+$ ]]; then
+            # It's a numeric ID, use it directly
+            MILESTONE_ID="${{ github.event.inputs.milestone_number }}"
+          else
+            # It's a version string, find the corresponding milestone ID
+            MILESTONE_DATA=$(gh api repos/:owner/:repo/milestones --jq '.[] | {number: .number, title: .title}')
+            MILESTONE_ID=$(echo "$MILESTONE_DATA" | jq -r "select(.title == \"${{ github.event.inputs.milestone_number }}\") | .number")
+
+            if [ -z "$MILESTONE_ID" ]; then
+              echo "Error: Could not find milestone with title '${{ github.event.inputs.milestone_number }}'"
+              exit 1
+            fi
+            echo "Found milestone ID: $MILESTONE_ID for milestone title: ${{ github.event.inputs.milestone_number }}"
+          fi
+
+          VERSION=$(gh api repos/:owner/:repo/milestones/$MILESTONE_ID --jq '.title')
+          echo "Version from milestone: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "milestone_id=$MILESTONE_ID" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract release notes from CHANGELOG.md
+        id: release-notes
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          echo "Extracting release notes for version $VERSION from CHANGELOG.md"
+          
+          # Extract the section for this version from CHANGELOG.md
+          # Pattern: Look for section starting with ## [$VERSION] and ending at the next ## or EOF
+          SECTION_PATTERN="## \\[$VERSION\\]"
+          
+          # Use awk to extract the section
+          RELEASE_NOTES=$(awk -v pattern="$SECTION_PATTERN" '
+            BEGIN { found=0; printing=0; buffer=""; }
+            $0 ~ pattern { found=1; printing=1; buffer=$0 ORS; next; }
+            printing && /^## / { printing=0; }
+            printing { buffer=buffer $0 ORS; }
+            END { if (found) printf "%s", buffer; else print "Release notes not found in CHANGELOG.md"; }
+          ' CHANGELOG.md)
+          
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Merge dev to main
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git checkout main
+          git merge --no-ff origin/dev -m "Merge dev into main for release v${{ steps.get-version.outputs.version }}"
+          git push origin main
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get-version.outputs.version }}
+          name: Release v${{ steps.get-version.outputs.version }}
+          body: ${{ steps.release-notes.outputs.release_notes }}
+          draft: ${{ github.event.inputs.draft }}
+          prerelease: false
+
+            # Uncomment the following lines in a future release to push the Docker image to GHCR
+            # - name: Set up Docker Buildx
+            # uses: docker/setup-buildx-action@v2
+
+            # - name: Login to GitHub Container Registry
+            # uses: docker/login-action@v2
+            # with:
+            # registry: ghcr.io
+            # username: ${{ github.repository_owner }}
+            # password: ${{ secrets.GITHUB_TOKEN }}
+
+            # - name: Build and push Docker image
+            # uses: docker/build-push-action@v4
+            # with:
+            # context: .
+            # file: ./docker/Dockerfile
+            # push: true
+            # tags: |
+            # ghcr.io/${{ github.repository_owner }}/vmpilot:v${{ steps.get-version.outputs.version }}
+            # ghcr.io/${{ github.repository_owner }}/vmpilot:latest
+            # cache-from: type=gha
+            # cache-to: type=gha,mode=max
+
+      - name: Update milestone
+        if: ${{ !github.event.inputs.draft }}
+        run: |
+          gh api repos/:owner/:repo/milestones/${{ steps.get-version.outputs.milestone_id }} -X PATCH -F state=closed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

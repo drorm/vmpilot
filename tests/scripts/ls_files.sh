@@ -9,7 +9,9 @@ while getopts "p:" opt; do
 done
 shift $((OPTIND -1))
 
-output=$(/home/dror/vmpilot/bin/cli.sh -p "$PROVIDER" -t 0 "ls -1 $TEST_DIR")
+# Use the run_cli.sh wrapper script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+output=$("$SCRIPT_DI"$SCRIPT_DIR/run_cli.sh"" -p "$PROVIDER" -t 0 "ls -1 $TEST_DIR")
 echo "Contents of TEST_DIR before executing cli.sh:" && ls -1 $TEST_DIR
 echo "Raw output:"
 echo "$output"

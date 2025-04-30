@@ -1,4 +1,6 @@
 #!/bin/bash
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Test API integration and responses
 # Requires TEST_DIR environment variable to be set
@@ -6,14 +8,14 @@
 set -e  # Exit on error
 
 # Set the absolute path to cli.sh
-CLI_PATH="/home/dror/vmpilot/bin/cli.sh"
+CLI_PATH=""$SCRIPT_DI"$SCRIPT_DIR/run_cli.sh"""
 
 echo "Starting API integration tests..."
 
 # Test 1: Check API key validation
 echo "Test 1: API key validation"
 response=$(ANTHROPIC_API_KEY="invalid_key" $CLI_PATH -t 0 "echo test" 2>&1)
-if echo "$response" | grep -q "Error: Invalid or missing Anthropic API key"; then
+if echo "$response" | grep -q -i "Error: Invalid or missing Anthropic API key"; then
     echo "✓ Invalid API key test passed"
 else
     echo "✗ Invalid API key test failed"
@@ -49,7 +51,7 @@ fi
 
 # Test 4: Response formatting
 echo "Test 4: Response formatting"
-response=$(ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" $CLI_PATH -t 0 "ls -l" 2>&1)
+response=$(ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" $CLI_PATH -t 0 "run ls -l" 2>&1)
 if echo "$response" | grep -q "\`\`\`"; then
     echo "✓ Response formatting test passed"
 else

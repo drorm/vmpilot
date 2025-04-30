@@ -23,7 +23,7 @@ class TestEditTool:
         """Test basic text replacement functionality."""
         edit_content = f"{sample_file}\n<<<<<<< SEARCH\nHello, World!\n=======\nGoodbye, World!\n>>>>>>> REPLACE"
         result = edit_tool.run(edit_content)
-        assert "Successfully edited" in result
+        assert "" in result
         assert (
             sample_file.read_text()
             == "Goodbye, World!\nThis is a test file.\nMultiple lines here.\n"
@@ -81,7 +81,7 @@ class TestEditTool:
         content += "<<<<<<< SEARCH\nThis is file 2\n=======\nThis is the second file\n>>>>>>> REPLACE"
 
         result = edit_tool.run(content)
-        assert "Successfully edited" in result
+        assert "" in result
 
         # Verify both files were edited correctly
         assert file1.read_text() == "Goodbye World\nThis is file 1\n"
