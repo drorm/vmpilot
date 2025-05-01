@@ -55,9 +55,5 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Expose ports for pipeline mode and Open WebUI
 EXPOSE 9099 8080
 
-# Copy the startup script
-COPY docker/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
 # Start supervisor as root (which will start vmpilot processes as vmpilot user)
-CMD ["/app/start.sh"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
