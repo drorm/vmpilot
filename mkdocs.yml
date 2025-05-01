@@ -14,6 +14,7 @@ nav:
     - Home: index.md
     - Installation: installation.md
     - Configuration: configuration.md
+    - Using Open-WebUI: using-webui.md
     - User Guide: user-guide.md
     - Coding: coding.md
     - Git Tracking: git-tracking.md

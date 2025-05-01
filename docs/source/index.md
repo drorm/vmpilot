@@ -45,7 +45,7 @@ VMPilot is a chat-based AI development agent that operates directly in your virt
 Get up and running with VMPilot in minutes:
 
 1. [Installation](installation.md) - Set up VMPilot on your system
-2. [Integrated Open WebUI](integrated_webui.md) - Learn about the bundled Open WebUI experience
+2. [Using Open WebUI](using-webui.md) - Learn how to use the web interface effectively
 3. [Configuration](configuration.md) - Configure your environment
 4. [User Guide](user-guide.md) - Learn the basics of VMPilot
 
