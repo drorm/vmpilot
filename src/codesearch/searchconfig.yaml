@@ -1,0 +1,66 @@
+# Code Search Configuration
+
+# This configuration file is used to set up the parameters for the code search tool.
+# It includes settings for the codebase directory, file patterns to include/exclude,
+# size limits for files, and API configuration for the LLM provider.
+general:
+  # Base directory for the codebase
+  base_dir: "~/vmpilot/src/vmpilot"  # Path to the codebase
+
+# File Patterns
+file_patterns:
+  # Files to include in search
+  include:
+    - "*.py"    # Python files
+    - "*.js"    # JavaScript files
+    - "*.ts"    # TypeScript files
+    - "*.java"  # Java files
+    - "*.c"     # C files
+    - "*.cpp"   # C++ files
+    - "*.h"     # Header files
+    - "*.hpp"   # C++ header files
+    - "*.go"    # Go files
+    - "*.rb"    # Ruby files
+    - "*.rs"    # Rust files
+    - "*.php"   # PHP files
+    - "*.swift" # Swift files
+    - "*.sh"    # Shell scripts
+    - "*.html"  # HTML files
+    - "*.css"   # CSS files
+    - "*.md"    # Markdown files
+    - "*.ini"   # INI files
+    - "*.yaml"  # YAML files
+
+  # Files to exclude from search
+  exclude:
+    - "**/node_modules/**"   # Node.js modules
+    - "**/.git/**"           # Git directories
+    - "**/venv/**"           # Python virtual environments
+    - "**/__pycache__/**"    # Python cache
+    - "**/.pytest_cache/**"  # Pytest cache
+    - "**/build/**"          # Build directories
+    - "**/dist/**"           # Distribution directories
+    - "**/*.min.js"          # Minified JavaScript
+    - "**/*.min.css"         # Minified CSS
+    - "**/*.log"             # Log files
+    - "**/*.pyc"             # Python compiled files
+    - "plugins/**"          # Plugin directories
+    # specific files. These are more "libraries" than part of the codebase
+    - "**/chat_models.py"
+    - "**/edit_diff.py"
+
+# Size and Token Limits
+limits:
+  max_file_size_kb: 1000      # Maximum file size in KB
+  max_total_tokens: 50000     # Maximum tokens for API request
+  max_files_to_include: 100   # Maximum number of files to include in search
+
+# API Configuration
+api:
+  provider: "gemini"         # LLM provider (currently only "gemini" supported)
+  temperature: 0.7           # Temperature for API requests
+  top_p: 0.95                # Top-p for API requests
+
+# Output Configuration
+output:
+  default_format: "markdown" # Default output format (json, text, markdown)
