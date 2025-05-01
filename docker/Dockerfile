@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
     OPEN_WEBUI_VERSION="main"
 
 # Install dependencies
-RUN apt-get update && apt-get install -y python3.12 python3-pip python3-venv git gh supervisor curl wget \
+RUN apt-get update && apt-get install -y python3.12 python3-pip python3-venv git gh supervisor curl wget vim\
     && rm -rf /var/lib/apt/lists/*
 
 # Create and activate virtual environment

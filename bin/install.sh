@@ -15,7 +15,7 @@ mkdir -p $VMPILOT_DIR/config
 if docker ps -a | grep -q vmpilot; then
   echo "Existing VMPilot container running."
   echo "To reinstall, stop and remove the existing container with:"
-  echo " docker stop vmpilot && docker rm vmpilot"
+  echo "docker stop vmpilot && docker rm vmpilot"
   exit 1
 fi
 
@@ -44,6 +44,8 @@ sleep 3
 if [ ! -f "$VMPILOT_DIR/config/config.ini" ]; then
   echo "Copying default configuration file..."
   docker cp vmpilot:/app/vmpilot/src/vmpilot/config.ini $VMPILOT_DIR/config/
+  echo "Restarting VMPilot to apply configuration..."
+  docker exec vmpilot supervisorctl restart vmpilot
 fi
 
 # Check if container is running
@@ -58,6 +60,7 @@ if docker ps | grep -q vmpilot; then
   echo "1. Open http://localhost:8080 in your browser"
   echo "2. Create a user account (first user becomes admin)"
   echo "3. Add your API keys in the Admin Panel > Pipelines section"
+  echo "See https://drorm.github.io/vmpilot/installation/#3-openwebui-configuration for more details."
 else
   echo "Error: VMPilot container failed to start."
   echo "Check logs with: docker logs vmpilot"
