@@ -192,7 +192,7 @@ async def send_request(
             message = f" I've done {recursion_limit} steps in a row. Type *continue* if you'd like me to keep going."
             logger.info(message)
             return (
-                response,
+                message,
                 collected_tool_calls,
             )  # This is not a real error, just a limit, so we treat it as a normal response
         # Handle specific tool_use/tool_result error
