@@ -14,8 +14,8 @@ nav:
     - Home: index.md
     - Installation: installation.md
     - Configuration: configuration.md
+    - Getting Started: getting-started.md
     - Using Open-WebUI: using-webui.md
-    - User Guide: user-guide.md
     - Coding: coding.md
     - Git Tracking: git-tracking.md
     - Examples:
@@ -33,7 +33,6 @@ nav:
         - Project Plugin: plugins/project.md
         - Branch Manager Plugin: plugins/branch-manager.md
     - VMPilot Prompting: prompting.md
-    - Tips: tips.md
     - CLI Interface: cli.md
     - DNS and SSL: dns_ssl_setup.md
     - Release Process: release-process.md
