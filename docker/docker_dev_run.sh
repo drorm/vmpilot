@@ -2,6 +2,15 @@
 
 # Development Docker run script for VMPilot
 # This script runs a local development Docker container for testing
+# 
+# NOTE: This script is for DEVELOPMENT use only. For production installation,
+# use bin/install.sh instead.
+#
+# Key differences from production:
+# - Uses locally built image (vmpilot:dev)
+# - Uses different port (9399) to avoid conflicts with production
+# - Provides options for interactive shell and code mounting
+# - Designed for developers to test changes locally
 
 # Set variables
 DEV_TAG="dev"
@@ -11,7 +20,7 @@ CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/config"
 DATA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/data"
 
 # Create directories if they don't exist
-mkdir -p "${CONFIG_DIR}" "${DATA_DIR}"
+mkdir -p "${CONFIG_DIR}" "${DATA_DIR}" "${DATA_DIR}/logs"
 
 # Check if the container already exists
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -30,8 +39,17 @@ fi
 # Check if the image exists
 if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${IMAGE_NAME}$"; then
     echo "Error: Image ${IMAGE_NAME} not found!"
-    echo "Please run sh/docker_dev_build.sh first to build the development image."
+    echo "Please run docker/docker_dev_build.sh first to build the development image."
     exit 1
+fi
+
+# Check for potential conflicts with production container
+if docker ps -a | grep -q "vmpilot$"; then
+    echo "⚠️  Warning: A production VMPilot container is also running."
+    echo "    Development container will use port 9399 to avoid conflicts."
+    echo "    Production: http://localhost:9099"
+    echo "    Development: http://localhost:9399"
+    echo ""
 fi
 
 # Ask for confirmation
@@ -95,13 +113,37 @@ esac
 if [ $? -eq 0 ]; then
     echo "----------------------------------------"
     echo "Container ${CONTAINER_NAME} started successfully!"
-    echo "To view logs: docker logs -f ${CONTAINER_NAME}"
-    echo "To stop: docker stop ${CONTAINER_NAME}"
-    echo "To remove: docker rm ${CONTAINER_NAME}"
+    echo "VMPilot pipeline server is running at: http://localhost:9399"
+    echo "Open WebUI interface is accessible at: http://localhost:8080"
+    echo ""
+    echo "Useful commands:"
+    echo "- View logs: docker logs -f ${CONTAINER_NAME}"
+    echo "- Stop container: docker stop ${CONTAINER_NAME}"
+    echo "- Remove container: docker rm ${CONTAINER_NAME}"
+    echo "- Access shell: docker exec -it ${CONTAINER_NAME} /bin/bash"
+    echo "----------------------------------------"
+    
+    # Copy config file if it doesn't exist
+    if [ ! -f "${CONFIG_DIR}/config.ini" ]; then
+        echo "Copying default configuration file..."
+        docker cp ${CONTAINER_NAME}:/app/vmpilot/src/vmpilot/config.ini "${CONFIG_DIR}/"
+        echo "Restarting VMPilot to apply configuration..."
+        docker exec ${CONTAINER_NAME} supervisorctl restart vmpilot
+    fi
+    
+    echo "----------------------------------------"
+    echo "Development environment setup complete!"
+    echo "----------------------------------------"
+    echo "Next steps for development testing:"
+    echo "1. Access Open WebUI at http://localhost:8080"
+    echo "2. Create a user account (first user becomes admin)"
+    echo "3. Add API keys in Admin Panel > Pipelines section"
+    echo "4. Add http://localhost:9399 as a pipeline endpoint"
     echo "----------------------------------------"
 else
     echo "----------------------------------------"
     echo "Error: Failed to start container!"
+    echo "Check logs with: docker logs ${CONTAINER_NAME}"
     echo "----------------------------------------"
     exit 1
 fi
