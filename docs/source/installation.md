@@ -48,6 +48,7 @@ This script will:
 - Start the container with proper configuration
 - Copy the default configuration file
 
+
 2. Verify the container is running:
 ```bash
 docker ps | grep vmpilot

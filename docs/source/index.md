@@ -28,7 +28,7 @@ VMPilot is a chat-based AI development agent that operates directly in your virt
 - Plugin system ready for custom workflow extensions
 - Future plugins planned for documentation and testing
 
-🔹 **Multiple Interfaces & Integrated Open WebUI**
+🔹 **Multiple Interfaces & OpenWebUI Integration**
 
 - Powerful CLI for terminal-based workflows
 - Bundled Open WebUI for a seamless installation experience

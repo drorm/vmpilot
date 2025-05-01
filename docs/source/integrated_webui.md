@@ -5,7 +5,6 @@ VMPilot now comes with Open WebUI bundled directly into the container, providing
 ## Benefits of the Integrated Solution
 
 - **Single Container Installation**: Both VMPilot and Open WebUI are installed and configured in a single container
-- **Pre-configured Connection**: The connection between Open WebUI and VMPilot is automatically set up
 - **Simplified Workflow**: No manual configuration required to get started
 - **Consistent Versioning**: Ensures compatible versions of both components are always used together
 
@@ -25,8 +24,9 @@ When you first access the Open WebUI interface, you'll need to:
 2. Configure your API keys:
    - Click on your username in the bottom left corner
    - Select "Admin Panel"
+   - Click on "Settings" in the top menu
    - Navigate to the "Pipelines" tab
-   - Enter your API keys for OpenAI, Anthropic, or both
+   - Enter your API keys for any providers you want to use: OpenAI, Anthropic, Google.
    - Click "Save"
 
 ## Architecture Overview
@@ -51,7 +51,11 @@ The integrated solution stores data in the following locations:
 While the integrated solution works out of the box with default settings, you can customize it by:
 
 1. Modifying the environment variables when starting the container
-2. Editing the configuration files mapped to the host
+2. Editing the configuration files mapped to the host. You need to restart vmpilot by running:
+   ```bash
+   docker exec vmpilot supervisorctl restart vmpilot
+   ```
+   to apply changes to the VMPilot configuration.
 3. Using the Open WebUI admin interface for UI-specific settings
 
 ## Resource Considerations
@@ -68,22 +72,22 @@ If you encounter issues with the integrated solution:
 
 1. **Check Service Status**:
    ```bash
-   docker exec vmpilot-container supervisorctl status
+   docker exec vmpilot supervisorctl status
    ```
 
 2. **View Open WebUI Logs**:
    ```bash
-   docker exec vmpilot-container tail -f /app/data/logs/open-webui.log
+   docker exec vmpilot tail -f /app/data/logs/open-webui.log
    ```
 
 3. **View VMPilot Logs**:
    ```bash
-   docker exec vmpilot-container tail -f /app/data/logs/vmpilot.log
+   docker exec vmpilot tail -f /app/data/logs/vmpilot.log
    ```
 
 4. **Restart Services if Needed**:
    ```bash
-   docker exec vmpilot-container supervisorctl restart all
+   docker exec vmpilot supervisorctl restart all
    ```
 
 For more detailed troubleshooting, please refer to the [Installation Guide](installation.md#4-troubleshooting).
