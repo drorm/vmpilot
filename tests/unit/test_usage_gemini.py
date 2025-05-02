@@ -2,8 +2,9 @@
 Test Gemini token usage tracking implementation.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from vmpilot.config import Provider
 from vmpilot.usage import Usage
