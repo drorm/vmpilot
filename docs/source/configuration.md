@@ -42,7 +42,7 @@ The `config.ini` file is organized into the following sections:
 | tool_output_lines | Number of lines shown in tool output | 15 |
 | pricing_display | Controls how pricing information is displayed (disabled, total_only, or detailed) | detailed |
 
-> **Note:** The `default_project` setting is used when no workspace-specific project is defined. For multi-branch development, you can override this by setting `$PROJECT_ROOT=/path/to/project` in each workspace's system prompt. When a project directory is set, VMPilot will check for the `.vmpilot/prompts/project.md` file and include it in the system prompt. See [Multi-Branch Workspace Support](tips.md#multi-branch-workspace-support) and [Project Plugin](plugins/project.md) for details.
+> **Note:** The `default_project` setting is used when no workspace-specific project is defined. For multi-branch development, you can override this by setting `$PROJECT_ROOT=/path/to/project` in each workspace's system prompt. When a project directory is set, VMPilot will check for the `.vmpilot/prompts/project.md` file and include it in the system prompt. See [Multi-Branch Development](getting-started.md#multi-branch-development) and [Project Plugin](plugins/project.md) for details.
 
 ### Pricing Settings [pricing]
 | Setting | Description | Default |
@@ -86,7 +86,7 @@ The `config.ini` file is organized into the following sections:
 | commit_prefix | Prefix added to all commit messages | [VMPilot] |
 | author | Author name and email for Git commits | VMPilot <vmpilot@example.com> |
 
-### Database Settings [database]
+### Database Settings
 | Setting | Description | Default |
 |---------|-------------|---------|
 | enabled | Enable or disable database persistence for conversations | false |

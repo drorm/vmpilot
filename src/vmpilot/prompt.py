@@ -86,9 +86,9 @@ Use multiple edit blocks if needed.
 </IMPORTANT>
 
 <TOOLS>
-* Use the shell tool to execute system commands. Provide commands as a single string.
 * Use the EditTool tool for editing files.
-* Use the CreateFileTool tool for creating files. Takes path and content as input.
+* Use the CreateFileTool tool for creating files. Takes path and content as input. **Always use this to create files.**
+* Use the GoogleSearchTool tool for searching the web. The output will be a list of relevant search results.
 </TOOLS>
 
 <PLUGINS>
