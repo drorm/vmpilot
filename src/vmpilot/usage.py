@@ -33,6 +33,7 @@ class Usage:
         self.cache_read_input_tokens = 0
         self.input_tokens = 0
         self.output_tokens = 0
+        self.cache_read_input_tokens = 0
         self.provider = provider
         self.model_name: Optional[str] = model_name
 
@@ -55,12 +56,11 @@ class Usage:
         self._cached_costs = None
 
         response_metadata = getattr(message, "response_metadata", {})
-        logger.debug(f"Adding tokens from message: {response_metadata}")
 
         usage_metadata = getattr(message, "usage_metadata", {})
         # Message has OpenAI usage metadata? Also applies to Gemin and others
         if usage_metadata:
-            logger.info(f"Adding tokens from message: {usage_metadata}")
+            logger.debug(f"Adding tokens from message: {usage_metadata}")
             # Store the model name if available
             if response_metadata.get("model_name"):
                 self.model_name = response_metadata["model_name"]
@@ -68,28 +68,32 @@ class Usage:
                 # For Gemini, if model_name wasn't provided in constructor or response_metadata,
                 # try to get it from config
                 if Provider.GOOGLE in config.providers:
+                    logger.debug(f"Using default Gemini model: {self.model_name}")
                     self.model_name = config.providers[Provider.GOOGLE].default_model
                 else:
+                    logger.warning(
+                        "Usage metadata found but no model name provided and not a Google provider."
+                    )
                     return
-                logger.debug(f"Using default Gemini model: {self.model_name}")
 
-            # Gemini format
-            self.input_tokens += usage_metadata.get("input_tokens", 0)
-            self.output_tokens += usage_metadata.get("output_tokens", 0)
-
+            # Gemini/openai format
             # Handle cached tokens if available
             input_token_details = usage_metadata.get("input_token_details", {})
             if input_token_details:
-                self.cache_read_input_tokens += input_token_details.get("cache_read", 0)
+                self.cache_read_input_tokens = input_token_details.get("cache_read", 0)
+            self.output_tokens += usage_metadata.get("output_tokens", 0)
+            input_tokens = usage_metadata.get("input_tokens", 0)
+            # Subtract cached tokens from output tokens since openai/gemini input tokens include cached tokens
+            input_tokens -= self.cache_read_input_tokens
+            self.input_tokens += input_tokens
+            logger.info(
+                f"Added {self.model_name} tokens - input: {input_tokens}, "
+                f"output: {self.output_tokens}, cached: {self.cache_read_input_tokens}"
+            )
 
         else:
             response_metadata = getattr(message, "response_metadata", {})
             logger.debug(f"Adding tokens from message: {response_metadata}")
-
-            # Store the model name if available
-            if response_metadata.get("model_name"):
-                self.model_name = response_metadata["model_name"]
-                logger.info(f"Using model: {self.model_name}")
 
             # Anthropic format
             usage = response_metadata.get("usage", {})
@@ -104,12 +108,12 @@ class Usage:
             self.input_tokens += usage.get("input_tokens", 0)
             self.output_tokens += usage.get("output_tokens", 0)
 
-        # Log successful token addition
-        logger.info(
-            f"Added {self.model_name} tokens - input: {usage_metadata.get('input_tokens', 0)}, "
-            f"output: {usage_metadata.get('output_tokens', 0)}, "
-            f"cached: {input_token_details.get('cache_read', 0) if input_token_details else 0}"
-        )
+            # Log successful token addition
+            logger.info(
+                f"Added {self.model_name} tokens - input: {usage_metadata.get('input_tokens', 0)}, "
+                f"output: {usage_metadata.get('output_tokens', 0)}, "
+                f"cached: {self.cache_read_input_tokens}, "
+            )
         return
 
     def get_totals(self) -> Dict[str, int]:
