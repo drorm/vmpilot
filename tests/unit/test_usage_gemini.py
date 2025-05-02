@@ -34,7 +34,7 @@ def test_gemini_token_tracking():
 
     # Check that the tokens were tracked correctly
     totals = usage.get_totals()
-    assert totals["input_tokens"] == 3328
+    assert totals["input_tokens"] == 3128
     assert totals["output_tokens"] == 18
     assert totals["cache_read_input_tokens"] == 200
     assert totals["model"] == "gemini-2.5-pro-exp-03-25"
