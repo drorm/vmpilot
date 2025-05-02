@@ -2,11 +2,14 @@
 Token usage tracking for VMPilot.
 
 This module provides a Usage class to track token usage across an entire exchange
-between the user and the AI assistant.
+between the user and the AI assistant. Supports token tracking and cost calculation
+for Anthropic, OpenAI, and Google models.
 """
 
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
+
+from litellm import model_cost
 
 from vmpilot.config import Provider, config
 
@@ -28,6 +31,7 @@ class Usage:
         self.input_tokens = 0
         self.output_tokens = 0
         self.provider = provider
+        self.model_name: Optional[str] = None
 
         # Get pricing information from config based on provider
         self.pricing = config.get_pricing(provider)
@@ -40,13 +44,41 @@ class Usage:
             message: The message containing token usage metadata
         """
         response_metadata = getattr(message, "response_metadata", {})
-        usage = response_metadata.get("usage", {})
+        logger.debug(f"Adding tokens from message: {response_metadata}")
 
-        # If there's no usage data, return
+        # Store the model name if available
+        if response_metadata.get("model_name"):
+            self.model_name = response_metadata["model_name"]
+            logger.debug(f"Using model: {self.model_name}")
+
+        # Check for OpenAI token usage format
+        token_usage = response_metadata.get("token_usage", {})
+        if token_usage:
+            # OpenAI format
+            self.input_tokens += token_usage.get("prompt_tokens", 0)
+            self.output_tokens += token_usage.get("completion_tokens", 0)
+
+            # Handle cached tokens if available
+            prompt_tokens_details = token_usage.get("prompt_tokens_details", {})
+            if prompt_tokens_details:
+                self.cache_read_input_tokens += prompt_tokens_details.get(
+                    "cached_tokens", 0
+                )
+
+            # Log successful token addition
+            logger.info(
+                f"Added OpenAI tokens - input: {token_usage.get('prompt_tokens', 0)}, "
+                f"output: {token_usage.get('completion_tokens', 0)}, "
+                f"cached: {prompt_tokens_details.get('cached_tokens', 0) if prompt_tokens_details else 0}"
+            )
+            return
+
+        # Anthropic format
+        usage = response_metadata.get("usage", {})
         if not usage:
             return
 
-        # Add the tokens to our running totals
+        # Add the tokens to our running totals (Anthropic format)
         self.cache_creation_input_tokens += usage.get("cache_creation_input_tokens", 0)
         self.cache_read_input_tokens += usage.get("cache_read_input_tokens", 0)
         self.input_tokens += usage.get("input_tokens", 0)
@@ -59,12 +91,17 @@ class Usage:
         Returns:
             Dict with token usage totals
         """
-        return {
+        totals = {
             "cache_creation_input_tokens": self.cache_creation_input_tokens,
             "cache_read_input_tokens": self.cache_read_input_tokens,
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
         }
+
+        if self.model_name:
+            totals["model"] = self.model_name
+
+        return totals
 
     def calculate_cost(self) -> Dict[str, float]:
         """
@@ -73,6 +110,52 @@ class Usage:
         Returns:
             Dict with cost breakdown in dollars
         """
+        # If we have a model name, try to use litellm for pricing
+        if self.model_name:
+            try:
+                model_pricing = model_cost.get(self.model_name)
+                if model_pricing:
+
+                    # Calculate costs based on litellm pricing
+                    input_cost = self.input_tokens * model_pricing.get(
+                        "input_cost_per_token", 0
+                    )
+                    output_cost = self.output_tokens * model_pricing.get(
+                        "output_cost_per_token", 0
+                    )
+
+                    # For cached tokens, use cache_read_input_token_cost if available
+                    cache_read_cost = self.cache_read_input_tokens * model_pricing.get(
+                        "cache_read_input_token_cost",
+                        model_pricing.get("input_cost_per_token", 0)
+                        * 0.1,  # Fallback to 10% of input cost
+                    )
+
+                    # Calculate cache creation cost - if not specified, use input cost
+                    cache_creation_cost = (
+                        self.cache_creation_input_tokens
+                        * model_pricing.get("input_cost_per_token", 0)
+                    )
+
+                    # Calculate total cost
+                    total_cost = (
+                        input_cost + output_cost + cache_creation_cost + cache_read_cost
+                    )
+
+                    logger.info("Calculated costs using litellm pricing")
+                    return {
+                        "input_cost": input_cost,
+                        "output_cost": output_cost,
+                        "cache_creation_cost": cache_creation_cost,
+                        "cache_read_cost": cache_read_cost,
+                        "total_cost": total_cost,
+                    }
+            except Exception as e:
+                logger.warning(
+                    f"Error calculating cost with litellm: {e}. Falling back to config pricing."
+                )
+
+        # Fallback to config pricing
         # Calculate costs (convert tokens to millions and multiply by price per million)
         input_cost = (self.input_tokens / 1_000_000) * self.pricing.input_price
         output_cost = (self.output_tokens / 1_000_000) * self.pricing.output_price
@@ -86,6 +169,7 @@ class Usage:
         # Calculate total cost
         total_cost = input_cost + output_cost + cache_creation_cost + cache_read_cost
 
+        logger.info("Calculated costs using config pricing")
         return {
             "input_cost": input_cost,
             "output_cost": output_cost,
@@ -114,24 +198,35 @@ class Usage:
 
         pricing_display = config.get_pricing_display()
 
-        # We only show pricing for Anthropic
-        if self.provider != Provider.ANTHROPIC:
-            pricing_display = PricingDisplay.DISABLED
         # If pricing display is disabled, return empty string
         if pricing_display == PricingDisplay.DISABLED:
             return ""
 
         _, cost = self.get_cost_summary()
 
+        # Add model name to the cost summary if available
+        model_info = f" ({self.model_name})" if self.model_name else ""
+
         # Format based on the display setting
         if pricing_display == PricingDisplay.TOTAL_ONLY:
-            cost_message = f"\n\n" f"**Cost Summary:** `${cost['total_cost']:.6f}`"
-        else:  # Detailed display
             cost_message = (
-                f"\n\n"
-                f"| **Total** | Cache Creation | Cache Read | Output |\n"
-                f"|--------|----------------|------------|----------|\n"
-                f"| ${cost['total_cost']:.6f} | ${cost['cache_creation_cost']:.6f} | ${cost['cache_read_cost']:.6f} | ${cost['output_cost']:.6f} |"
+                f"\n\n" f"**Cost Summary{model_info}:** `${cost['total_cost']:.6f}`"
             )
+        else:  # Detailed display
+            # For OpenAI, we might not have cache creation tokens
+            if self.provider == Provider.OPENAI or self.provider == Provider.GOOGLE:
+                cost_message = (
+                    f"\n\n"
+                    f"| **Total** | Input | Output | Cache Read |\n"
+                    f"|--------|--------|--------|----------|\n"
+                    f"| ${cost['total_cost']:.6f} | ${cost['input_cost']:.6f} | ${cost['output_cost']:.6f} | ${cost['cache_read_cost']:.6f} |"
+                )
+            else:  # Anthropic format
+                cost_message = (
+                    f"\n\n"
+                    f"| **Total** | Cache Creation | Cache Read | Output |\n"
+                    f"|--------|----------------|------------|----------|\n"
+                    f"| ${cost['total_cost']:.6f} | ${cost['cache_creation_cost']:.6f} | ${cost['cache_read_cost']:.6f} | ${cost['output_cost']:.6f} |"
+                )
 
         return cost_message
