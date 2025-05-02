@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../prompting/">
+        <link rel="prev" href="../getting-started/">
       
       
-        <link rel="next" href="../cli/">
+        <link rel="next" href="../coding/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Tips - VMPilot Documentation</title>
+        <title>Using Open-WebUI - VMPilot Documentation</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#vmpilot-tips" class="md-skip">
+        <a href="#using-open-webui-with-vmpilot" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tips
+              Using Open-WebUI
             
           </span>
         </div>
@@ -293,17 +293,273 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/" class="md-nav__link">
+      <a href="../getting-started/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    User Guide
+    Getting Started
     
   </span>
   
 
       </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Using Open-WebUI
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Using Open-WebUI
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-open-webui" class="md-nav__link">
+    <span class="md-ellipsis">
+      Accessing Open WebUI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#first-time-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      First-time Setup
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-vmpilot-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available VMPilot Models
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-the-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with the Interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Working with the Interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workspaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      Workspaces
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workspaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#effective-workspace-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Effective Workspace Setup
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-workspace-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Workspace Categories
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chat-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Chat Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#managing-conversations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Managing Conversations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Managing Conversations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conversation-length" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conversation Length
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#editing-prompts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Editing Prompts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stopping-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stopping Generation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#steps-limit-exceeded-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      "Steps Limit Exceeded" Message
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llm-tool-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      LLM Tool Errors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Connection Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-configuration-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration Options
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -369,10 +625,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -385,8 +641,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             Examples
           </label>
@@ -554,10 +810,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -570,8 +826,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             Plugins
           </label>
@@ -748,127 +1004,6 @@
       
   
   
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Tips
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    Tips
-    
-  </span>
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
-    <span class="md-ellipsis">
-      Getting Started
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Getting Started">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#api-key-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      API Key Management
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#effective-communication" class="md-nav__link">
-    <span class="md-ellipsis">
-      Effective Communication
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Effective Communication">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#managing-conversations" class="md-nav__link">
-    <span class="md-ellipsis">
-      Managing Conversations
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#task-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      Task Management
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
   
   
     <li class="md-nav__item">
@@ -958,33 +1093,83 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
+  <a href="#accessing-open-webui" class="md-nav__link">
     <span class="md-ellipsis">
-      Getting Started
+      Accessing Open WebUI
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Getting Started">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#first-time-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      First-time Setup
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-vmpilot-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available VMPilot Models
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#working-with-the-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      Working with the Interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Working with the Interface">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#api-key-management" class="md-nav__link">
+  <a href="#workspaces" class="md-nav__link">
     <span class="md-ellipsis">
-      API Key Management
+      Workspaces
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workspaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#effective-workspace-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Effective Workspace Setup
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#effective-communication" class="md-nav__link">
+  <a href="#example-workspace-categories" class="md-nav__link">
     <span class="md-ellipsis">
-      Effective Communication
+      Example Workspace Categories
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Effective Communication">
-      <ul class="md-nav__list">
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chat-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Chat Features
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#managing-conversations" class="md-nav__link">
@@ -993,12 +1178,31 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Managing Conversations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conversation-length" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conversation Length
+    </span>
+  </a>
+  
 </li>
         
           <li class="md-nav__item">
-  <a href="#task-management" class="md-nav__link">
+  <a href="#editing-prompts" class="md-nav__link">
     <span class="md-ellipsis">
-      Task Management
+      Editing Prompts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stopping-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Stopping Generation
     </span>
   </a>
   
@@ -1011,6 +1215,72 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#steps-limit-exceeded-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      "Steps Limit Exceeded" Message
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llm-tool-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      LLM Tool Errors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Connection Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-configuration-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration Options
+    </span>
+  </a>
   
 </li>
       
@@ -1033,153 +1303,138 @@
   
 
 
-<h1 id="vmpilot-tips">VMPilot Tips</h1>
-<h2 id="getting-started">Getting Started</h2>
-<h3 id="api-key-management">API Key Management</h3>
-<p>For optimal cost control and usage tracking:
-1. Create a dedicated API key for VMPilot
-2. Set specific budget limits
-3. Monitor usage separately from other API applications
-4. Regularly review consumption patterns</p>
-<h3 id="effective-communication">Effective Communication</h3>
-<h4 id="managing-conversations">Managing Conversations</h4>
-<p>Long conversations can reduce effectiveness. To maintain quality:</p>
+<h1 id="using-open-webui-with-vmpilot">Using Open WebUI with VMPilot</h1>
+<p>Open WebUI provides a rich, intuitive interface for interacting with VMPilot. This guide covers how to use the interface effectively after you've completed the <a href="../installation/">installation process</a> and have familiarized yourself with the <a href="../getting-started/">basic concepts</a> of VMPilot.</p>
+<h2 id="accessing-open-webui">Accessing Open WebUI</h2>
+<p>After starting the VMPilot container, you can access the Open WebUI interface at:</p>
+<div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>http://localhost:8080
+</code></pre></div></td></tr></table></div>
+<h2 id="first-time-setup">First-time Setup</h2>
+<p>When you first access the Open WebUI interface, you'll need to:</p>
 <ol>
-<li>Keep conversations focused on specific tasks</li>
-<li>Start new sessions for new topics</li>
-<li>Include relevant context when starting fresh</li>
-</ol>
-<h4 id="task-management">Task Management</h4>
-<p>Break down complex tasks:
-- Divide large tasks into smaller, manageable steps
-- Verify each step before proceeding
-- Combine manual work with LLM assistance when needed</p>
-<h1 id="track-llm-changes-with-git">Track LLM changes with git</h1>
-<p>To track changes made by the LLM, if possible, use a clean git branch. That way, you can simply do a <code>git diff</code> to see the changes made by the LLM.</p>
-<h2 id="multi-project-support">Multi-Project Support</h2>
-<p>The multi-project support feature simplifies working with multiple codebases:</p>
-<ol>
-<li>
-<p><strong>No need for manual project root specification</strong>:
-   Previously, you had to include phrases like "The root directory of this project is '/path/to/project'" in your prompts. Now simply add <code>$PROJECT_ROOT=/path/to/your/project</code> to your workspace system prompt once.</p>
-</li>
-<li>
-<p><strong>Workspace-specific project contexts</strong>:</p>
-</li>
-<li>Create separate workspaces for different projects</li>
-<li>Each workspace maintains its own project context</li>
-<li>
-<p>All operations (file editing, shell commands, git) automatically work in the correct directory</p>
-</li>
-<li>
-<p><strong>Set a default project</strong>:
-   Configure <code>default_project</code> in your <code>config.ini</code> file to provide a fallback when no project is specified.</p>
-</li>
-<li>
-<p><strong>Seamless project switching</strong>:
-   When switching between workspaces, VMPilot automatically changes to the appropriate project directory without any additional commands.</p>
-</li>
-<li>
-<p><strong>Improved plugin functionality</strong>:
-   Plugins like GitHub Issues will automatically operate in the correct repository context based on the current project directory.</p>
-</li>
-</ol>
-<h2 id="multi-branch-workspace-support">Multi-Branch Workspace Support</h2>
-<p>VMPilot allows you to work on multiple branches or features simultaneously through workspace management:</p>
-<h3 id="setting-up-multiple-workspaces-for-parallel-development">Setting Up Multiple Workspaces for Parallel Development</h3>
-<ol>
-<li>
-<p><strong>Create separate workspaces for different branches</strong>:
-   <div class="highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Text Only</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
-<span class="normal"><a href="#__codelineno-0-2">2</a></span>
-<span class="normal"><a href="#__codelineno-0-3">3</a></span>
-<span class="normal"><a href="#__codelineno-0-4">4</a></span>
-<span class="normal"><a href="#__codelineno-0-5">5</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1"></a>Workspace 1: claude-proj1
-<a id="__codelineno-0-2" name="__codelineno-0-2"></a>$PROJECT_ROOT=~/proj1
-<a id="__codelineno-0-3" name="__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4"></a>Workspace 2: claude-proj2
-<a id="__codelineno-0-5" name="__codelineno-0-5"></a>$PROJECT_ROOT=~/proj2
-</code></pre></div></td></tr></table></div></p>
-</li>
-<li>
-<p><strong>Switch between workspaces</strong> using the OpenWebUI workspace dropdown to instantly change context.</p>
-</li>
-<li>
-<p><strong>Work on different branches simultaneously</strong>:</p>
-</li>
-<li>Each workspace maintains its own repository context</li>
-<li>You can have the same project in different directories to work on different branches</li>
-<li>Perfect isolation between features/branches</li>
-</ol>
-<h3 id="example-workflow">Example Workflow</h3>
-<ol>
-<li>Create two workspaces in OpenWebUI:</li>
-<li><code>feature-a</code> with <code>$PROJECT_ROOT=~/project-feature-a</code></li>
-<li>
-<p><code>feature-b</code> with <code>$PROJECT_ROOT=~/project-feature-b</code></p>
-</li>
-<li>
-<p>Clone your repository to both directories and check out different branches in each.</p>
-</li>
-<li>
-<p>Work in the <code>feature-a</code> workspace on one feature branch, then switch to the <code>feature-b</code> workspace to work on another feature branch.</p>
-</li>
-<li>
-<p>Use standard Git operations to keep branches in sync with the remote repository.</p>
-</li>
-</ol>
-<p>This approach provides clean separation between feature work while maintaining context awareness through OpenWebUI's workspace feature and standard Git practices.</p>
-<h1 id="using-openwebui">Using OpenWebUI</h1>
-<h2 id="use-workspaces">Use Workspaces</h2>
-<p>Workspaces are powerful organizational tools that allow you to group related pipelines and prompts. Here are some example workspace categories:</p>
-<ul>
-<li>My software with OpenAI</li>
-<li>My software with Anthropic</li>
-<li>Frontend development</li>
-<li>Backend development</li>
-<li>Personal</li>
-</ul>
-<p>When setting up a workspace prompt, include:</p>
-<ul>
-<li>The root directory of your project (crucial for file operations)</li>
-<li>Your technology stack</li>
-<li>A brief project description and file structure overview</li>
-</ul>
-<h3 id="creating-a-workspace">Creating a Workspace</h3>
-<ol>
-<li>Click on "Workspace"</li>
-<li>Click the "+" button to create a new workspace</li>
-<li>Enter a name and configure the prompt and settings</li>
+<li>Create a user account (the first user automatically becomes the admin)</li>
+<li>Configure your API keys:</li>
+<li>Click on your username in the bottom left corner</li>
+<li>Select "Admin Panel"</li>
+<li>Click on "Settings" in the top menu</li>
+<li>Navigate to the "Pipelines" tab</li>
+<li>Enter your API keys for any providers you want to use: OpenAI, Anthropic, Google.</li>
 <li>Click "Save"</li>
 </ol>
-<h2 id="steps-limit-exceeded">Steps limit exceeded</h2>
-<p>Sometimes you'll see the message: "Sorry, need more steps to process this request. I've done 25 steps in a row. Let me know if you'd like me to continue."
-The agent has a built in limit on the number of steps that it can take in a row to prevent it from getting stuck in a loop. The number is defined in the config file as recursion_limit. 
-When you see this message, you can either:</p>
+<h2 id="available-vmpilot-models">Available VMPilot Models</h2>
+<p>When using Open WebUI with VMPilot, you'll see two models in the pipeline list:</p>
 <ul>
-<li>Just type "continue" to let the agent continue</li>
-<li>Break down the task into smaller steps</li>
+<li><strong>VMPilot PipelineAnthropic (Claude)</strong></li>
+<li><strong>VMPilot PipelineOpenAI (GPT-4o)</strong></li>
+<li><strong>VMPilot PipelineGoogle AI</strong></li>
 </ul>
-<h2 id="llm-issues-and-error-handling">LLM Issues and Error Handling</h2>
-<p>The LLM may run into issues when using tools. You'll see errors like:</p>
+<p>Claude is currently the preferred model for VMPilot, as it:
+- Handles code-related tasks effectively
+- Offers good performance with VMPilot's caching system
+- Has been more extensively tested with VMPilot</p>
+<p>The landscape of AI models is rapidly evolving, so the other models may also be suitable for your needs. </p>
+<p>You can select your preferred model when creating or editing a workspace.</p>
+<h2 id="working-with-the-interface">Working with the Interface</h2>
+<p>Open WebUI provides several powerful features for working with VMPilot:</p>
+<h3 id="workspaces">Workspaces</h3>
+<p>Workspaces are powerful organizational tools that allow you to group related conversations, projects, and settings:</p>
 <ul>
-<li>"Field required [type=missing, input_value={}, input_type=dict]"</li>
-<li>"messages.1.content.1.tool_use.name: String should match pattern '^[a-zA-Z0-9_-]{1,64}$'"}"</li>
-<li>"messages.5.content.1.tool_use.name: String should have at most 64 characters'}}"</li>
+<li><strong>Creating a Workspace</strong>: Click the "+" icon in the sidebar to create a new workspace</li>
+<li><strong>Configuring a Workspace</strong>: Set workspace-specific settings, model preferences, and system prompts</li>
+<li><strong>Switching Workspaces</strong>: Click on a workspace name or search for it in the drop-down on the top right corner</li>
 </ul>
-<h3 id="why-this-happens">Why This Happens</h3>
-<p>This mostly happens when the LLM tries to edit a file with a large amount of content or when the history becomes large: the full request is 8000 tokens or more. To resolve this try:</p>
+<h4 id="effective-workspace-setup">Effective Workspace Setup</h4>
+<p>For optimal results when setting up a workspace:</p>
+<ol>
+<li>
+<p><strong>Choose descriptive names</strong> that reflect the purpose of the workspace (e.g., "Frontend Development," "Project X Backend")</p>
+</li>
+<li>
+<p><strong>Configure the system prompt</strong> with:</p>
+</li>
+<li>The root directory of your project: <code>$PROJECT_ROOT=/path/to/your/project</code></li>
+<li>Your technology stack</li>
+<li>A brief project description</li>
+<li>
+<p>Any specific instructions for the LLM</p>
+</li>
+<li>
+<p><strong>Select the appropriate model</strong> for your needs:</p>
+</li>
+<li>Claude is recommended for code-related tasks</li>
+<li>
+<p>GPT models may be better for certain creative tasks</p>
+</li>
+<li>
+<p><strong>Organize workspaces by project or function</strong>:</p>
+</li>
+<li>Create separate workspaces for different projects</li>
+<li>Consider creating dedicated workspaces for specific tasks (documentation, testing, etc.)</li>
+<li>Use workspaces to isolate different branches of the same project</li>
+</ol>
+<h4 id="example-workspace-categories">Example Workspace Categories</h4>
 <ul>
-<li>Just type "continue". Often the LLM can recover from the error and just keep going</li>
-<li>Ask the llm to create a new file instead of editing a new</li>
-<li>Start a new shorter conversation</li>
-<li>Break down the task into smaller steps</li>
+<li>Project-specific workspaces (e.g., "Project X - Frontend")</li>
+<li>Model-specific workspaces (e.g., "Project X with Claude")</li>
+<li>Task-specific workspaces (e.g., "Documentation Generation")</li>
+<li>Branch-specific workspaces (e.g., "Feature Y Development")</li>
 </ul>
-<p>This is an ongoing issue with LLMs and hopefully will get better with time. We're also working on improving the error handling and recovery mechanisms.</p>
-<h2 id="edit-your-prompt">Edit your prompt</h2>
-<p>When you're working on a prompt, it's often helpful to edit the original or latest prompt to refine your request. This can help you get more accurate and relevant responses from the LLM.</p>
-<h2 id="stop-the-llm">Stop the LLM</h2>
-<p>Sometimes the LLM may get stuck or go in the wrong direction. Hit the "Stop" button to reset the LLM and start fresh.</p>
+<h3 id="chat-features">Chat Features</h3>
+<ul>
+<li><strong>Code Highlighting</strong>: Code blocks are automatically highlighted for readability</li>
+<li><strong>History Navigation</strong>: Browse previous conversations in the sidebar</li>
+<li><strong>Response Streaming</strong>: See responses as they're generated. We don't stream the content of each message, but display the message, tool actions, and code blocks as they are generated.</li>
+</ul>
+<h3 id="managing-conversations">Managing Conversations</h3>
+<p>Effective conversation management helps you get the most out of VMPilot:</p>
+<h4 id="conversation-length">Conversation Length</h4>
+<p>Long conversations can reduce effectiveness as they:
+- Consume more tokens
+- May lead to context confusion
+- Can cause the LLM to hit token limits</p>
+<p>For best results:
+- Keep conversations focused on specific tasks
+- Start new sessions for new topics
+- Include relevant context when starting fresh</p>
+<h4 id="editing-prompts">Editing Prompts</h4>
+<p>You can refine your requests by editing your prompts:
+- Click the edit icon next to your message to modify it
+- This helps clarify your intent without starting over
+- Useful for correcting misunderstandings or adding details</p>
+<h4 id="stopping-generation">Stopping Generation</h4>
+<p>If the LLM gets stuck or goes in the wrong direction:
+- Click the "Stop" button to halt generation
+- This lets you redirect the conversation more efficiently
+- Particularly useful for long-running operations</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<h4 id="steps-limit-exceeded-message">"Steps Limit Exceeded" Message</h4>
+<p>If you see: "Sorry, need more steps to process this request. I've done 25 steps in a row. Let me know if you'd like me to continue."</p>
+<p><strong>Solution</strong>:
+- Type "continue" to let the agent proceed
+- Or break the task into smaller parts</p>
+<h4 id="llm-tool-errors">LLM Tool Errors</h4>
+<p>If you see error messages like:
+- "Field required [type=missing, input_value={}, input_type=dict]"
+- "messages.1.content.1.tool_use.name: String should match pattern..."</p>
+<p><strong>Causes</strong>:
+- Large file edits
+- Conversation history too large (8000+ tokens)</p>
+<p><strong>Solutions</strong>:
+- Type "continue" to retry
+- Create new files instead of editing large ones
+- Start a fresh conversation
+- Break down complex tasks</p>
+<h4 id="connection-issues">Connection Issues</h4>
+<p>If you experience connection problems:</p>
+<p><strong>Solutions</strong>:
+- Check that both VMPilot and Open WebUI are running
+- Verify API keys are correctly configured
+- Check network settings if using remote connections</p>
+<h2 id="advanced-configuration-options">Advanced Configuration Options</h2>
+<p>Open WebUI offers many additional features and settings to enhance your experience.
+For more detailed information, visit the <a href="https://docs.openwebui.com/">Open WebUI documentation site</a>.</p>
+<p>For VMPilot-specific configurations, refer to our <a href="../configuration/">Configuration Guide</a>.</p>
 
 
 
