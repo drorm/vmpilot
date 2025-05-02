@@ -36,6 +36,10 @@ class Usage:
         self.provider = provider
         self.model_name: Optional[str] = model_name
 
+        # Cache for cost calculation results
+        self._cached_totals = None
+        self._cached_costs = None
+
         # Get pricing information from config based on provider
         self.pricing = config.get_pricing(provider)
 
@@ -46,6 +50,10 @@ class Usage:
         Args:
             message: The message containing token usage metadata
         """
+        # Reset cached values when new tokens are added
+        self._cached_totals = None
+        self._cached_costs = None
+
         response_metadata = getattr(message, "response_metadata", {})
         logger.debug(f"Adding tokens from message: {response_metadata}")
 
@@ -233,7 +241,12 @@ class Usage:
         Returns:
             Tuple containing token totals and cost breakdown
         """
-        return self.get_totals(), self.calculate_cost()
+        # Use cached results if available
+        if self._cached_totals is None or self._cached_costs is None:
+            self._cached_totals = self.get_totals()
+            self._cached_costs = self.calculate_cost()
+
+        return self._cached_totals, self._cached_costs
 
     def get_cost_message(self) -> str:
         """
