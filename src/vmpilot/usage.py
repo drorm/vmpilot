@@ -57,13 +57,13 @@ class Usage:
         response_metadata = getattr(message, "response_metadata", {})
         logger.debug(f"Adding tokens from message: {response_metadata}")
 
-        # Check if the message has Gemini usage metadata
         usage_metadata = getattr(message, "usage_metadata", {})
+        # Message has OpenAI usage metadata? Also applies to Gemin and others
         if usage_metadata:
+            logger.info(f"Adding tokens from message: {usage_metadata}")
             # Store the model name if available
             if response_metadata.get("model_name"):
                 self.model_name = response_metadata["model_name"]
-                logger.debug(f"Using model: {self.model_name}")
             elif self.provider == Provider.GOOGLE and not self.model_name:
                 # For Gemini, if model_name wasn't provided in constructor or response_metadata,
                 # try to get it from config
@@ -82,54 +82,35 @@ class Usage:
             if input_token_details:
                 self.cache_read_input_tokens += input_token_details.get("cache_read", 0)
 
-            # Log successful token addition
-            logger.info(
-                f"Added Gemini tokens - input: {usage_metadata.get('input_tokens', 0)}, "
-                f"output: {usage_metadata.get('output_tokens', 0)}, "
-                f"cached: {input_token_details.get('cache_read', 0) if input_token_details else 0}"
+        else:
+            response_metadata = getattr(message, "response_metadata", {})
+            logger.debug(f"Adding tokens from message: {response_metadata}")
+
+            # Store the model name if available
+            if response_metadata.get("model_name"):
+                self.model_name = response_metadata["model_name"]
+                logger.info(f"Using model: {self.model_name}")
+
+            # Anthropic format
+            usage = response_metadata.get("usage", {})
+            if not usage:
+                return
+
+            # Add the tokens to our running totals (Anthropic format)
+            self.cache_creation_input_tokens += usage.get(
+                "cache_creation_input_tokens", 0
             )
-            return
+            self.cache_read_input_tokens += usage.get("cache_read_input_tokens", 0)
+            self.input_tokens += usage.get("input_tokens", 0)
+            self.output_tokens += usage.get("output_tokens", 0)
 
-        response_metadata = getattr(message, "response_metadata", {})
-        logger.debug(f"Adding tokens from message: {response_metadata}")
-
-        # Store the model name if available
-        if response_metadata.get("model_name"):
-            self.model_name = response_metadata["model_name"]
-            logger.debug(f"Using model: {self.model_name}")
-
-        # Check for OpenAI token usage format
-        token_usage = response_metadata.get("token_usage", {})
-        if token_usage:
-            # OpenAI format
-            self.input_tokens += token_usage.get("prompt_tokens", 0)
-            self.output_tokens += token_usage.get("completion_tokens", 0)
-
-            # Handle cached tokens if available
-            prompt_tokens_details = token_usage.get("prompt_tokens_details", {})
-            if prompt_tokens_details:
-                self.cache_read_input_tokens += prompt_tokens_details.get(
-                    "cached_tokens", 0
-                )
-
-            # Log successful token addition
-            logger.info(
-                f"Added OpenAI tokens - input: {token_usage.get('prompt_tokens', 0)}, "
-                f"output: {token_usage.get('completion_tokens', 0)}, "
-                f"cached: {prompt_tokens_details.get('cached_tokens', 0) if prompt_tokens_details else 0}"
-            )
-            return
-
-        # Anthropic format
-        usage = response_metadata.get("usage", {})
-        if not usage:
-            return
-
-        # Add the tokens to our running totals (Anthropic format)
-        self.cache_creation_input_tokens += usage.get("cache_creation_input_tokens", 0)
-        self.cache_read_input_tokens += usage.get("cache_read_input_tokens", 0)
-        self.input_tokens += usage.get("input_tokens", 0)
-        self.output_tokens += usage.get("output_tokens", 0)
+        # Log successful token addition
+        logger.info(
+            f"Added {self.model_name} tokens - input: {usage_metadata.get('input_tokens', 0)}, "
+            f"output: {usage_metadata.get('output_tokens', 0)}, "
+            f"cached: {input_token_details.get('cache_read', 0) if input_token_details else 0}"
+        )
+        return
 
     def get_totals(self) -> Dict[str, int]:
         """
@@ -192,7 +173,7 @@ class Usage:
                         input_cost + output_cost + cache_creation_cost + cache_read_cost
                     )
 
-                    logger.info(
+                    logger.debug(
                         f"Calculated costs using LiteLLM pricing for {self.model_name}"
                     )
                     return {
