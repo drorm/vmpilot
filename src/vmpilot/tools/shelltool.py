@@ -1,16 +1,12 @@
 """Tool for executing shell commands with proper output formatting."""
 
-import json
 import logging
-import platform
 import subprocess
-import warnings
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.language_models import BaseChatModel
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 

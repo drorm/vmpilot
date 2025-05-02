@@ -203,6 +203,61 @@ class TestFilePaths:
             ), f"Parent directory for {provider} api_key_path must exist"
 
 
+class TestDatabaseSection:
+    """Tests for the [database] section of the config file."""
+
+    def test_database_section_exists(self, config):
+        """Test that database section exists."""
+        assert "database" in config, "database section must exist in config"
+
+    def test_database_enabled_exists(self, config):
+        """Test that database enabled setting exists."""
+        assert (
+            "enabled" in config["database"]
+        ), "database enabled setting must be defined"
+
+    def test_database_enabled_boolean(self, config):
+        """Test that database enabled is a boolean value."""
+        enabled = config["database"].getboolean("enabled")
+        assert isinstance(enabled, bool), "database enabled must be a boolean"
+
+    def test_database_path_exists(self, config):
+        """Test that database path is defined."""
+        assert "path" in config["database"], "database path must be defined"
+
+    def test_database_path_not_empty(self, config):
+        """Test that database path is not empty."""
+        assert config["database"]["path"].strip(), "database path cannot be empty"
+
+    def test_database_path_expansion(self, config):
+        """Test that ~ in database path can be expanded."""
+        path = config["database"]["path"]
+        if "~" in path:
+            expanded = os.path.expanduser(path)
+            assert expanded != path, "database path ~ expansion failed"
+            assert not expanded.startswith("~"), "database path expansion incomplete"
+
+    def test_database_path_parent_exists(self, config):
+        """Test that parent directory of database path exists or can be created."""
+        # Skip this test in CI environments
+        if os.environ.get("CI") == "true":
+            pytest.skip("Skipping directory existence check in CI environment")
+
+        path = config["database"]["path"]
+        if "~" in path:
+            path = os.path.expanduser(path)
+
+        # For database path, we only check if the parent directory exists
+        # or if it's a standard location that would be created
+        parent_dir = os.path.dirname(os.path.abspath(path))
+        standard_dirs = ["/app/data", str(Path.home() / ".vmpilot")]
+
+        if not os.path.exists(parent_dir):
+            assert any(
+                parent_dir.startswith(std_dir) for std_dir in standard_dirs
+            ), f"Parent directory for database path must exist or be a standard location: {parent_dir}"
+
+
 class TestConfigurationStructure:
     """Tests for overall configuration file structure."""
 
@@ -215,6 +270,7 @@ class TestConfigurationStructure:
             "anthropic",
             "openai",
             "pipeline",
+            "database",  # Add database as a required section
         ]
         for section in required_sections:
             assert (
@@ -232,7 +288,8 @@ class TestConfigurationStructure:
             "openai",
             "pipeline",
             "git",
-            "google",  # Add google as an allowed section
+            "google",
+            "database",  # Add database as an allowed section
         }
         for section in config.sections():
             assert section in allowed_sections, f"Unexpected section '{section}' found"

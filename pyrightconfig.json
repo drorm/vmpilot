@@ -19,6 +19,11 @@
   "reportOptionalSubscript": "warning",
   "reportOptionalCall": "warning",
   "reportPrivateUsage": "none",
-  "useLibraryCodeForTypes": true
+  "useLibraryCodeForTypes": true,
+  "reportUnusedVariable": "error",
+  "reportUnusedImport": "error",
+  "reportUnusedFunction": "error",
+  "reportUnusedClass": "error",
+  "reportUnusedExpression": "error"
 }
 

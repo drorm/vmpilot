@@ -7,7 +7,7 @@ import pytest
 
 from vmpilot.vmpilot import Pipeline
 
-sys.path.insert(0, "/home/dror/4vmpilot")
+sys.path.insert(0, "/home/dror/vmpilot")
 from tests.unit.pipeline_test_adapter import add_test_methods_to_pipeline
 
 # Apply the adapter to add backward compatibility methods
@@ -38,6 +38,9 @@ class TestChatID:
             patch("os.path.exists", return_value=True),
             patch("os.path.isdir", return_value=True),
             patch("os.chdir"),
+            patch(
+                "vmpilot.project.Project.check_project_structure"
+            ),  # Patch the project structure check
         ):
             yield
 

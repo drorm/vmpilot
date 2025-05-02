@@ -92,6 +92,7 @@ for test in "${test_files[@]}"; do
     (
         # Run test with provider flag but don't pass coverage flag
         # (coverage is handled via VMPILOT_COVERAGE environment variable)
+        # if bash -xv "$test" -p "$PROVIDER" | tee "$RESULTS_DIR/$test_name.log" 2>&1; then # for debugging
         if bash "$test" -p "$PROVIDER" > "$RESULTS_DIR/$test_name.log" 2>&1; then
             echo "$test_name: PASS" > "$RESULTS_DIR/$test_name.result"
         else

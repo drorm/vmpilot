@@ -6,10 +6,9 @@ Handles chat IDs, project directories, and session management.
 import logging
 import secrets
 import string
-from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional
 
-from . import config, env
+from .project import Project
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +26,7 @@ class Chat:
         messages=None,
         output_callback=None,
         system_prompt_suffix=None,
+        chat_id=None,
     ):
         """
         Initialize a chat session.
@@ -34,25 +34,34 @@ class Chat:
         Args:
             messages: Optional list of chat messages to extract information from.
             output_callback: Optional callback function for sending output.
+            system_prompt_suffix: Optional system prompt suffix.
+            chat_id: Optional chat ID to continue a specific conversation.
         """
         # Set initial project directory value
-        self.project_dir = ""
         self.messages = messages or []
         self.output_callback = output_callback
+        self.new_chat = False
+        self.done = False
 
-        # Extract project directory from messages if provided
-        if system_prompt_suffix:
-            logger.debug(f"Using system prompt suffix: {system_prompt_suffix}")
-            extracted_dir = env.extract_project_dir(system_prompt_suffix)
-            if extracted_dir:
-                self.project_dir = extracted_dir
+        # If chat_id is explicitly provided, use it
+        if chat_id:
+            self.chat_id = chat_id
+            self.new_chat = False
+            logger.debug(f"Using provided chat_id: {chat_id}")
+        else:
+            # Otherwise, extract from messages or generate a new one
+            self.chat_id = self._determine_chat_id(self.messages, output_callback)
 
-        # Get or generate chat_id
-        self.chat_id = self._determine_chat_id(self.messages, output_callback)
+        # Check project setup
+        project = Project(system_prompt_suffix or "", self.output_callback)
+        self.project = project
 
-        # For tests: change directory now during initialization
-        # This matches the behavior expected by the tests
-        self.change_to_project_dir()
+        if self.new_chat:
+            project.check_project_structure()
+            if project.done():
+                # If it's a new project and the check sends a message to the user, no need to continue
+                self.done = True
+                return
 
         if self.chat_id:
             logger.debug(f"Using chat_id: {self.chat_id}")
@@ -88,8 +97,10 @@ class Chat:
         # Try to extract an existing chat_id from messages
         extracted_id = self._extract_chat_id_from_messages(messages)
         if extracted_id:
+            self.new_chat = False
             return extracted_id
 
+        self.new_chat = True
         # If no existing chat_id found, generate a new one
         new_chat_id = self._generate_chat_id()
         logger.debug(f"Generated new chat_id: {new_chat_id}")
@@ -103,7 +114,48 @@ class Chat:
                 }
             )
 
+        self._db_new_chat(new_chat_id, messages)
         return new_chat_id
+
+    def _db_new_chat(self, chat_id: str, messages: Optional[List[Dict[str, str]]]):
+        """
+        Create a new chat record in the database.
+
+        Args:
+            chat_id: The unique identifier for the chat
+            messages: List of chat messages
+        """
+        try:
+            from vmpilot.config import config
+            from vmpilot.db.crud import ConversationRepository
+
+            # Skip if database is disabled
+            if not config.is_database_enabled():
+                logger.debug("Database persistence is disabled, skipping chat creation")
+                return
+
+            # Get the first user message if available
+            initial_request = None
+            if messages and len(messages) > 0:
+                for message in messages:
+                    if message.get("role") == "user":
+                        content = message.get("content")
+                        # Import the utility function
+                        from vmpilot.utils import extract_text_from_message_content
+
+                        initial_request = extract_text_from_message_content(content)
+                        break
+            logger.debug(f"Initial request: {initial_request}")
+
+            # truncate the initial request to 100 characters
+            if initial_request and len(initial_request) > 100:
+                initial_request = initial_request[:100]
+
+            # Create a record in the database
+            repo = ConversationRepository()
+            repo.create_chat(chat_id, initial_request)
+        except Exception as e:
+            logger.error(f"Error creating chat record in database: {e}")
 
     def _extract_chat_id_from_messages(
         self, messages: Optional[List[Dict[str, str]]]
@@ -153,7 +205,7 @@ class Chat:
         return None
 
     # Compatibility methods for tests
-    def extract_project_dir(self, system_prompt_suffix: str = None) -> Optional[str]:
+    def extract_project_dir(self, system_prompt_suffix: str) -> Optional[str]:
         """
         Extract project directory from system message if present.
         This is a compatibility method for tests - actual implementation is in env.py.
@@ -165,65 +217,12 @@ class Chat:
             Project directory if found, None otherwise
         """
         if system_prompt_suffix:
-            extracted = env.extract_project_dir(system_prompt_suffix)
+            extracted = self.project.extract_project_dir(system_prompt_suffix)
+            extracted = None
             if extracted:
                 self.project_dir = extracted
             return extracted
         return None
-
-    def change_to_project_dir(self):
-        """
-        Ensure the project directory exists and is a directory before changing to it.
-        This is a compatibility method for tests - actual implementation is in env.py.
-
-        Direct implementation for tests - doesn't use env.py to ensure test compatibility
-        """
-        import os
-
-        # For tests: if the PROJECT_ROOT environment variable is set, use it
-        # This is a workaround for tests that don't set project_dir
-        if not self.project_dir and "PROJECT_ROOT" in os.environ:
-            self.project_dir = os.environ["PROJECT_ROOT"]
-            logger.debug(f"Using PROJECT_ROOT from environment: {self.project_dir}")
-
-        # Use the project_dir that was set in __init__
-        expanded_dir = os.path.expanduser(self.project_dir)
-        logger.debug(
-            f"Changing to project directory: {expanded_dir} (original: {self.project_dir})"
-        )
-
-        # In test environment, skip directory validation if running under pytest
-        if "PYTEST_CURRENT_TEST" in os.environ and not expanded_dir:
-            logger.debug("Skipping directory validation in test environment")
-            return
-
-        # Check if directory exists
-        if not os.path.exists(expanded_dir):
-            error = f"Project directory {self.project_dir} does not exist. See https://vmpdocs.a1.lingastic.org/user-guide/?h=project+directory#project-directory-configuration "
-            logger.error(error)
-            raise Exception(error)
-
-        # Check if it's a directory
-        if not os.path.isdir(expanded_dir):
-            error_msg = f"Failed to change to project directory {self.project_dir}: Not a directory"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-
-        # Try to change to the directory
-        try:
-            os.chdir(expanded_dir)
-            logger.info(f"Changed to project directory: {expanded_dir}")
-
-            # For tests, update env variable
-            os.environ["PROJECT_ROOT"] = expanded_dir
-        except PermissionError:
-            error_msg = f"Failed to change to project directory {self.project_dir}: Permission denied"
-            logger.error(error_msg)
-            raise Exception(error_msg)
-        except Exception as e:
-            error_msg = f"Failed to change to project directory {self.project_dir}: {e}"
-            logger.error(error_msg)
-            raise Exception(error_msg)
 
     def should_truncate_messages(self, messages):
         """

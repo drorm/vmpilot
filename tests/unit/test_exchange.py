@@ -68,11 +68,6 @@ def patch_dependencies(monkeypatch):
     monkeypatch.setattr(exchange, "GitTracker", lambda: DummyGitTracker())
     monkeypatch.setattr(exchange, "GitStatus", DummyGitStatus)
 
-    # Patch save_conversation_state
-    monkeypatch.setattr(
-        exchange, "save_conversation_state", dummy_save_conversation_state
-    )
-
     # Clear saved_states before each test
     saved_states.clear()
 
@@ -162,12 +157,6 @@ def test_complete_sets_assistant_and_tool_calls(monkeypatch):
     assert isinstance(ex.assistant_message, AIMessage)
     assert ex.assistant_message.content == "Assistant reply"
     assert ex.tool_calls == tool_calls
-    # Check that conversation state was saved
-    saved = saved_states.get("chat_complete")
-    assert saved is not None
-    messages, extra = saved
-    assert any(m.content == "User message" for m in messages)
-    assert any(m.content == "Assistant reply" for m in messages)
 
 
 def test_commit_changes_not_enabled(monkeypatch):

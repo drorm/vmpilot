@@ -163,7 +163,17 @@ class Pipeline:
         logger.debug(f"on_startup:{__name__}")
 
     async def on_shutdown(self):
+        """Handle graceful shutdown of the pipeline"""
         logger.debug(f"on_shutdown:{__name__}")
+
+        # Close database connection if it's open
+        try:
+            from vmpilot.db import close_db_connection
+
+            close_db_connection()
+            logger.debug("Database connection closed during pipeline shutdown")
+        except Exception as e:
+            logger.error(f"Error closing database connection during shutdown: {e}")
 
     async def on_valves_updated(self):
         """Handle valve updates by re-syncing configuration"""

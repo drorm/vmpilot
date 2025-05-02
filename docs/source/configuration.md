@@ -3,6 +3,8 @@
 ## Overview
 VMPilot features a flexible configuration system that allows you to customize your environment, LLM providers, and model parameters. This guide explains all available configuration options and how to set them up.
 
+VMPilot also supports project-specific configuration through the `.vmpilot` directory structure. See the [Project Plugin](plugins/project.md) documentation for details on how to set up and customize project-specific settings.
+
 ## Applying Configuration Changes
 After modifying the `config.ini` file, you must restart the VMPilot server for the changes to take effect.
 ## Docker Install: Configuration File Location
@@ -39,6 +41,8 @@ The `config.ini` file is organized into the following sections:
 | default_project | Default project directory for git operations and file access | ~/vmpilot |
 | tool_output_lines | Number of lines shown in tool output | 15 |
 | pricing_display | Controls how pricing information is displayed (disabled, total_only, or detailed) | detailed |
+
+> **Note:** The `default_project` setting is used when no workspace-specific project is defined. For multi-branch development, you can override this by setting `$PROJECT_ROOT=/path/to/project` in each workspace's system prompt. When a project directory is set, VMPilot will check for the `.vmpilot/prompts/project.md` file and include it in the system prompt. See [Multi-Branch Development](getting-started.md#multi-branch-development) and [Project Plugin](plugins/project.md) for details.
 
 ### Pricing Settings [pricing]
 | Setting | Description | Default |
@@ -82,6 +86,12 @@ The `config.ini` file is organized into the following sections:
 | commit_prefix | Prefix added to all commit messages | [VMPilot] |
 | author | Author name and email for Git commits | VMPilot <vmpilot@example.com> |
 
+### Database Settings
+| Setting | Description | Default |
+|---------|-------------|---------|
+| enabled | Enable or disable database persistence for conversations | false |
+| path | Path to SQLite database file | /app/data/vmpilot.db |
+
 ## Example Configuration
 ```ini
 [general]
@@ -124,7 +134,19 @@ provider = anthropic
 temperature = 0.7
 commit_prefix = [VMPilot]
 author = VMPilot <vmpilot@example.com>
+
+[database]
+enabled = true
+path = /app/data/vmpilot.db
 ```
+
+## Database Settings [database]
+| Setting | Description | Default |
+|---------|-------------|---------|
+| enabled | Enable or disable database persistence for conversations | false |
+| path | Path to SQLite database file | /app/data/vmpilot.db |
+
+> **Note:** When database persistence is enabled, VMPilot stores all conversations in a SQLite database, allowing chat history to persist across server restarts. This is particularly useful for maintaining context in long-running development sessions and supporting the CLI's chat mode with the `-c` flag across multiple invocations. For Docker installations, the database is stored in the `vmpilot_data` volume by default.
 
 ## Environment Variables
 - VMPILOT_CONFIG: Optional path to configuration file

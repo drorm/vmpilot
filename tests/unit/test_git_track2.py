@@ -6,8 +6,9 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import vmpilot.config
+from vmpilot.config import CommitMessageStyle, GitConfig
 from vmpilot.config import Provider as APIProvider
-from vmpilot.git_track import CommitMessageStyle, GitConfig, GitStatus, GitTracker
+from vmpilot.git_track import GitStatus, GitTracker
 
 
 class TestCommitMessageStyles(unittest.TestCase):

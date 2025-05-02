@@ -43,10 +43,17 @@ fi
 export OPENAI_API_KEY=`cat ~/.openai`
 cd "$SCRIPT_DIR/.."
 
-# Set Python logging level to WARN before running the CLI
-# This reduces verbosity in the CLI output
-# Use -v flag for verbose mode or -d flag for debug mode
+# Set Python path for running the CLI
 export PYTHONPATH="$(pwd)"
-export PYTHONLOGLEVEL=WARN
+
+# Check if verbose or debug flag is present
+if [[ "$*" == *"-v"* || "$*" == *"--verbose"* ]]; then
+    export PYTHONLOGLEVEL=INFO
+elif [[ "$*" == *"-d"* || "$*" == *"--debug"* ]]; then
+    export PYTHONLOGLEVEL=DEBUG
+else
+    export PYTHONLOGLEVEL=WARN
+fi
+
 python3 src/vmpilot/cli.py "$@"
 echo

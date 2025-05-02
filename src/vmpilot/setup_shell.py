@@ -1,9 +1,8 @@
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.language_models import BaseChatModel
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .tools.shelltool import ShellTool
 

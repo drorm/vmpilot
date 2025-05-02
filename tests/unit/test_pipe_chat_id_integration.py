@@ -82,6 +82,12 @@ def timeout_after(seconds):
 
 
 class TestPipeChatIDIntegration:
+    @pytest.fixture(autouse=True)
+    def setup_project_patch(self):
+        """Patch the project structure check for all tests."""
+        with patch("vmpilot.project.Project.check_project_structure"):
+            yield
+
     @pytest.fixture
     def pipeline(self):
         """Create a Pipeline instance with mocked API key for testing."""
@@ -109,7 +115,7 @@ class TestPipeChatIDIntegration:
             except Exception:
                 pass
 
-    @timeout_after(5)  # 5 second timeout
+    @timeout_after(2)  # 2 second timeout
     @patch("vmpilot.agent.process_messages")
     def test_message_truncation_with_chat_id(self, mock_process_messages, pipeline):
         """Test that only the last message is kept when chat_id exists."""
@@ -156,8 +162,11 @@ class TestPipeChatIDIntegration:
                     # Simulate the behavior of the Chat class for message truncation
                     from vmpilot.chat import Chat
 
-                    chat = Chat(messages=messages)
-                    chat.chat_id = "test123"  # Set the chat_id
+                    with patch("vmpilot.project.Project.check_project_structure"):
+                        chat = Chat(
+                            messages=messages, system_prompt_suffix="$PROJECT_ROOT=/tmp"
+                        )
+                        chat.chat_id = "test123"  # Set the chat_id
 
                     # Get the formatted messages (should be truncated because we have a chat_id)
                     formatted_messages = chat.get_formatted_messages(messages)
@@ -270,9 +279,12 @@ class TestPipeChatIDIntegration:
                     # Simulate the behavior of the Chat class for message retention
                     from vmpilot.chat import Chat
 
-                    chat = Chat(messages=messages)
-                    # Ensure no chat_id is set (for testing - normally it would generate one)
-                    chat.chat_id = None
+                    with patch("vmpilot.project.Project.check_project_structure"):
+                        chat = Chat(
+                            messages=messages, system_prompt_suffix="$PROJECT_ROOT=/tmp"
+                        )
+                        # Ensure no chat_id is set (for testing - normally it would generate one)
+                        chat.chat_id = None
 
                     # Get the formatted messages (should not be truncated because we have no chat_id)
                     formatted_messages = chat.get_formatted_messages(messages)

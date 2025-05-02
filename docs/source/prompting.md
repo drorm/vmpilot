@@ -7,24 +7,21 @@ VMPilot uses a multi-level prompting system to ensure the LLM has the necessary 
 ## Context Layers
 
 ### 1. Project Context (Workspace Level)
-Managed through OpenWebUI workspaces provide a high-level overview:
-```yaml
-Essential Components:
-- Project Root Directory: /path/to/project in the vm.
-- Technology Stack: [languages, frameworks, tools]
-- Project Structure: Directory layout and key files
-- Development Guidelines: Coding standards, workflows
+Managed through OpenWebUI workspaces. Lets VMPilot know the root directory of the project.
+```bash
+$PROJECT_ROOT=/path/to/project
+```
+The project plugin will create a `.vmpilot` directory in the project root, containing a `project.md` file with essential information about the project.
+The contents of the `project.md` file is included in the system prompt for each conversation, helping VMPilot understand the project context.
+See the [Project Plugin](plugins/project.md) for more details.
 ```
 
-### 2. Task Context (GitHub Integration)
-Leveraged through the GitHub Issues plugin:
-```yaml
-Available Information:
-- Issue Details: Requirements, objectives
-- Discussion History: Comments, feedback
-- Project Metadata: Labels, milestones
-- Related Issues: Dependencies, blockers
-```
+### 2. Task Context (Branch Manager)
+Leveraged through the [Branch Manager plugin](plugins/branch_manager.md):
+
+When you ask VMPilot to create a new branch based on a GitHub issue, it will create a new branch with a name based on the issue title and number.
+When you start a new conversation in the project and branch, VMPilot includes the text and comments for the issue in the system prompt.
+This ensures that VMPilot has the **full context** for the task at hand.
 
 ## Workspace Management
 
@@ -36,6 +33,7 @@ Organize your development environment with purpose-specific workspaces:
    Examples:
    - OpenAI Development
    - Claude Integration
+   - Gemini Integration
    - Local Model Testing
    ```
 

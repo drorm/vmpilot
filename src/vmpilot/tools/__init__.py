@@ -1,4 +1,4 @@
-from .base import CLIResult, ToolResult
+from .base import CLIResult
 from .edit_tool import EditTool
 
 __ALL__ = [

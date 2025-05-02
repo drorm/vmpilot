@@ -2,31 +2,26 @@
 
 [TOC]
 
-This guide provides step-by-step instructions for setting up VMPilot in your environment.
+This guide provides step-by-step instructions for installing VMPilot in your environment. VMPilot comes with Open WebUI bundled in the Docker container, providing a seamless, integrated installation experience with a powerful web interface.
 
 > [!CAUTION]
-> Only run this if you have enough knowledge about the security implications of running arbitrary commands in your virtual machine.
-> **Never run this directly on your personal machine**. You are letting the AI/LLM pilot run commands in your machine and it can be dangerous.
+> Only run VMPilot if you understand the security implications of running arbitrary commands in your virtual machine.
+> **Never run this directly on your personal machine**. You are letting the AI/LLM run commands in your machine which can be dangerous.
 
-# Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have:
-- Docker container running Ubuntu 22.04 or later
-- Python 3.11 or later
+- Docker installed on your system
 - Basic familiarity with Docker and Linux
+- For secure remote access, complete the [DNS and SSL Setup](dns_ssl_setup.md) before proceeding
 
-For secure access setup, we recommend you complete the [DNS and SSL Setup](dns_ssl_setup.md) before proceeding.
+## Recommended Installation: Docker
 
-# 1. Install VMPilot
+VMPilot is available as a Docker container from GitHub Container Registry (ghcr.io). This container includes both VMPilot and Open WebUI pre-configured to work together.
 
-## 1.1 Docker Installation
+### Docker Installation Steps
 
-VMPilot is available as a Docker container from GitHub Container Registry (ghcr.io). Note that this is an Ubuntu based container. If you'd like to use a different distribution, you need to install VMPilot manually.
-Follow these steps to install and run VMPilot in a Docker container:
-
-1. You have two options to install VMPilot:
-
-Download the installation script first, review it, and then run it:
+1. Download the installation script, review it, and then run it:
 
 ```bash
 # Download the installation script
@@ -44,26 +39,35 @@ chmod +x install_vmpilot.sh
 ```
 
 This script will:
-- Create the necessary directories at the specified location (default is `$HOME/.vmpilot/`)
+- Create the necessary directories (default is `$HOME/.vmpilot/`)
 - Pull the latest VMPilot image from GitHub Container Registry
 - Start the container with proper configuration
 - Copy the default configuration file
 
-
-4. Verify the container is running:
+2. Verify the container is running:
 ```bash
 docker ps | grep vmpilot
 ```
 
-The Docker container works out of the box without any initial configuration changes. You only need to:
-1. Set up the OpenWebUI connection and pipeline as described in Section 3
-2. Add your API keys (OpenAI and/or Anthropic) in the OpenWebUI pipeline configuration
+3. Access the web interface:
+   - Open your browser and navigate to `http://localhost:8080`
+   - Follow the steps in [Using the Web UI](using-webui.md) to complete setup
 
-Optional Configuration:
-- If you want to customize VMPilot's behavior, you can modify the config file at `$HOME/.vmpilot/config/config.ini`
-- When using the VMPilot CLI interface (not open-webui), you will need to set up a password as described in the Security section
+### Port Configuration
 
-Note: Most users won't need to modify config.ini unless they have specific requirements for customization.
+The VMPilot Docker container exposes two main ports:
+- **Port 8080**: Open WebUI interface
+- **Port 9099**: VMPilot pipeline server (internal communication)
+
+If you need to change these ports, modify the port mapping in your Docker run command:
+
+```bash
+docker run -d \
+  -p <custom-webui-port>:8080 \
+  -p <custom-pipeline-port>:9099 \
+  ... other options ...
+  ghcr.io/drorm/vmpilot:latest
+```
 
 ## 1.2 Manual Installation
 
@@ -122,81 +126,124 @@ For CLI usage:
 ```bash
 ~/vmpilot/bin/run.sh
 ```
-## 2. OpenWebUI Setup
+## 2. First-Time Setup
 
-### 2.1 OpenWebUI Installation
+After installing VMPilot, you'll need to complete a few setup steps to get started.
 
-OpenWebUI serves as the frontend interface for VMPilot.
+### 2.1 Accessing the Web Interface
 
-Follow the instructions on the [OpenWebUI GitHub repository](https://github.com/open-webui/open-webui/)
+1. After starting the VMPilot container, the Open WebUI interface is automatically available at:
+   ```
+   http://localhost:8080
+   ```
 
-```bash
-pip install open-webui
+2. When you first access the interface, you'll need to create a user account. The first user created automatically becomes the admin.
+
+### 2.2 Configuring API Keys
+
+To use VMPilot with your preferred LLM provider:
+
+1. Click on your username in the bottom left corner
+2. Select "Admin Panel"
+3. Navigate to the "Pipelines" tab
+4. Enter your API keys for OpenAI, Anthropic, or both
+5. Click "Save"
+
+The connection between Open WebUI and VMPilot is pre-configured in the container, so you don't need to set up the connection manually.
+
+For more detailed information on using the web interface, see the [Using Open WebUI](using-webui.md) guide.
+
+## 3. Verification
+
+To verify your installation is working correctly:
+
+1. Open the web interface in your browser (http://localhost:8080)
+2. Log in with the user account you created
+3. Create a new conversation
+4. Choose one of the VMPilot models (Claude is recommended)
+5. Try a simple command like "Show me the contents of /home"
+6. VMPilot should execute the command and return the results
+
+If the command executes successfully, your installation is working properly.
+
+## 4. Troubleshooting
+
+## 5. Project Configuration Setup
+
+After installing VMPilot, you'll want to set up project-specific configuration for each of your projects. 
+
+### 5.1 Project Directory Structure
+
+When you start using VMPilot with a new project, it will check for the existence of the `.vmpilot` directory structure:
+
+```
+your-project/
+└── .vmpilot/
+    └── prompts/
+        └── project.md
 ```
 
-and then run the following command:
+### 5.2 Initial Project Setup
 
-```bash
-open-webui serve
-```
+VMPilot will guide you through the setup process when you first use it with a project:
 
-You can, of course, follow one of the other methods suggested in the OpenWebUI documentation, such as using Docker.
+1. Start a chat session in your project directory:Simply make a request like "do pwd"
+2. VMPilot will detect if the `.vmpilot` directory structure is missing
+3. You'll be presented with options:
+   - Create standard project files from a template
+   - Skip project setup
+4. When you choose to create standard project files, VMPilot will offer to:
+   - Analyze existing files and create a customized project description
+   - Let you do it manually
 
-### 2.2 Create a new OpenWebUI user
-In a browser, navigate to the OpenWebUI interface at your domain or localhost
-Create a new user on OpenWebUI which, as the first user, will make you the admin user.
+### 5.3 Project Description File
 
+The `project.md` file contains essential information about your project that's included in the system prompt for each conversation. This helps VMPilot understand your project's context, structure, and requirements.
 
-### 3 OpenWebUI Configuration
+For more details on project configuration, see the [Project Plugin](plugins/project.md) documentation.
 
-1. Access the OpenWebUI interface at your domain or localhost
-1. Open OpenWebUI in your browser
-1. Click on your user name in the bottom left corner
-1. Click on Admin Panel
-1. Click on connections
-1. Add VMPilot Connection:
-  - URL: http://localhost:9099 and the password
-  - Click "Save"
+Common installation issues and solutions:
 
-4. Enable the pipeline:
-   - Go to Pipelines tab
-   - Find the above url
-   - Enter the keys for the provider you want to use: OpenAI, Anthropic, or both.
-   - Click "Save"
+### Container Issues
 
-Note: Because the VMPilot pipeline is a manifold pipeline, you'll see two models in the pipeline list:
+1. **Container fails to start:**
+   - Check Docker logs: `docker logs vmpilot`
+   - Verify Docker is running: `systemctl status docker`
+   - Ensure you have sufficient disk space: `df -h`
+   - Check for port conflicts: `netstat -tuln | grep 8080`
 
-- VMPilot PipelineAnthropic (Claude)
-- VMPilot PipelineOpenAI (GPT-4o)
+2. **Container starts but services are unavailable:**
+   - Check service status: `docker exec vmpilot supervisorctl status`
+   - View logs for specific services:
+     ```bash
+     docker exec vmpilot tail -f /app/data/logs/vmpilot.log
+     docker exec vmpilot tail -f /app/data/logs/open-webui.log
+     ```
+   - Restart services if needed: `docker exec vmpilot supervisorctl restart all`
 
-Claude is currently the preferred model for VMPilot, since it:
-- Seems to handle code better.
-- Is relatively affordable and fast when caching is handled correctly. VMPIlot caches the conversation history, so the model doesn't have to relearn everything every time.
-- Has been tested more extensively.
+### Access Issues
 
-### 4. Verification
+3. **Cannot access web interface:**
+   - Verify the container is running: `docker ps | grep vmpilot`
+   - Check if port 8080 is accessible: `curl -I http://localhost:8080`
+   - Ensure no firewall is blocking access: `sudo ufw status`
+   - Try accessing from the host directly: `http://127.0.0.1:8080`
 
-To verify your installation:
+### Configuration Issues
 
-1. Open OpenWebUI in your browser. Choose one of the above models and start a conversation.
-2. Try a simple command like "Show me /home"
+4. **API key problems:**
+   - Ensure you've entered valid API keys in the Open WebUI Admin Panel
+   - Check for error messages in the web interface
+   - Verify your API keys work with the respective services
 
+5. **Model not found:**
+   - Go to Admin Panel > Pipelines and verify your API keys are correctly entered
+   - When using a workspace, edit the workspace and make sure the pipeline is selected
+   - Check if the model is available from your provider
 
-### 4. Troubleshooting
+### Resource Issues
 
-Common issues and solutions:
-
-1. Connection refused:
-    - Check if VMPilot server is running
-    - Verify port configurations
-    - Check firewall settings
-
-2. Authentication errors:
-    - Verify API key in the UI
-    - Check OpenWebUI pipeline configuration
-
-3. Model not found:
-    - Go to the connection settings as described above, and save the connection again.
-    - Go to the pipeline settings and save the pipeline again.
-    - When using a workspace, edit the workspace and make sure the pipeline is selected.
-
+6. **Performance problems:**
+   - Check container resource usage: `docker stats vmpilot`
+   - Verify the host has sufficient resources: `free -h` and `top`
+   - Consider increasing container resource limits if necessary

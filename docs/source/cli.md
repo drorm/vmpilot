@@ -53,22 +53,25 @@ cli.sh -t 0.3 "Write a Python function to calculate factorial"
 
 ### Chat Mode
 
-Chat mode maintains conversation context across multiple commands, allowing for follow-up questions and references to previous interactions.
+Chat mode maintains conversation context across multiple commands, allowing for follow-up questions and references to previous interactions. With database persistence enabled, conversation context is preserved even between separate CLI invocations.
 
 Examples:
 ```bash
 # Start a chat session
-cli.sh -c "List all Python files"
+cli.sh "List all Python files"
 
-# Continue the same chat session
-cli.sh -c "Explain what these files do"
+# Continue the same chat session (works across different terminal sessions). Where 12345 is the chat ID that shows in the output of the first command
+cli.sh -c 12345 "Explain what these files do"
 
 # Specify a custom chat ID
 cli.sh -c my_session_123 "Show system information"
 
-# Combine with file input for batch processing with context
-cli.sh -f commands.txt -c
+# Continue the custom chat session later
+cli.sh -c my_session_123 "Show memory usage"
+
 ```
+
+> **Note:** Chat persistence across CLI invocations requires database persistence to be enabled. See the [Database Configuration](configuration.md#database-settings-database) section for details on how to enable this feature.
 
 ### File Input Mode
 
