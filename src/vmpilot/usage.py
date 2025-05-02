@@ -19,19 +19,22 @@ logger = logging.getLogger(__name__)
 class Usage:
     """Track token usage throughout an exchange."""
 
-    def __init__(self, provider: Provider = Provider.ANTHROPIC):
+    def __init__(
+        self, provider: Provider = Provider.ANTHROPIC, model_name: Optional[str] = None
+    ):
         """
         Initialize usage counters.
 
         Args:
             provider: The provider to use for pricing calculations
+            model_name: The model name to use for pricing calculations (optional)
         """
         self.cache_creation_input_tokens = 0
         self.cache_read_input_tokens = 0
         self.input_tokens = 0
         self.output_tokens = 0
         self.provider = provider
-        self.model_name: Optional[str] = None
+        self.model_name: Optional[str] = model_name
 
         # Get pricing information from config based on provider
         self.pricing = config.get_pricing(provider)
@@ -43,6 +46,42 @@ class Usage:
         Args:
             message: The message containing token usage metadata
         """
+        response_metadata = getattr(message, "response_metadata", {})
+        logger.debug(f"Adding tokens from message: {response_metadata}")
+
+        # Check if the message has Gemini usage metadata
+        usage_metadata = getattr(message, "usage_metadata", {})
+        if usage_metadata:
+            # Store the model name if available
+            if response_metadata.get("model_name"):
+                self.model_name = response_metadata["model_name"]
+                logger.debug(f"Using model: {self.model_name}")
+            elif self.provider == Provider.GOOGLE and not self.model_name:
+                # For Gemini, if model_name wasn't provided in constructor or response_metadata,
+                # try to get it from config
+                if Provider.GOOGLE in config.providers:
+                    self.model_name = config.providers[Provider.GOOGLE].default_model
+                else:
+                    return
+                logger.debug(f"Using default Gemini model: {self.model_name}")
+
+            # Gemini format
+            self.input_tokens += usage_metadata.get("input_tokens", 0)
+            self.output_tokens += usage_metadata.get("output_tokens", 0)
+
+            # Handle cached tokens if available
+            input_token_details = usage_metadata.get("input_token_details", {})
+            if input_token_details:
+                self.cache_read_input_tokens += input_token_details.get("cache_read", 0)
+
+            # Log successful token addition
+            logger.info(
+                f"Added Gemini tokens - input: {usage_metadata.get('input_tokens', 0)}, "
+                f"output: {usage_metadata.get('output_tokens', 0)}, "
+                f"cached: {input_token_details.get('cache_read', 0) if input_token_details else 0}"
+            )
+            return
+
         response_metadata = getattr(message, "response_metadata", {})
         logger.debug(f"Adding tokens from message: {response_metadata}")
 
@@ -115,6 +154,9 @@ class Usage:
             try:
                 model_pricing = model_cost.get(self.model_name)
                 if model_pricing:
+                    logger.debug(
+                        f"Using LiteLLM pricing for model {self.model_name}: {model_pricing}"
+                    )
 
                     # Calculate costs based on litellm pricing
                     input_cost = self.input_tokens * model_pricing.get(
@@ -142,7 +184,9 @@ class Usage:
                         input_cost + output_cost + cache_creation_cost + cache_read_cost
                     )
 
-                    logger.info("Calculated costs using litellm pricing")
+                    logger.info(
+                        f"Calculated costs using LiteLLM pricing for {self.model_name}"
+                    )
                     return {
                         "input_cost": input_cost,
                         "output_cost": output_cost,
@@ -150,9 +194,13 @@ class Usage:
                         "cache_read_cost": cache_read_cost,
                         "total_cost": total_cost,
                     }
+                else:
+                    logger.warning(
+                        f"No LiteLLM pricing found for model {self.model_name}"
+                    )
             except Exception as e:
                 logger.warning(
-                    f"Error calculating cost with litellm: {e}. Falling back to config pricing."
+                    f"Error calculating cost with LiteLLM for {self.model_name}: {e}. Falling back to config pricing."
                 )
 
         # Fallback to config pricing
@@ -213,8 +261,8 @@ class Usage:
                 f"\n\n" f"**Cost Summary{model_info}:** `${cost['total_cost']:.6f}`"
             )
         else:  # Detailed display
-            # For OpenAI, we might not have cache creation tokens
-            if self.provider == Provider.OPENAI or self.provider == Provider.GOOGLE:
+            # For OpenAI and Gemini, we might not have cache creation tokens
+            if self.provider in [Provider.OPENAI, Provider.GOOGLE]:
                 cost_message = (
                     f"\n\n"
                     f"| **Total** | Input | Output | Cache Read |\n"
