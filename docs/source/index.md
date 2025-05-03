@@ -31,6 +31,7 @@ VMPilot is a chat-based AI development agent that operates directly in your virt
 🔹 **Multiple Interfaces & OpenWebUI Integration**
 
 - Powerful CLI for terminal-based workflows
+- Bundled Open WebUI for a seamless installation experience
 - Rich web interface with advanced features:
   - Multi-modal conversation view with code highlighting
   - Real-time streaming responses
@@ -44,14 +45,14 @@ VMPilot is a chat-based AI development agent that operates directly in your virt
 Get up and running with VMPilot in minutes:
 
 1. [Installation](installation.md) - Set up VMPilot on your system
-2. [Configuration](configuration.md) - Configure your environment
-3. [User Guide](user-guide.md) - Learn the basics of VMPilot
+2. [Getting Started](getting-started.md) - Learn the basics of VMPilot
+3. [Using Open WebUI](using-webui.md) - Learn how to use the web interface effectively
+4. [Configuration](configuration.md) - Configure your environment
 
 ## Core Documentation
 
 ### Essential Guides
 - [Prompting Guide](prompting.md) - Master effective prompt writing for VMPilot
-- [Tips and Best Practices](tips.md) - Learn proven techniques and best practices
 - [CLI Reference](cli.md) - Complete command-line interface documentation
 
 ### Tools and Extensions

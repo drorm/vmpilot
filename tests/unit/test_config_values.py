@@ -289,6 +289,7 @@ class TestConfigurationStructure:
             "pipeline",
             "git",
             "google",
+            "google_search",
             "database",  # Add database as an allowed section
         }
         for section in config.sections():

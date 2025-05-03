@@ -14,7 +14,8 @@ nav:
     - Home: index.md
     - Installation: installation.md
     - Configuration: configuration.md
-    - User Guide: user-guide.md
+    - Getting Started: getting-started.md
+    - Using Open-WebUI: using-webui.md
     - Coding: coding.md
     - Git Tracking: git-tracking.md
     - Examples:
@@ -24,6 +25,8 @@ nav:
         - Github issue: examples/github-issue.md
         - Todo App 1: examples/todo1.md
         - Todo App 2: examples/todo2.md
+    - Tools:
+        - Google Search: tools/google-search.md
     - Plugins:
         - Overview: plugins/overview.md
         - GitHub Issues: plugins/github.md
@@ -32,7 +35,6 @@ nav:
         - Project Plugin: plugins/project.md
         - Branch Manager Plugin: plugins/branch-manager.md
     - VMPilot Prompting: prompting.md
-    - Tips: tips.md
     - CLI Interface: cli.md
     - DNS and SSL: dns_ssl_setup.md
     - Release Process: release-process.md

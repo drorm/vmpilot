@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5] - 2025-05-01
+
+### Added
+- #28: [Feature Request] Bundle Open WebUI with VMPilot Container (@dror-llm)
+- #31: SQLite persistence for conversations (@dror-llm)
+- #59: [Feature Request] Multi-Branch Workspace Support for Parallel Feature Development (@dror-llm)
+- #60: Feature/58 add env variables and date context (@drorm)
+- #62: Agent.py Refactoring: Split Into Focused Modules (@dror-llm)
+- #65: [Sub-Issue] Implement Initial .vmpilot/prompts Directory Structure (@dror-llm)
+
+
 ## [0.4] - 2025-04-09
 
 ### Added

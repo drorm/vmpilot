@@ -191,8 +191,11 @@ async def send_request(
         if "Recursion limit" in error_message and "reached" in error_message:
             message = f" I've done {recursion_limit} steps in a row. Type *continue* if you'd like me to keep going."
             logger.info(message)
+            # Create a proper response dictionary instead of just returning the message string
+            ai_message = AIMessage(content=message)
+            response_dict = {"messages": [ai_message]}
             return (
-                response,
+                response_dict,
                 collected_tool_calls,
             )  # This is not a real error, just a limit, so we treat it as a normal response
         # Handle specific tool_use/tool_result error

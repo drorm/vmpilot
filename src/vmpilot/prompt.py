@@ -86,9 +86,9 @@ Use multiple edit blocks if needed.
 </IMPORTANT>
 
 <TOOLS>
-* Use the shell tool to execute system commands. Provide commands as a single string.
 * Use the EditTool tool for editing files.
-* Use the CreateFileTool tool for creating files. Takes path and content as input.
+* Use the CreateFileTool tool for creating files. Takes path and content as input. **Always use this to create files.**
+* Use the GoogleSearchTool tool for searching the web. The output will be a list of relevant search results.
 </TOOLS>
 
 <PLUGINS>
@@ -99,6 +99,12 @@ Use multiple edit blocks if needed.
 This is the current issue we're working on. You do not need to fetch it again.
 {full_current_issue}
 </CURRENT ISSUE>
+<WORKFLOW_CONTROL>
+Follow this sequence:
+1. **Investigate**: Collect necessary information (e.g., from files or system state) to understand the task.
+2. **Plan**: Present a clear plan to the user, including what you intend to change or create. Wait for explicit approval.
+3. **Implement**: Only proceed with actions (e.g., file edits or shell commands) *after* the user confirms the plan.
+</WORKFLOW_CONTROL>
 """
     logger.debug(f"Prompt: {current_issue_content}")
     return prompt

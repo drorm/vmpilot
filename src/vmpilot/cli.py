@@ -24,7 +24,8 @@ except ImportError:
 
 # Configure basic logging as early as possible
 log_level = os.environ.get("PYTHONLOGLEVEL", "INFO")
-logging.basicConfig(level=getattr(logging, log_level))
+log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+logging.basicConfig(level=getattr(logging, log_level), format=log_format)
 logging.getLogger("vmpilot").setLevel(getattr(logging, log_level))
 
 # Explicitly silence specific loggers that might be noisy in CLI mode
@@ -320,14 +321,15 @@ def main() -> None:
             )
 
     # Configure logging based on debug and verbose flags
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format=log_format)
         logging.getLogger("vmpilot").setLevel(logging.DEBUG)
     elif args.verbose:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format=log_format)
         logging.getLogger("vmpilot").setLevel(logging.INFO)
     else:
-        logging.basicConfig(level=logging.WARNING)
+        logging.basicConfig(level=logging.WARNING, format=log_format)
         logging.getLogger("vmpilot").setLevel(logging.WARNING)
 
     # Override Git configuration from command line if specified
