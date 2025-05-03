@@ -244,6 +244,11 @@ def format_output(results: Dict[str, Any], format_type: str) -> str:
         # Simple text format
         output = f"Query: {results.get('query', '')}\n\n"
         output += f"Results:\n{results.get('response', '')}\n\n"
+
+        # Add usage cost information if available
+        if "usage_cost" in results and results["usage_cost"]:
+            output += f"Usage: {results['usage_cost']}\n\n"
+
         output += "Files searched:\n"
         for file in results.get("files_searched", []):
             output += f"- {file}\n"
@@ -253,6 +258,11 @@ def format_output(results: Dict[str, Any], format_type: str) -> str:
         output = f"## Code Search Results\n\n"
         output += f"**Query:** {results.get('query', '')}\n\n"
         output += f"### Response\n\n{results.get('response', '')}\n\n"
+
+        # Add usage cost information if available
+        if "usage_cost" in results and results["usage_cost"]:
+            output += f"### Usage\n{results['usage_cost']}\n\n"
+
         output += "### Files Searched\n\n"
         for file in results.get("files_searched", []):
             output += f"- `{file}`\n"

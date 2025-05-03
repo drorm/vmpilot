@@ -74,8 +74,10 @@ def search_project_code(
         config = load_config(config_path)
 
         # Override model if specified
-        if model and "llm" in config:
-            config["llm"]["model"] = model
+        if model:
+            if "api" not in config:
+                config["api"] = {}
+            config["api"]["model"] = model
 
         # Setup API
         setup_api(config)

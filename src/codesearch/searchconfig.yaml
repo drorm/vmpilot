@@ -58,6 +58,7 @@ limits:
 # API Configuration
 api:
   provider: "gemini"         # LLM provider (currently only "gemini" supported)
+  model: "gemini-1.5-flash-8b"  # Model name for the LLM
   temperature: 0.7           # Temperature for API requests
   top_p: 0.95                # Top-p for API requests
 
