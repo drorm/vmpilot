@@ -10,8 +10,8 @@ from vmpilot.config import google_search_config
 from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
-from vmpilot.tools.searchtool import SearchTool
 from vmpilot.tools.google_search_tool import GoogleSearchTool
+from vmpilot.tools.searchtool import SearchTool
 
 # Configure logging
 logger = logging.getLogger(__name__)
