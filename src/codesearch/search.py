@@ -107,7 +107,7 @@ def search_project_code(
 
         # Build prompt and execute search
         prompt = build_search_prompt(files, query, config)
-        result = execute_search(prompt, config)
+        result = execute_search(prompt, config, files=files)
 
         # Add query and files searched to result
         result["query"] = query
