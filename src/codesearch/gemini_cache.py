@@ -9,7 +9,7 @@ import logging
 import os
 import pathlib
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import google.api_core.exceptions
 import google.generativeai as genai
@@ -47,6 +47,7 @@ class GeminiCache:
         # Store the current model and cache for reuse
         self._current_model = None
         self._current_cache = None
+        self.checksum = None  # Store the current checksum for reuse
 
         # Show existing caches
         # self._show_existing_caches()
@@ -59,7 +60,7 @@ class GeminiCache:
         for cache in genai.caching.CachedContent.list():
             logger.info(cache)
 
-    def generate_checksum(self, file_path: Union[str, pathlib.Path]) -> str:
+    def generate_checksum(self, file_path: Union[str, pathlib.Path]) -> None:
         """
         Generate an MD5 checksum for a file's content.
 
@@ -80,28 +81,22 @@ class GeminiCache:
             for chunk in iter(lambda: f.read(4096), b""):
                 md5_hash.update(chunk)
 
-        checksum = md5_hash.hexdigest()
-        logger.debug(f"Generated checksum: {checksum}")
-        return checksum
+        self.checksum = md5_hash.hexdigest()
+        logger.debug(f"Generated checksum: {self.checksum}")
 
     def upload_code_file(self, file_path: Union[str, pathlib.Path]) -> Dict[str, Any]:
         """
         Upload a code file to Gemini API and wait for processing to complete.
-        Also calculates and stores the MD5 checksum of the file.
 
         Args:
             file_path: Path to the code file to upload
 
         Returns:
-            Dictionary containing the processed code file object and its checksum
+            Dictionary containing the processed code file object
         """
         path = pathlib.Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"The file {path} does not exist.")
-
-        # Generate checksum for the file
-        checksum = self.generate_checksum(path)
-        logger.debug(f"Generated MD5 checksum for {path}: {checksum}")
 
         logger.debug(f"Uploading code file: {path}")
         code_file = genai.upload_file(path=path)
@@ -114,20 +109,18 @@ class GeminiCache:
 
         logger.debug(f"Code file processing complete: {code_file.uri}")
 
-        # Return both the code file and its checksum
-        return {"file": code_file, "checksum": checksum}
+        # Return the code file
+        return {"file": code_file}
 
-    def find_existing_cache(self, checksum: str) -> Optional[Any]:
+    def find_existing_cache(self) -> Optional[Any]:
         """
         Find an existing cache with the given checksum in the display_name.
 
-        Args:
-            checksum: MD5 checksum to look for in cache display_names
 
         Returns:
             The cache object if found, None otherwise
         """
-        cache_name = f"code_search_cache_{checksum}"
+        cache_name = f"code_search_cache_{self.checksum}"
 
         logger.debug(f"Looking for existing cache with display_name: {cache_name}")
 
@@ -171,7 +164,6 @@ class GeminiCache:
     def create_cache(
         self,
         model_name: str,
-        checksum: str,
         system_instruction: str,
         contents: list,
         ttl_minutes: int = 5,
@@ -182,7 +174,6 @@ class GeminiCache:
 
         Args:
             model_name: Name of the Gemini model to use
-            checksum: MD5 checksum to use in the display_name
             system_instruction: System instruction for the model
             contents: List of content files to include in the cache
             ttl_minutes: Time-to-live in minutes (default: 5)
@@ -191,7 +182,7 @@ class GeminiCache:
             The created cache object
         """
         # Create a display name using the checksum
-        display_name = f"code_search_cache_{checksum}"
+        display_name = f"code_search_cache_{self.checksum}"
 
         logger.debug(
             f"Creating cache with display_name: {display_name} and {ttl_minutes}-minute TTL..."
@@ -226,7 +217,7 @@ class GeminiCache:
 
         Args:
             model_name: Name of the Gemini model to use
-            file_info: Either a dictionary with file and checksum information, or a file path
+            file_info: Either a dictionary with file information, or a file path
             system_instruction: System instruction for the model
             ttl_minutes: Time-to-live in minutes (default: 5)
 
@@ -235,20 +226,18 @@ class GeminiCache:
         """
         # Handle the case where file_info is a file path
         file_path = None
-        checksum = None
         code_file = None
 
         if isinstance(file_info, (str, pathlib.Path)):
             file_path = pathlib.Path(file_info)
-            # Only calculate the checksum first, don't upload yet
-            checksum = self.generate_checksum(file_path)
+            # Calculate the checksum first, don't upload yet
+            # This will update self.checksum
+            self.generate_checksum(file_path)
         else:
-            # Extract checksum from file_info dictionary
-            checksum = file_info["checksum"]
-            code_file = file_info["file"]
+            code_file = file_info.get("file")
 
-        # Try to find an existing cache using just the checksum
-        existing_cache = self.find_existing_cache(checksum)
+        # Try to find an existing cache using self.checksum
+        existing_cache = self.find_existing_cache()
 
         if existing_cache:
             logger.info(f"Using existing cache: {existing_cache.name}")
@@ -262,14 +251,20 @@ class GeminiCache:
                 f"No existing cache found. Uploading file for new cache creation."
             )
             # Now we upload the file since we need to create a new cache
-            file_info = self.upload_code_file(file_path)
-            code_file = file_info["file"]
-            # The checksum should be the same as what we calculated earlier
+            logger.debug(f"Uploading code file: {file_path}")
+            code_file = genai.upload_file(path=file_path)
+
+            # Wait for the file to finish processing
+            while code_file.state.name == "PROCESSING":
+                logger.debug("Waiting for code file to be processed...")
+                time.sleep(1)
+                code_file = genai.get(name=code_file.name)
+
+            logger.debug(f"Code file processing complete: {code_file.uri}")
 
         # Create a new cache
         return self.create_cache(
             model_name=model_name,
-            checksum=checksum,
             system_instruction=system_instruction,
             contents=[code_file],
             ttl_minutes=ttl_minutes,
