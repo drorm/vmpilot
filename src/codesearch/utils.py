@@ -53,17 +53,27 @@ def should_include_file(
     Returns:
         True if the file should be included, False otherwise
     """
+    # Normalize path for consistent matching
+    filepath = os.path.normpath(filepath)
+
     # First check if file should be excluded
     for pattern in exclude_patterns:
-        if any(fnmatch.fnmatch(filepath, p) for p in _expand_pattern(pattern)):
-            return False
+        expanded_patterns = _expand_pattern(pattern)
+        for expanded in expanded_patterns:
+            if fnmatch.fnmatch(filepath, expanded):
+                logger.debug(f"Excluding {filepath} due to pattern {expanded}")
+                return False
 
     # Then check if file should be included
     for pattern in include_patterns:
-        if any(fnmatch.fnmatch(filepath, p) for p in _expand_pattern(pattern)):
-            return True
+        expanded_patterns = _expand_pattern(pattern)
+        for expanded in expanded_patterns:
+            if fnmatch.fnmatch(filepath, expanded):
+                logger.debug(f"Including {filepath} due to pattern {expanded}")
+                return True
 
     # If no include pattern matches, exclude the file
+    logger.debug(f"Excluding {filepath} because it didn't match any include patterns")
     return False
 
 
@@ -77,9 +87,28 @@ def _expand_pattern(pattern: str) -> List[str]:
     Returns:
         List of expanded patterns
     """
+    # Normalize pattern
+    pattern = pattern.replace("\\", "/")
+
     # Handle basic file extension patterns
     if pattern.startswith("*."):
+        # For file extensions, add both the direct pattern and a nested pattern
         return [pattern, f"**/{pattern}"]
+
+    # For directory exclusion patterns that don't end with a wildcard,
+    # ensure they match both the directory and its contents
+    if pattern.endswith("/") and not pattern.endswith("**/"):
+        return [pattern, f"{pattern}**"]
+
+    # For explicit directory patterns like 'plugins/**'
+    # Make sure they match both with and without leading path components
+    if (
+        "/" in pattern
+        and not pattern.startswith("**/")
+        and not pattern.startswith("**")
+    ):
+        return [pattern, f"**/{pattern}"]
+
     return [pattern]
 
 
@@ -106,8 +135,8 @@ def collect_files(
     collected_files = []
     max_size_bytes = max_file_size_kb * 1024
 
-    # Convert to absolute path
-    project_root = os.path.abspath(project_root)
+    # Convert to absolute path and normalize
+    project_root = os.path.abspath(os.path.expanduser(project_root))
 
     # Debug information
     logger.debug(f"Project root: {project_root}")
@@ -118,6 +147,10 @@ def collect_files(
     skipped_by_pattern = 0
     skipped_by_size = 0
     skipped_by_error = 0
+    skipped_by_outside_root = 0
+
+    # Special debug checks for the specific examples mentioned
+    debug_files = ["codesearch/README.md", "vmpilot/plugins/code_review/README.md"]
 
     for root, _, files in os.walk(project_root):
         if len(collected_files) >= max_files:
@@ -128,7 +161,28 @@ def collect_files(
                 break
 
             filepath = os.path.join(root, file)
+
+            # Ensure the file is within the project_root directory
+            if not os.path.abspath(filepath).startswith(project_root):
+                skipped_by_outside_root += 1
+                continue
+
+            # Calculate relative path from project_root
             relpath = os.path.relpath(filepath, project_root)
+
+            # Special debug for specific example files
+            for debug_file in debug_files:
+                if debug_file in relpath or debug_file in filepath:
+                    logger.debug(f"DEBUG CHECK for {debug_file}:")
+                    logger.debug(f"  Full path: {filepath}")
+                    logger.debug(f"  Relative path: {relpath}")
+                    logger.debug(f"  Project root: {project_root}")
+                    logger.debug(
+                        f"  Include check: {[fnmatch.fnmatch(relpath, p) for p in sum([_expand_pattern(pat) for pat in include_patterns], [])]}"
+                    )
+                    logger.debug(
+                        f"  Exclude check: {[fnmatch.fnmatch(relpath, p) for p in sum([_expand_pattern(pat) for pat in exclude_patterns], [])]}"
+                    )
 
             # Skip files that don't match patterns
             if not should_include_file(relpath, include_patterns, exclude_patterns):

@@ -46,7 +46,7 @@ def search_project_code(
 
     Args:
         query: The natural language query to search for
-        project_root: Root directory of the project to search (defaults to current directory)
+        project_root: Root directory of the project to search (defaults to config base_dir or current directory)
         config_path: Path to the search configuration file (defaults to searchconfig.yaml in module directory)
         output_format: Output format - "markdown", "json", or "text"
         model: LLM model to use (overrides config setting)
@@ -55,11 +55,6 @@ def search_project_code(
         Formatted search results as a string
     """
     try:
-        # Set default project root if not provided
-        if project_root is None:
-            project_root = os.getcwd()
-        project_root = os.path.abspath(project_root)
-
         # Set default config path if not provided
         if config_path is None:
             # Look for config in current directory first
@@ -72,6 +67,13 @@ def search_project_code(
 
         # Load configuration
         config = load_config(config_path)
+
+        # Use project_root from arguments if provided, otherwise use base_dir from config
+        if project_root is None:
+            project_root = config.get("general", {}).get("base_dir", os.getcwd())
+
+        # Ensure path is expanded and absolute
+        project_root = os.path.abspath(os.path.expanduser(project_root))
 
         # Override model if specified
         if model:
@@ -224,8 +226,9 @@ def search_code(
     # Use project_root from arguments if provided, otherwise use base_dir from config
     if not project_root:
         project_root = config.get("general", {}).get("base_dir", ".")
-        # Expand ~ to home directory if present
-        project_root = os.path.expanduser(project_root)
+
+    # Ensure path is expanded and absolute
+    project_root = os.path.abspath(os.path.expanduser(project_root))
 
     if verbose:
         logger.info(f"Using project root: {project_root}")
