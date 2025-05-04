@@ -289,37 +289,26 @@ class Usage:
 
     def get_cost_message(self) -> str:
         """
-        Generate a formatted cost message string
+        Generate a formatted cost message string showing token usage and estimated cost
 
         Returns:
-            A formatted string with cost breakdown according to pricing_display setting
+            A formatted string with token usage and cost estimate
         """
-        try:
-            _, cost = self.get_cost_summary()
+        # Very simple cost calculation based on standard rates
+        # Approximate costs: $0.0005 per 1K input tokens, $0.0015 per 1K output tokens
+        input_cost = (self.input_tokens / 1000) * 0.0005
+        output_cost = (self.output_tokens / 1000) * 0.0015
+        total_cost = input_cost + output_cost
 
-            # Add model name to the cost summary if available
-            model_info = f" ({self.model_name})" if self.model_name else ""
+        # Add model name to the message if available
+        model_info = f" ({self.model_name})" if self.model_name else ""
 
-            # For OpenAI and Gemini, we might not have cache creation tokens
-            if self.provider in ["openai", "gemini"]:
-                cost_message = (
-                    f"\n\n"
-                    f"| **Total** | Input | Output | Cache Read |\n"
-                    f"|--------|--------|--------|----------|\n"
-                    f"| ${cost['total_cost']:.6f} | ${cost['input_cost']:.6f} | ${cost['output_cost']:.6f} | ${cost['cache_read_cost']:.6f} |"
-                )
-            else:
-                # Generic format for other providers
-                cost_message = (
-                    f"\n\n"
-                    f"| **Total Cost{model_info}** | Input Tokens | Output Tokens |\n"
-                    f"|--------|--------|--------|\n"
-                    f"| ${cost['total_cost']:.6f} | {self.input_tokens} | {self.output_tokens} |"
-                )
+        # Create a simple markdown table with the information
+        cost_message = (
+            f"\n\n"
+            f"| **Model{model_info}** | Input Tokens | Output Tokens | Estimated Cost |\n"
+            f"|--------|--------|--------|--------|\n"
+            f"| {self.provider} | {self.input_tokens} | {self.output_tokens} | ${total_cost:.6f} |"
+        )
 
-            return cost_message
-
-        except Exception as e:
-            logger.warning(f"Error generating cost message: {e}")
-            # Return a simple token count if cost calculation fails
-            return f"\n\nToken usage: {self.input_tokens} input, {self.output_tokens} output tokens"
+        return cost_message

@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Tuple
 import google.generativeai as genai
 import openai
 
-from codesearch.usage import Usage
+from codesearch.simple_usage import Usage
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -112,8 +112,18 @@ def execute_search(prompt: str, config: Dict[str, Any]) -> Dict[str, Any]:
             response = model.generate_content(prompt)
             response_text = response.text
 
-            # Add tokens to usage tracker
-            usage_tracker.add_tokens(response)
+            # Instead of trying to extract tokens from the response, use a simple estimation
+            # Estimate: 1 token ≈ 4 characters for both input and output
+            estimated_prompt_tokens = len(prompt) // 4
+            estimated_completion_tokens = len(response_text) // 4
+
+            # Manually add token estimates
+            usage_tracker.input_tokens += estimated_prompt_tokens
+            usage_tracker.output_tokens += estimated_completion_tokens
+
+            logger.info(
+                f"Estimated tokens - input: {estimated_prompt_tokens}, output: {estimated_completion_tokens}"
+            )
 
         elif provider == "openai":
             # Check for API key in environment
@@ -132,8 +142,18 @@ def execute_search(prompt: str, config: Dict[str, Any]) -> Dict[str, Any]:
             )
             response_text = response.choices[0].message.content
 
-            # Add tokens to usage tracker
-            usage_tracker.add_tokens(response)
+            # Instead of trying to extract tokens from the response, use a simple estimation
+            # Estimate: 1 token ≈ 4 characters for both input and output
+            estimated_prompt_tokens = len(prompt) // 4
+            estimated_completion_tokens = len(response_text) // 4
+
+            # Manually add token estimates
+            usage_tracker.input_tokens += estimated_prompt_tokens
+            usage_tracker.output_tokens += estimated_completion_tokens
+
+            logger.info(
+                f"Estimated tokens - input: {estimated_prompt_tokens}, output: {estimated_completion_tokens}"
+            )
 
         # Get usage cost message
         cost_message = usage_tracker.get_cost_message()
