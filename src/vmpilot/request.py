@@ -200,6 +200,11 @@ async def send_request(
         elif "Request timed out" in error_message:
             logger.error(f"Request timed out: {e}")
             message = f"Request timed out: {str(e)}"
+            return (
+                # pyright: ignore
+                response,
+                collected_tool_calls,
+            )  # Save the work done so far
         elif (
             "Messages containing `tool_use` blocks must be followed by a user message with `tool_result` blocks"
             in error_message
