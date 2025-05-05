@@ -31,6 +31,9 @@ logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 
+import time
+
+
 def search_project_code(
     query: str,
     project_root: Optional[str] = None,
@@ -54,6 +57,7 @@ def search_project_code(
     Returns:
         Formatted search results as a string
     """
+    start_time = time.time()
     try:
         # Set default config path if not provided
         if config_path is None:
@@ -115,12 +119,21 @@ def search_project_code(
         result["query"] = query
         result["files_searched"] = [f[0] for f in files]
 
+        # Calculate elapsed time
+        elapsed_time = time.time() - start_time
+
+        # Add elapsed time to result
+        result["elapsed_time"] = elapsed_time
+
         # Format the output
         return format_output(result, output_format)
 
     except Exception as e:
         logger.error(f"Error in search_project_code: {str(e)}")
-        return f"Error searching code: {str(e)}"
+        elapsed_time = time.time() - start_time
+        return (
+            f"Error searching code: {str(e)} (elapsed time: {elapsed_time:.2f} seconds)"
+        )
 
 
 # Default configuration file path
@@ -223,6 +236,7 @@ def search_code(
     Returns:
         Formatted search results
     """
+    start_time = time.time()
     # Use project_root from arguments if provided, otherwise use base_dir from config
     if not project_root:
         project_root = config.get("general", {}).get("base_dir", ".")
@@ -301,7 +315,8 @@ def search_code(
             if verbose:
                 logger.info(f"Sending query to Gemini API...")
             model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash-8b",
+                model_name="gemini-2.0-flash-001",
+                # model_name="gemini-1.5-flash-8b",
                 generation_config={
                     "temperature": temperature,
                     "top_p": top_p,
@@ -325,11 +340,15 @@ def search_code(
         if verbose:
             logger.info(f"Response received from API.")
 
+        # Calculate elapsed time
+        elapsed_time = time.time() - start_time
+
         # Format results
         results = {
             "query": query,
             "response": response_text,
             "files_searched": [f[0] for f in files],
+            "elapsed_time": elapsed_time,
         }
 
         return format_output(results, output_format)
@@ -339,10 +358,14 @@ def search_code(
         if verbose:
             logger.info(f"Error from API: {error_msg}")
 
+        # Calculate elapsed time even for errors
+        elapsed_time = time.time() - start_time
+
         results = {
             "query": query,
             "error": error_msg,
             "files_searched": [f[0] for f in files],
+            "elapsed_time": elapsed_time,
         }
         return format_output(results, output_format)
 

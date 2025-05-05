@@ -306,6 +306,11 @@ def format_output(results: Dict[str, Any], format_type: str) -> str:
         output += "Files searched:\n"
         for file in results.get("files_searched", []):
             output += f"- {file}\n"
+
+        # Add elapsed time at the bottom
+        if "elapsed_time" in results:
+            output += f"\nTotal elapsed time: {results['elapsed_time']:.2f} seconds\n"
+
         return output
     elif format_type == "markdown":
         # Markdown format
@@ -320,6 +325,13 @@ def format_output(results: Dict[str, Any], format_type: str) -> str:
         output += "### Files Searched\n\n"
         for file in results.get("files_searched", []):
             output += f"- `{file}`\n"
+
+        # Add elapsed time at the bottom
+        if "elapsed_time" in results:
+            output += (
+                f"\n**Total elapsed time:** {results['elapsed_time']:.2f} seconds\n"
+            )
+
         return output
     else:
         # Default to JSON if format not recognized
