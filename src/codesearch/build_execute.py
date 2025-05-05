@@ -1,12 +1,35 @@
 """
 Functions for building search prompts and executing searches.
 These are used by the search.py module.
+
+Prompt Structure:
+----------------
+This module supports loading prompt templates from a markdown file (gemini_prompt.md).
+The file contains sections with code blocks that define different parts of the prompt:
+
+1. System Instruction: Used with Gemini cache to establish the assistant's role
+2. Complete Search Prompt Structure: Template for the full search prompt
+
+The prompt templates can contain placeholders:
+- ${QUERY}: Replaced with the user's search query
+- ${FILES}: Replaced with the formatted file contents
+
+To modify prompts:
+1. Edit the gemini_prompt.md file
+2. Test with benchmark queries from issue #76:
+   - "I want to support -m/--model in the cli."
+   - "I want to refactor vmpilot.py"
+   - "Reorganize our config so that it handles correctly defaults, cli args, and eliminating passing variables like temperature and model"
+
+If the markdown file is not available, fallback hardcoded prompts are used.
 """
 
 import logging
 import os
+import re
 import tempfile
-from typing import Any, Dict, List, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 import google.generativeai as genai
 import openai
@@ -17,14 +40,60 @@ from codesearch.usage import Usage
 # Set up logging
 logger = logging.getLogger(__name__)
 
+# Path to the prompt markdown file
+PROMPT_FILE_PATH = os.path.join(os.path.dirname(__file__), "gemini_prompt.md")
+
+
+def read_prompt_from_markdown(section_name: str) -> Optional[str]:
+    """
+    Read a specific section of the prompt from a markdown file.
+
+    Args:
+        section_name: The name of the section to extract (e.g., "System Instruction")
+
+    Returns:
+        The content of the code block in the specified section, or None if not found
+    """
+    try:
+        if not os.path.exists(PROMPT_FILE_PATH):
+            logger.warning(f"Prompt file not found: {PROMPT_FILE_PATH}")
+            return None
+
+        with open(PROMPT_FILE_PATH, "r") as file:
+            content = file.read()
+
+        # Look for the section header (## Section Name)
+        pattern = rf"## {re.escape(section_name)}\s*\n\s*```[^\n]*\n(.*?)```"
+        match = re.search(pattern, content, re.DOTALL)
+
+        if match:
+            return match.group(1).strip()
+        else:
+            logger.warning(f"Section '{section_name}' not found in {PROMPT_FILE_PATH}")
+            return None
+
+    except Exception as e:
+        logger.error(f"Error reading prompt file: {str(e)}")
+        return None
+
 
 def get_system_instruction() -> str:
     """
     Get the system instruction for the code search.
+    Loads from markdown file if available, otherwise uses default.
 
     Returns:
         The system instruction string
     """
+    # Try to load from markdown file
+    instruction = read_prompt_from_markdown("System Instruction")
+    logger.info(f"System instruction loaded: {instruction}")
+
+    if instruction:
+        return instruction
+
+    # Fallback to hardcoded prompt
+    logger.info("Using fallback system instruction")
     return """
 You are a code search assistant that helps developers find relevant information in their codebase.
 
@@ -49,6 +118,7 @@ def build_search_prompt(
 ) -> str:
     """
     Build a prompt for the LLM search based on the query and files.
+    Loads prompt template from markdown file if available, otherwise uses default.
 
     Args:
         files: List of (file_path, content) tuples
@@ -58,10 +128,17 @@ def build_search_prompt(
     Returns:
         The constructed prompt
     """
-    prompt = f"""
+    # Try to load from markdown file
+    prompt_template = read_prompt_from_markdown("Complete Search Prompt Structure")
+    logger.info(f"Prompt template loaded: {prompt_template}")
+
+    if not prompt_template:
+        logger.info("Using fallback search prompt template")
+        # Fallback to hardcoded prompt
+        prompt_template = """
 You are a code search assistant that helps developers find relevant information in their codebase.
 
-SEARCH QUERY: {query}
+SEARCH QUERY: ${QUERY}
 
 I'll provide you with the content of relevant files from the codebase.
 Your task is to analyze these files and provide a comprehensive answer to the search query.
@@ -72,14 +149,9 @@ For each relevant section of code, include:
 3. An explanation of how it relates to the query
 
 CODEBASE FILES:
-"""
 
-    for filepath, content in files:
-        prompt += f"\n--- FILE: {filepath} ---\n"
-        prompt += content
-        prompt += "\n--- END FILE ---\n"
+${FILES}
 
-    prompt += """
 INSTRUCTIONS:
 1. Focus on directly answering the search query with specific code references
 2. If the provided files don't contain relevant information, say so clearly
@@ -90,12 +162,24 @@ INSTRUCTIONS:
 Now, please provide a comprehensive answer to the search query based on the provided code files.
 """
 
+    # Format files content
+    files_content = ""
+    for filepath, content in files:
+        files_content += f"\n--- FILE: {filepath} ---\n"
+        files_content += content
+        files_content += "\n--- END FILE ---\n"
+
+    # Replace placeholders in the template
+    prompt = prompt_template.replace("${QUERY}", query)
+    prompt = prompt.replace("${FILES}", files_content)
+
     return prompt
 
 
 def prepare_files_for_cache(files: List[Tuple[str, str]]) -> str:
     """
     Prepare files for caching by combining them into a single content string.
+    Uses the same format as in the build_search_prompt function.
 
     Args:
         files: List of (file_path, content) tuples
@@ -170,6 +254,7 @@ def execute_search(
                 try:
                     # Get system instruction
                     system_instruction = get_system_instruction()
+                    logger.info(f"System instruction: {system_instruction}")
 
                     # Get or create cache with a 5-minute TTL
                     gemini_cache.get_or_create_cache(
@@ -185,7 +270,8 @@ def execute_search(
                     query = prompt[query_start:query_end].strip()
 
                     # Generate response using the cache
-                    full_query = f"SEARCH QUERY: {query}\n\nPlease provide a comprehensive answer to this search query based on the provided code files."
+                    full_query = f"SEARCH QUERY: {query}\n\nPlease provide a focused answer to this search query based on the provided code files."
+                    logger.info(f"Full query for cache: {full_query}")
                     response = gemini_cache.generate_from_cache(full_query)
 
                     if response is None:
