@@ -12,7 +12,7 @@ import google.generativeai as genai
 import openai
 
 from codesearch.gemini_cache import GeminiCache
-from codesearch.simple_usage import Usage
+from codesearch.usage import Usage
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -172,7 +172,7 @@ def execute_search(
                     system_instruction = get_system_instruction()
 
                     # Get or create cache with a 5-minute TTL
-                    cache = gemini_cache.get_or_create_cache(
+                    gemini_cache.get_or_create_cache(
                         model_name=model_name,
                         file_info=temp_file_path,
                         system_instruction=system_instruction,

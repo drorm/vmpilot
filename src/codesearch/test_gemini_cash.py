@@ -3,7 +3,6 @@ Test script for the GeminiCache class.
 Demonstrates cache creation and usage for code search.
 """
 
-import os
 import pathlib
 import time
 

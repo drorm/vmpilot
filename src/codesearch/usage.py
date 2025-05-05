@@ -143,9 +143,10 @@ class Usage:
                 # Provide reasonable default estimates
                 self.input_tokens += 500  # Default estimate
                 self.output_tokens += 200  # Default estimate
-            logger.debug(f"Adding tokens from message: {response_metadata}")
 
             # Anthropic format
+            response_metadata = getattr(message, "response_metadata", {})
+            logger.debug(f"Adding tokens from message: {response_metadata}")
             usage = response_metadata.get("usage", {})
             if not usage:
                 return
