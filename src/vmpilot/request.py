@@ -15,24 +15,23 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from langchain_core.runnables import Runnable
 
-
-def log_token_usage(message: Any) -> None:
-    """Log token usage and related metadata"""
-    response_metadata = getattr(message, "response_metadata", {})
-    usage = response_metadata.get("usage", {})
-
-    # if there's no usage data, return
-    if not usage:
-        return
-
-    # Log token usage in single line format
-    logger.info(
-        "TOKEN_USAGE: {'cache_creation_input_tokens': %d, 'cache_read_input_tokens': %d, 'input_tokens': %d, 'output_tokens': %d}",
-        usage.get("cache_creation_input_tokens", 0),
-        usage.get("cache_read_input_tokens", 0),
-        usage.get("input_tokens", 0),
-        usage.get("output_tokens", 0),
-    )
+"""
+Send a request to the agent and handle the response.
+This function is responsible for sending a request to the agent, processing the response,
+and handling any errors that may occur during the process.
+It uses the `Runnable` interface to send the request and receive the response.
+Args:
+    agent (Runnable): The agent to send the request to.
+    chat (Any): The chat object tracking the conversation.
+    exchange (Any): The exchange object for tracking the conversation.
+    recursion_limit (int): The recursion limit for the agent.
+    formatted_messages (List[Union[HumanMessage, AIMessage]]): The messages to send to the agent.
+    output_callback (Callable[[Dict[str, Any]], None]): Callback function for handling output.
+    tool_output_callback (Callable[[Dict[str, Any], str], None]): Callback function for handling tool output.
+    usage (Any): Usage object for tracking token usage.
+Returns:
+    Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]: A tuple containing the response and collected tool calls.
+"""
 
 
 async def send_request(
@@ -69,7 +68,6 @@ async def send_request(
 
                     # Log message receipt and usage for all message types
                     log_message_received(message)
-                    log_token_usage(message)
 
                     # Add tokens to usage tracker
                     usage.add_tokens(message)
