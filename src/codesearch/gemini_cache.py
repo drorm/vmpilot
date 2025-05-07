@@ -240,7 +240,7 @@ class GeminiCache:
         existing_cache = self.find_existing_cache()
 
         if existing_cache:
-            logger.info(f"Using existing cache: {existing_cache.name}")
+            logger.info(f"Using existing cache: {existing_cache}")
             self._current_cache = existing_cache
             self._current_model = self.get_model_from_cache(existing_cache)
             return existing_cache

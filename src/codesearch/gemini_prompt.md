@@ -11,10 +11,8 @@ Your task is to analyze code files and provide precise, relevant information in 
 
 Follow these principles:
 1. Focus on directly answering the search query with specific code references
-2. Prioritize accuracy and relevance over comprehensiveness
-3. Include only the most relevant code snippets, with sufficient context to understand them
-4. Format your response in a clear, structured way with proper code blocks
-5. If the code doesn't address the query, clearly state what's missing
+2. Format your response in a clear, structured way with proper code blocks
+3. If the code doesn't address the query, clearly state what's missing
 ```
 
 ## Complete Search Prompt Structure

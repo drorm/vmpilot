@@ -87,13 +87,13 @@ def get_system_instruction() -> str:
     """
     # Try to load from markdown file
     instruction = read_prompt_from_markdown("System Instruction")
-    logger.info(f"System instruction loaded: {instruction}")
+    logger.debug(f"System instruction loaded: {instruction}")
 
     if instruction:
         return instruction
 
     # Fallback to hardcoded prompt
-    logger.info("Using fallback system instruction")
+    logger.debug("Using fallback system instruction")
     return """
 You are a code search assistant that helps developers find relevant information in their codebase.
 
@@ -130,10 +130,10 @@ def build_search_prompt(
     """
     # Try to load from markdown file
     prompt_template = read_prompt_from_markdown("Complete Search Prompt Structure")
-    logger.info(f"Prompt template loaded: {prompt_template}")
+    logger.debug(f"Prompt template loaded: {prompt_template}")
 
     if not prompt_template:
-        logger.info("Using fallback search prompt template")
+        logger.debug("Using fallback search prompt template")
         # Fallback to hardcoded prompt
         prompt_template = """
 You are a code search assistant that helps developers find relevant information in their codebase.
