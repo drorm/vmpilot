@@ -58,62 +58,38 @@ class Usage:
         response_metadata = getattr(message, "response_metadata", {})
 
         usage_metadata = getattr(message, "usage_metadata", {})
-        # Message has OpenAI usage metadata? Also applies to Gemin and others
+        # Message has OpenAI usage metadata? Also applies to Gemini and others
         if usage_metadata:
-            logger.debug(f"Adding tokens from message: {usage_metadata}")
+            logger.debug(
+                f"Adding tokens from message: {usage_metadata} for model {response_metadata.get('model_name')}"
+            )
             # Store the model name if available
             if response_metadata.get("model_name"):
                 self.model_name = response_metadata["model_name"]
-            elif self.provider == Provider.GOOGLE and not self.model_name:
-                # For Gemini, if model_name wasn't provided in constructor or response_metadata,
+            else:
                 # try to get it from config
-                if Provider.GOOGLE in config.providers:
-                    logger.debug(f"Using default Gemini model: {self.model_name}")
-                    self.model_name = config.providers[Provider.GOOGLE].default_model
-                else:
-                    logger.warning(
-                        "Usage metadata found but no model name provided and not a Google provider."
-                    )
-                    return
+                self.model_name = config.providers[self.provider].default_model
 
             # Gemini/openai format
             # Handle cached tokens if available
             input_token_details = usage_metadata.get("input_token_details", {})
             if input_token_details:
                 self.cache_read_input_tokens = input_token_details.get("cache_read", 0)
-            self.output_tokens += usage_metadata.get("output_tokens", 0)
+                self.cache_creation_input_tokens += input_token_details.get(
+                    "cache_creation", 0
+                )
+            output_tokens = usage_metadata.get("output_tokens", 0)
+            self.output_tokens += output_tokens
             input_tokens = usage_metadata.get("input_tokens", 0)
             # Subtract cached tokens from output tokens since openai/gemini input tokens include cached tokens
             input_tokens -= self.cache_read_input_tokens
             self.input_tokens += input_tokens
             logger.info(
                 f"Added {self.model_name} tokens - input: {input_tokens}, "
-                f"output: {self.output_tokens}, cached: {self.cache_read_input_tokens}"
+                f"output: {output_tokens}, cached: {self.cache_read_input_tokens}"
+                f" cache creation: {self.cache_creation_input_tokens}"
             )
 
-        else:
-            response_metadata = getattr(message, "response_metadata", {})
-            logger.debug(f"Adding tokens from message: {response_metadata}")
-
-            # Anthropic format
-            usage = response_metadata.get("usage", {})
-            if not usage:
-                return
-
-            # Add the tokens to our running totals (Anthropic format)
-            self.cache_creation_input_tokens += usage.get(
-                "cache_creation_input_tokens", 0
-            )
-            self.cache_read_input_tokens += usage.get("cache_read_input_tokens", 0)
-            self.input_tokens += usage.get("input_tokens", 0)
-            self.output_tokens += usage.get("output_tokens", 0)
-
-            # Log successful token addition
-            logger.info(
-                f"Added {self.model_name} tokens - input: {usage_metadata.get('input_tokens', 0)}, "
-                f"output: {usage_metadata.get('output_tokens', 0)}, "
-                f"cached: {self.cache_read_input_tokens}, "
-            )
         return
 
     def get_totals(self) -> Dict[str, int]:
