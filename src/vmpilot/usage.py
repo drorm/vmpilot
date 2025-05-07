@@ -4,6 +4,8 @@ Token usage tracking for VMPilot.
 This module provides a Usage class to track token usage across an entire exchange
 between the user and the AI assistant. Supports token tracking and cost calculation
 for Anthropic, OpenAI, and Google models.
+
+For OpenAI and Gemini models, token usage is tracked using metadata from the response.
 """
 
 import logging
@@ -57,6 +59,41 @@ class Usage:
 
         response_metadata = getattr(message, "response_metadata", {})
 
+        # Check for token usage in response_metadata (OpenAI format)
+        if "token_usage" in response_metadata:
+            token_usage = response_metadata["token_usage"]
+            logger.debug(
+                f"Found OpenAI token usage in response metadata: {token_usage}"
+            )
+
+            # Store the model name if available
+            if response_metadata.get("model_name"):
+                self.model_name = response_metadata["model_name"]
+            else:
+                # try to get it from config
+                self.model_name = config.providers[self.provider].default_model
+
+            # Extract token usage
+            prompt_tokens = token_usage.get("prompt_tokens", 0)
+            completion_tokens = token_usage.get("completion_tokens", 0)
+
+            # Handle cached tokens if available
+            prompt_tokens_details = token_usage.get("prompt_tokens_details", {})
+            cached_tokens = prompt_tokens_details.get("cached_tokens", 0)
+
+            # Update counters
+            self.cache_read_input_tokens += cached_tokens
+            self.input_tokens += prompt_tokens - cached_tokens  # Subtract cached tokens
+            self.output_tokens += completion_tokens
+
+            logger.info(
+                f"Added {self.model_name} tokens - input: {prompt_tokens - cached_tokens}, "
+                f"output: {completion_tokens}, cached: {cached_tokens}"
+            )
+
+            return
+
+        # Check for traditional usage_metadata (used by some models)
         usage_metadata = getattr(message, "usage_metadata", {})
         # Message has OpenAI usage metadata? Also applies to Gemini and others
         if usage_metadata:
