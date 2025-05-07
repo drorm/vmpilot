@@ -166,10 +166,16 @@ async def send_request(
                                                     "content": item["output"],
                                                 }
                                             )
+                                elif isinstance(item, str):
+                                    # Handle string items in the content list (common with Gemini)
+                                    output_callback({"type": "text", "text": item})
                                 else:
+                                    # For any other type, convert to string and handle it
+                                    # This ensures we don't lose any content regardless of type
                                     logger.warning(
-                                        f"Unknown content item type: {type(item)}"
+                                        f"Converting content item of type {type(item)} to string"
                                     )
+                                    output_callback({"type": "text", "text": str(item)})
                     else:
                         logger.debug(
                             f"Unhandled message type: {type(message).__name__}"
