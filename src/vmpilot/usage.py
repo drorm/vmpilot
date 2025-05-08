@@ -93,11 +93,11 @@ class Usage:
 
             return
 
-        # Check for traditional usage_metadata (used by some models)
+        # Check for usage_metadata (used by Anthropic and others)
         usage_metadata = getattr(message, "usage_metadata", {})
         # Message has OpenAI usage metadata? Also applies to Gemini and others
         if usage_metadata:
-            logger.debug(
+            logger.info(
                 f"Adding tokens from message: {usage_metadata} for model {response_metadata.get('model_name')}"
             )
             # Store the model name if available
@@ -111,20 +111,22 @@ class Usage:
             # Handle cached tokens if available
             input_token_details = usage_metadata.get("input_token_details", {})
             if input_token_details:
-                self.cache_read_input_tokens = input_token_details.get("cache_read", 0)
-                self.cache_creation_input_tokens += input_token_details.get(
+                cache_read_input_tokens = input_token_details.get("cache_read", 0)
+                self.cache_read_input_tokens += cache_read_input_tokens
+                cache_creation_input_tokens = input_token_details.get(
                     "cache_creation", 0
                 )
+                self.cache_creation_input_tokens += cache_creation_input_tokens
             output_tokens = usage_metadata.get("output_tokens", 0)
             self.output_tokens += output_tokens
             input_tokens = usage_metadata.get("input_tokens", 0)
-            # Subtract cached tokens from output tokens since openai/gemini input tokens include cached tokens
-            input_tokens -= self.cache_read_input_tokens
+            # Subtract cached tokens input output tokens since input tokens include cached tokens
+            input_tokens -= cache_read_input_tokens
             self.input_tokens += input_tokens
             logger.info(
-                f"Added {self.model_name} tokens - input: {input_tokens}, "
-                f"output: {output_tokens}, cached: {self.cache_read_input_tokens}"
-                f" cache creation: {self.cache_creation_input_tokens}"
+                f"Added {self.model_name} tokens input: {input_tokens}, "
+                f"output: {output_tokens}, cached: {cache_read_input_tokens}"
+                f" cache creation: {cache_creation_input_tokens}"
             )
 
         return
