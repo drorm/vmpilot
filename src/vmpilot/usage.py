@@ -17,6 +17,37 @@ from vmpilot.config import Provider, config
 
 logger = logging.getLogger(__name__)
 
+from vmpilot.db.crud import ConversationRepository
+
+
+def store_cost_in_db(chat_id: str, request: str, cost: dict, start: str, end: str):
+    """
+    Stores cost and exchange info in the exchanges table.
+    """
+    # Ensure request is a string
+    if isinstance(request, list):
+        request = " ".join(str(x) for x in request)
+    elif not isinstance(request, str):
+        request = str(request)
+    if len(request) > 500:
+        request = request[:500] + "..."
+
+    # Round all float values in the cost dict to 6 decimal places
+    def round_floats(obj):
+        if isinstance(obj, dict):
+            return {k: round_floats(v) for k, v in obj.items()}
+        elif isinstance(obj, float):
+            return round(obj, 6)
+        return obj
+
+    cost = round_floats(cost)
+
+    repo = ConversationRepository()
+    try:
+        repo.create_exchange(chat_id, request, cost, start, end)
+    except Exception as e:
+        logger.error(f"Failed to store cost in DB: {e}")
+
 
 class Usage:
     """Track token usage throughout an exchange."""
