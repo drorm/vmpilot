@@ -81,11 +81,48 @@ def initialize_db() -> None:
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Execute each SQL statement in the schema
+    # Execute each SQL statement in the schema using executescript
+    # which allows multiple statements to be executed at once
     for sql in SCHEMA_SQL:
-        cursor.execute(sql)
+        cursor.executescript(sql)
 
     connection.commit()
+
+
+def update_schema() -> None:
+    """
+    Update the database schema for existing databases.
+
+    This function checks for missing tables and creates them if needed.
+    It should be called during application startup to ensure the database
+    schema is up to date.
+    """
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Check if exchanges table exists
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='exchanges'"
+        )
+        if not cursor.fetchone():
+            # Create exchanges table if it doesn't exist
+            cursor.executescript(
+                """
+            CREATE TABLE IF NOT EXISTS exchanges (
+                exchange_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id TEXT NOT NULL,
+                request TEXT,
+                cost JSON,
+                start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                end TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+            )
+            connection.commit()
+            logger.info("Created exchanges table in existing database")
+    except Exception as e:
+        logger.error(f"Error updating database schema: {e}")
 
 
 def get_db_connection() -> sqlite3.Connection:
@@ -111,8 +148,11 @@ def get_db_connection() -> sqlite3.Connection:
         )
         _db_connection.row_factory = sqlite3.Row
 
-        # Initialize database if it's a new database or doesn't have tables
+        # Initialize database if it's a new database
         if not db_exists:
             initialize_db()
+        else:
+            # Update schema for existing database
+            update_schema()
 
     return _db_connection

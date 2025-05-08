@@ -8,6 +8,7 @@ storing and retrieving chats and messages in a SQLite database.
 import json
 import logging
 import os
+import traceback
 from typing import Dict, List, Optional, Tuple
 
 from langchain_core.messages import BaseMessage
@@ -23,6 +24,47 @@ class ConversationRepository:
     def __init__(self):
         """Initialize the repository with a database connection."""
         self.conn = get_db_connection()
+
+    def create_exchange(
+        self,
+        chat_id: str,
+        request: str,
+        cost: dict,
+        start: str,
+        end: str,
+    ) -> None:
+        """
+        Insert a new exchange row into the exchanges table.
+
+        Args:
+            chat_id: The chat/thread ID.
+            request: The truncated user request.
+            cost: Cost info (as dict, will be serialized to JSON).
+            start: Start timestamp (ISO string).
+            end: End timestamp (ISO string).
+        """
+        import json
+
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO exchanges (chat_id, request, cost, start, end)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    chat_id,
+                    request,
+                    json.dumps(cost),
+                    start,
+                    end,
+                ),
+            )
+            self.conn.commit()
+            logger.debug(f"Inserted exchange for chat_id={chat_id}")
+        except Exception as e:
+            logger.error(f"Failed to insert exchange: {e}")
+            traceback.print_exc()
 
     def create_chat(self, chat_id: str, initial_request: Optional[str] = None) -> None:
         """
