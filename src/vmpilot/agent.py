@@ -318,16 +318,6 @@ async def process_messages(
         # In case of error or no response, still try to save what we have
         exchange.complete(AIMessage(content="Error occurred during processing"), [])
 
-    # Log the total token usage and cost for this exchange
-    usage.get_cost_summary()
-
-    # Get cost message from usage module - it will handle display settings internally
-    cost_message = usage.get_cost_message()
-    if cost_message:  # Only output if there's a message to display
-        logger.debug(cost_message)
-        # append cost message to the Messages
-        output_callback({"type": "text", "text": cost_message})
-
     # --- Store exchange and cost data in DB ---
     try:
         from vmpilot.usage import store_cost_in_db
@@ -343,5 +333,15 @@ async def process_messages(
         store_cost_in_db(chat_id, request, cost_dict, start, end)
     except Exception as e:
         logger.error(f"Could not persist exchange/cost info: {e}")
+
+    # Log the total token usage and cost for this exchange
+    usage.get_cost_summary()
+
+    # Get cost message from usage module - it will handle display settings internally
+    cost_message = usage.get_cost_message(chat_id=exchange.chat_id)
+    if cost_message:  # Only output if there's a message to display
+        logger.debug(cost_message)
+        # append cost message to the Messages
+        output_callback({"type": "text", "text": cost_message})
 
     return messages

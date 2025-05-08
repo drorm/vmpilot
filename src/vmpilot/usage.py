@@ -277,7 +277,7 @@ class Usage:
 
         return self._cached_totals, self._cached_costs
 
-    def get_cost_message(self) -> str:
+    def get_cost_message(self, chat_id: str = None) -> str:
         """
         Generate a formatted cost message string based on config settings.
 
@@ -285,6 +285,7 @@ class Usage:
             A formatted string with cost breakdown according to pricing_display setting
         """
         from vmpilot.config import PricingDisplay, config
+        from vmpilot.db.crud import ConversationRepository
 
         pricing_display = config.get_pricing_display()
 
@@ -293,14 +294,24 @@ class Usage:
             return ""
 
         _, cost = self.get_cost_summary()
-
         # Add model name to the cost summary if available
         model_info = f" ({self.model_name})" if self.model_name else ""
+
+        accumulated_cost_str = ""
+        if chat_id:
+            try:
+                repo = ConversationRepository()
+                acc_cost = repo.get_accumulated_cost(chat_id)
+                accumulated_cost_str = f"\n**Accumulated Cost:** `${acc_cost:.6f}`"
+            except Exception as e:
+                accumulated_cost_str = "\n**Accumulated Cost:** N/A"
 
         # Format based on the display setting
         if pricing_display == PricingDisplay.TOTAL_ONLY:
             cost_message = (
-                f"\n\n" f"**Cost Summary{model_info}:** `${cost['total_cost']:.6f}`"
+                f"\n\n"
+                f"**Cost Summary{model_info}:** `${cost['total_cost']:.6f}`"
+                f"{accumulated_cost_str}"
             )
         else:  # Detailed display
             # For OpenAI and Gemini, we might not have cache creation tokens
@@ -310,6 +321,7 @@ class Usage:
                     f"| **Total** | Input | Output | Cache Read |\n"
                     f"|--------|--------|--------|----------|\n"
                     f"| ${cost['total_cost']:.6f} | ${cost['input_cost']:.6f} | ${cost['output_cost']:.6f} | ${cost['cache_read_cost']:.6f} |"
+                    f"{accumulated_cost_str}"
                 )
             else:  # Anthropic format
                 cost_message = (
@@ -317,6 +329,7 @@ class Usage:
                     f"| **Total** | Cache Creation | Cache Read | Output |\n"
                     f"|--------|----------------|------------|----------|\n"
                     f"| ${cost['total_cost']:.6f} | ${cost['cache_creation_cost']:.6f} | ${cost['cache_read_cost']:.6f} | ${cost['output_cost']:.6f} |"
+                    f"{accumulated_cost_str}"
                 )
 
         return cost_message

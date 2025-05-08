@@ -308,3 +308,24 @@ class ConversationRepository:
 
         self.conn.commit()
         logger.debug(f"Cleared conversation state from database for chat_id {chat_id}")
+
+    def get_accumulated_cost(self, chat_id: str) -> float:
+        """
+        Returns the sum of total_cost for all exchanges for a given chat_id.
+        """
+        import json
+
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute("SELECT cost FROM exchanges WHERE chat_id = ?", (chat_id,))
+            total = 0.0
+            for row in cursor.fetchall():
+                try:
+                    cost_data = json.loads(row[0])
+                    total += float(cost_data.get("total_cost", 0.0))
+                except Exception as e:
+                    logger.warning(f"Could not parse cost row: {e}")
+            return round(total, 6)
+        except Exception as e:
+            logger.error(f"Failed to calculate accumulated cost: {e}")
+            return 0.0
