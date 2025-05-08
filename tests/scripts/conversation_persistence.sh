@@ -96,33 +96,46 @@ echo -e "\033[1;32m✓\033[0m Third command validated successfully"
 echo -e "\n[Step 4] Validating token usage and caching effectiveness..."
 
 # Extract token usage information from each log file
-# Get the last TOKEN_USAGE entry from each log (in case there are multiple)
-FIRST_TOKEN_USAGE=$(grep "TOKEN_USAGE" "$FIRST_OUTPUT_LOG" | tail -1)
-SECOND_TOKEN_USAGE=$(grep "TOKEN_USAGE" "$SECOND_OUTPUT_LOG" | tail -1)
-THIRD_TOKEN_USAGE=$(grep "TOKEN_USAGE" "$THIRD_OUTPUT_LOG" | tail -1)
+# Get the relevant token usage entries from each log
+FIRST_USAGE_ENTRIES=$(grep -E "vmpilot.usage.*tokens" "$FIRST_OUTPUT_LOG")
+SECOND_USAGE_ENTRIES=$(grep -E "vmpilot.usage.*tokens" "$SECOND_OUTPUT_LOG")
+THIRD_USAGE_ENTRIES=$(grep -E "vmpilot.usage.*tokens" "$THIRD_OUTPUT_LOG")
 
 # Check if we have token usage information for all commands
-if [ -z "$FIRST_TOKEN_USAGE" ] || [ -z "$SECOND_TOKEN_USAGE" ] || [ -z "$THIRD_TOKEN_USAGE" ]; then
+if [ -z "$FIRST_USAGE_ENTRIES" ] || [ -z "$SECOND_USAGE_ENTRIES" ] || [ -z "$THIRD_USAGE_ENTRIES" ]; then
     echo -e "\033[1;31mERROR:\033[0m Missing token usage information"
-    echo -e "First command token usage: $FIRST_TOKEN_USAGE"
-    echo -e "Second command token usage: $SECOND_TOKEN_USAGE"
-    echo -e "Third command token usage: $THIRD_TOKEN_USAGE"
+    echo -e "First command token usage entries: $FIRST_USAGE_ENTRIES"
+    echo -e "Second command token usage entries: $SECOND_USAGE_ENTRIES"
+    echo -e "Third command token usage entries: $THIRD_USAGE_ENTRIES"
     exit 1
 fi
 
-echo -e "Token usage entries:"
-echo -e "First command: $FIRST_TOKEN_USAGE"
-echo -e "Second command: $SECOND_TOKEN_USAGE"
-echo -e "Third command: $THIRD_TOKEN_USAGE"
+echo -e "Token usage entries found for all commands"
 
-# Extract cache read tokens from the second command
-SECOND_CACHE_READ=$(echo "$SECOND_TOKEN_USAGE" | grep -o "cache_read_input_tokens': [0-9]\+" | grep -o "[0-9]\+")
+# Extract cache read tokens from the usage entries
+FIRST_CACHE_READ=$(echo "$FIRST_USAGE_ENTRIES" | grep -o "cached: [0-9]\+" | grep -o "[0-9]\+" | tail -1)
+# If no cache read found, set to 0
+FIRST_CACHE_READ=${FIRST_CACHE_READ:-0}
+
+# Extract cache creation tokens from the usage entries
+FIRST_CACHE_CREATION=$(echo "$FIRST_USAGE_ENTRIES" | grep -o "cache creation: [0-9]\+" | grep -o "[0-9]\+" | tail -1)
+# If no cache creation found, set to 0
+FIRST_CACHE_CREATION=${FIRST_CACHE_CREATION:-0}
+
+# Extract second command cache values
+SECOND_CACHE_READ=$(echo "$SECOND_USAGE_ENTRIES" | grep -o "cached: [0-9]\+" | grep -o "[0-9]\+" | tail -1)
+# If no cache read found, set to 0
+SECOND_CACHE_READ=${SECOND_CACHE_READ:-0}
+
 # Extract cache creation tokens from the second command
-SECOND_CACHE_CREATION=$(echo "$SECOND_TOKEN_USAGE" | grep -o "cache_creation_input_tokens': [0-9]\+" | grep -o "[0-9]\+")
+SECOND_CACHE_CREATION=$(echo "$SECOND_USAGE_ENTRIES" | grep -o "cache creation: [0-9]\+" | grep -o "[0-9]\+" | tail -1)
+# If no cache creation found, set to 0
+SECOND_CACHE_CREATION=${SECOND_CACHE_CREATION:-0}
 
-# Extract first command cache values for reference
-FIRST_CACHE_READ=$(echo "$FIRST_TOKEN_USAGE" | grep -o "cache_read_input_tokens': [0-9]\+" | grep -o "[0-9]\+")
-FIRST_CACHE_CREATION=$(echo "$FIRST_TOKEN_USAGE" | grep -o "cache_creation_input_tokens': [0-9]\+" | grep -o "[0-9]\+")
+# Extract third command cache read
+THIRD_CACHE_READ=$(echo "$THIRD_USAGE_ENTRIES" | grep -o "cached: [0-9]\+" | grep -o "[0-9]\+" | tail -1)
+# If no cache read found, set to 0
+THIRD_CACHE_READ=${THIRD_CACHE_READ:-0}
 
 echo -e "\nCache token values:"
 echo -e "First command - Cache read: $FIRST_CACHE_READ, Cache creation: $FIRST_CACHE_CREATION"
@@ -145,13 +158,10 @@ if [ -z "$SECOND_CACHE_CREATION" ] || [ "$SECOND_CACHE_CREATION" -eq 0 ]; then
     exit 1
 fi
 
-# Extract cache read tokens from the third command
-THIRD_CACHE_READ=$(echo "$THIRD_TOKEN_USAGE" | grep -o "cache_read_input_tokens': [0-9]\+" | grep -o "[0-9]\+")
-
 # Validation 3: Third command should have positive cache read tokens
 if [ -z "$THIRD_CACHE_READ" ] || [ "$THIRD_CACHE_READ" -eq 0 ]; then
     echo -e "\033[1;31mERROR:\033[0m Cache read tokens not found in third command"
-    echo -e "Expected positive value for cache_read_input_tokens in third command"
+    echo -e "Expected positive value for cached tokens in third command"
     exit 1
 fi
 
