@@ -14,7 +14,7 @@ import traceback
 from typing import Dict
 
 from vmpilot.agent import APIProvider, process_messages
-from vmpilot.config import TOOL_OUTPUT_LINES
+from vmpilot.config import MAX_TOKENS, RECURSION_LIMIT, TEMPERATURE, TOOL_OUTPUT_LINES
 
 logger = logging.getLogger(__name__)
 
@@ -101,22 +101,10 @@ def generate_responses(
                     output_callback=output_callback,
                     tool_output_callback=tool_callback,
                     api_key=pipeline_self._api_key,
-                    max_tokens=(
-                        pipeline_self.MAX_TOKENS
-                        if hasattr(pipeline_self, "MAX_TOKENS")
-                        else 1024
-                    ),
-                    temperature=(
-                        pipeline_self.TEMPERATURE
-                        if hasattr(pipeline_self, "TEMPERATURE")
-                        else 0.7
-                    ),
+                    max_tokens=MAX_TOKENS,
+                    temperature=TEMPERATURE,
                     disable_logging=body.get("disable_logging", False),
-                    recursion_limit=(
-                        pipeline_self.RECURSION_LIMIT
-                        if hasattr(pipeline_self, "RECURSION_LIMIT")
-                        else 3
-                    ),
+                    recursion_limit=RECURSION_LIMIT,
                 )
             )
         except Exception as e:
