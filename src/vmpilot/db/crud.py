@@ -329,3 +329,38 @@ class ConversationRepository:
         except Exception as e:
             logger.error(f"Failed to calculate accumulated cost: {e}")
             return 0.0
+
+    def get_accumulated_cost_breakdown(self, chat_id: str) -> dict:
+        """
+        Returns a dict of summed cost fields across all exchanges for a given chat_id.
+        Fields include: input_cost, output_cost, cache_read_cost,
+        cache_creation_cost, total_cost (matching per-exchange breakdown).
+        Missing fields are treated as 0.0.
+        """
+        import json
+
+        fields = [
+            "input_cost",
+            "output_cost",
+            "cache_read_cost",
+            "cache_creation_cost",
+            "total_cost",
+        ]
+        sums = {field: 0.0 for field in fields}
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute("SELECT cost FROM exchanges WHERE chat_id = ?", (chat_id,))
+            for row in cursor.fetchall():
+                try:
+                    cost_data = json.loads(row[0])
+                    for field in fields:
+                        sums[field] += float(cost_data.get(field, 0.0))
+                except Exception as e:
+                    logger.warning(f"Could not parse cost row: {e}")
+            # Round all floats to 6 places
+            for k in sums:
+                sums[k] = round(sums[k], 6)
+            return sums
+        except Exception as e:
+            logger.error(f"Failed to calculate accumulated cost breakdown: {e}")
+            return {field: 0.0 for field in fields}

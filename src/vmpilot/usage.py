@@ -297,17 +297,33 @@ class Usage:
         # Add model name to the cost summary if available
         model_info = f" ({self.model_name})" if self.model_name else ""
 
-        accumulated_cost_str = ""
+        accumulated_cost_table = ""
         if chat_id:
             try:
                 repo = ConversationRepository()
-                acc_cost = repo.get_accumulated_cost(chat_id)
-                accumulated_cost_str = f"\n**Accumulated Cost:** `${acc_cost:.6f}`"
+                acc_breakdown = repo.get_accumulated_cost_breakdown(chat_id)
+                # Format as markdown table matching provider style
+                if self.provider in [Provider.OPENAI, Provider.GOOGLE]:
+                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.6f} | ${acc_breakdown['input_cost']:.6f} | ${acc_breakdown['output_cost']:.6f} | ${acc_breakdown['cache_read_cost']:.6f} |"
+                else:  # Anthropic
+                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.6f} | ${acc_breakdown['cache_creation_cost']:.6f} | ${acc_breakdown['cache_read_cost']:.6f} | ${acc_breakdown['output_cost']:.6f} |"
             except Exception as e:
-                accumulated_cost_str = "\n**Accumulated Cost:** N/A"
+                accumulated_cost_table = "\n**Accumulated Cost Breakdown:** N/A"
 
         # Format based on the display setting
         if pricing_display == PricingDisplay.TOTAL_ONLY:
+            acc_cost = None
+            if chat_id:
+                try:
+                    repo = ConversationRepository()
+                    acc_cost = repo.get_accumulated_cost(chat_id)
+                except Exception as e:
+                    acc_cost = None
+            accumulated_cost_str = (
+                f"\n**Accumulated Cost:** `${acc_cost:.6f}`"
+                if acc_cost is not None
+                else "\n**Accumulated Cost:** N/A"
+            )
             cost_message = (
                 f"\n\n"
                 f"**Cost Summary{model_info}:** `${cost['total_cost']:.6f}`"
@@ -318,18 +334,18 @@ class Usage:
             if self.provider in [Provider.OPENAI, Provider.GOOGLE]:
                 cost_message = (
                     f"\n\n"
-                    f"| **Total** | Input | Output | Cache Read |\n"
-                    f"|--------|--------|--------|----------|\n"
-                    f"| ${cost['total_cost']:.6f} | ${cost['input_cost']:.6f} | ${cost['output_cost']:.6f} | ${cost['cache_read_cost']:.6f} |"
-                    f"{accumulated_cost_str}"
+                    f"| Request | **Total** | Input | Output | Cache Read |\n"
+                    f"|--------|--------|--------|----------|----------|\n"
+                    f"| Current |  ${cost['total_cost']:.6f} | ${cost['input_cost']:.6f} | ${cost['output_cost']:.6f} | ${cost['cache_read_cost']:.6f} |"
+                    f"{accumulated_cost_table}"
                 )
             else:  # Anthropic format
                 cost_message = (
                     f"\n\n"
-                    f"| **Total** | Cache Creation | Cache Read | Output |\n"
-                    f"|--------|----------------|------------|----------|\n"
-                    f"| ${cost['total_cost']:.6f} | ${cost['cache_creation_cost']:.6f} | ${cost['cache_read_cost']:.6f} | ${cost['output_cost']:.6f} |"
-                    f"{accumulated_cost_str}"
+                    f"| Request | **Total** | Cache Creation | Cache Read | Output |\n"
+                    f"|--------|----------------|------------|----------|----------|\n"
+                    f"| Current |  ${cost['total_cost']:.6f} | ${cost['cache_creation_cost']:.6f} | ${cost['cache_read_cost']:.6f} | ${cost['output_cost']:.6f} |"
+                    f"{accumulated_cost_table}"
                 )
 
         return cost_message
