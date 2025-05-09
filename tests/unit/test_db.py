@@ -56,7 +56,7 @@ class TestDatabaseConnection(unittest.TestCase):
         # Execute the schema to initialize tables directly
         for sql in SCHEMA_SQL:
             print(f"Executing SQL: {sql[:30]}...")
-            cursor.execute(sql)
+            cursor.executescript(sql)
         conn.commit()
         print(f"Database created at {self.db_path}")
 
@@ -104,7 +104,7 @@ class TestConversationRepository(unittest.TestCase):
         # Create the schema
         cursor = self.conn.cursor()
         for sql in SCHEMA_SQL:
-            cursor.execute(sql)
+            cursor.executescript(sql)
         self.conn.commit()
 
         # Create a repository with the in-memory connection
