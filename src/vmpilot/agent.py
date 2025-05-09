@@ -320,8 +320,6 @@ async def process_messages(
 
     # --- Store exchange and cost data in DB ---
     try:
-        from vmpilot.usage import store_cost_in_db
-
         # Prepare values
         chat_id = exchange.chat_id
         request = getattr(exchange.user_message, "content", str(exchange.user_message))
@@ -330,7 +328,7 @@ async def process_messages(
         _, cost_dict = usage.get_cost_summary()
         start = exchange.started_at.isoformat()
         end = exchange.completed_at.isoformat() if exchange.completed_at else start
-        store_cost_in_db(chat_id, model, request, cost_dict, start, end)
+        usage.store_cost_in_db(chat_id, model, request, cost_dict, start, end)
     except Exception as e:
         logger.error(f"Could not persist exchange/cost info: {e}")
 
