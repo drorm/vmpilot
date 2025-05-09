@@ -11,8 +11,8 @@ class StreamContentFilter(logging.Filter):
             # Filter out 'stream_content:Generator:' messages
             if "stream_content:Generator:" in message:
                 return False
-            # Filter out 'stream:true:<generator object Pipeline.pipe.<locals>.generate_responses' messages
-            if "stream:true:<generator object Pipeline.pipe" in message:
+            # Filter out 'stream:true:<generator object' messages from pipelines main.py
+            if "stream:true:<generator object" in message:
                 return False
         return True
 

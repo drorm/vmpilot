@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 
 from vmpilot.config import google_search_config
 
+# Hide Google API client message: googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 

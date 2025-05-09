@@ -256,7 +256,7 @@ class Usage:
         # Calculate total cost
         total_cost = input_cost + output_cost + cache_creation_cost + cache_read_cost
 
-        logger.info("Calculated costs using config pricing")
+        logger.warning(f"Calculated costs using config pricing for {self.model_name}")
         return {
             "input_cost": input_cost,
             "output_cost": output_cost,
