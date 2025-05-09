@@ -27,6 +27,7 @@ class ConversationRepository:
 
     def create_exchange(
         self,
+        model: str,
         chat_id: str,
         request: str,
         cost: dict,
@@ -49,11 +50,12 @@ class ConversationRepository:
         try:
             cursor.execute(
                 """
-                INSERT INTO exchanges (chat_id, request, cost, start, end)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO exchanges (chat_id, model, request, cost, start, end)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
                     chat_id,
+                    model,
                     request,
                     json.dumps(cost),
                     start,
@@ -103,8 +105,8 @@ class ConversationRepository:
         cursor.execute(
             """
             INSERT OR REPLACE INTO chats
-            (chat_id, initial_request, project_root, messages, cache_info, updated_at)
-            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            (chat_id, model, initial_request, project_root, messages, cache_info, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             """,
             (chat_id, initial_request, project_root, empty_messages, empty_cache_info),
         )

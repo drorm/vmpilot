@@ -112,6 +112,7 @@ def update_schema() -> None:
             CREATE TABLE IF NOT EXISTS exchanges (
                 exchange_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 chat_id TEXT NOT NULL,
+                model TEXT NOT NULL,               -- Model used for the exchange
                 request TEXT,
                 cost JSON,
                 start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

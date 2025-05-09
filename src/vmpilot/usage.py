@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 from vmpilot.db.crud import ConversationRepository
 
 
-def store_cost_in_db(chat_id: str, request: str, cost: dict, start: str, end: str):
+def store_cost_in_db(
+    chat_id: str, model: str, request: str, cost: dict, start: str, end: str
+):
     """
     Stores cost and exchange info in the exchanges table.
     """
@@ -44,7 +46,7 @@ def store_cost_in_db(chat_id: str, request: str, cost: dict, start: str, end: st
 
     repo = ConversationRepository()
     try:
-        repo.create_exchange(chat_id, request, cost, start, end)
+        repo.create_exchange(chat_id, model, request, cost, start, end)
     except Exception as e:
         logger.error(f"Failed to store cost in DB: {e}")
 

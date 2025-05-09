@@ -21,6 +21,7 @@ SCHEMA_SQL = [
     CREATE TABLE IF NOT EXISTS exchanges (
         exchange_id INTEGER PRIMARY KEY AUTOINCREMENT, -- Unique identifier for each exchange
         chat_id TEXT NOT NULL,             -- Foreign key to chats table
+        model TEXT NOT NULL,               -- Model used for the exchange
         request TEXT,                      -- Truncated user request
         cost JSON,                         -- JSON serialized cost information
         start TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Start time of the exchange
