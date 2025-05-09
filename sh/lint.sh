@@ -11,17 +11,21 @@ echo "Running linting checks..."
 
 # Run black check
 echo "Running black check..."
-python3 -m black .
+python3 -m black --check .
 if [ $? -ne 0 ]; then
-    echo "Error: Black formatting check failed."
+    echo 'Black found files to reformat. Formatting them now...'
+    python3 -m black .
+    echo 'Please review and add the changes, then commit again.'
     exit 1
 fi
 
 # Run isort check
 echo "Running isort check..."
-python3 -m isort .
+python3 -m isort --check-only .
 if [ $? -ne 0 ]; then
-    echo "Error: Import sorting check failed."
+    echo 'Isort found files to reformat. Formatting them now...'
+    python3 -m isort .
+    echo 'Please review and add the changes, then commit again.'
     exit 1
 fi
 
