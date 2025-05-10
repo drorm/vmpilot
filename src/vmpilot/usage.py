@@ -246,7 +246,13 @@ class Usage:
         }
 
     def store_cost_in_db(
-        self, chat_id: str, model: str, request: str, cost: dict, start: str, end: str
+        self,
+        chat_id: str,
+        model: str,
+        request: str,
+        cost: dict | float,
+        start: str,
+        end: str,
     ):
         """
         Stores cost and exchange info in the exchanges table.
@@ -267,7 +273,8 @@ class Usage:
                 return round(obj, 6)
             return obj
 
-        cost = round_floats(cost)
+        if isinstance(cost, dict):
+            cost = round_floats(cost)
 
         repo = ConversationRepository()
         try:
@@ -289,7 +296,7 @@ class Usage:
 
         return self._cached_totals, self._cached_costs
 
-    def get_cost_message(self, chat_id: str = None) -> str:
+    def get_cost_message(self, chat_id: Optional[str] = None) -> str:
         """
         Generate a formatted cost message string based on config settings.
 
@@ -319,7 +326,7 @@ class Usage:
                     accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.6f} | ${acc_breakdown['input_cost']:.6f} | ${acc_breakdown['output_cost']:.6f} | ${acc_breakdown['cache_read_cost']:.6f} |"
                 else:  # Anthropic
                     accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.6f} | ${acc_breakdown['cache_creation_cost']:.6f} | ${acc_breakdown['cache_read_cost']:.6f} | ${acc_breakdown['output_cost']:.6f} |"
-            except Exception as e:
+            except Exception:
                 accumulated_cost_table = "\n**Accumulated Cost Breakdown:** N/A"
 
         # Format based on the display setting
@@ -329,7 +336,7 @@ class Usage:
                 try:
                     repo = ConversationRepository()
                     acc_cost = repo.get_accumulated_cost(chat_id)
-                except Exception as e:
+                except Exception:
                     acc_cost = None
             accumulated_cost_str = (
                 f"\n**Accumulated Cost:** `${acc_cost:.6f}`"
