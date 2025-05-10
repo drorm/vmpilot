@@ -15,6 +15,7 @@ nav:
     - Installation: installation.md
     - Configuration: configuration.md
     - Getting Started: getting-started.md
+    - Cost Tracking: cost-tracking.md
     - Using Open-WebUI: using-webui.md
     - Coding: coding.md
     - Git Tracking: git-tracking.md
