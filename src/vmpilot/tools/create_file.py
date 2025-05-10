@@ -55,7 +55,7 @@ class CreateFileTool(BaseTool):
                 raise FileExistsError(f"File already exists at: {path}")
 
             self._write_file(file_path, content)
-            return f"\n\n**Created {file_path}.**\n\n"
+            return f"\n\n**Created {file_path}**\n\n"
         except (FileError, FileExistsError, ValueError) as e:
             raise
         except Exception as e:
