@@ -157,7 +157,7 @@ class Usage:
         Returns:
             Dict with cost breakdown in dollars
         """
-        # If we have a model name, try to use litellm for pricing
+        # If we have a model name, use litellm for pricing
         if self.model_name:
             try:
                 model_pricing = model_cost.get(self.model_name)
@@ -210,6 +210,17 @@ class Usage:
                 logger.warning(
                     f"Error calculating cost with LiteLLM for {self.model_name}: {e}. Falling back to config pricing."
                 )
+
+        logger.error(
+            f"no pricing for model {self.model_name} as no LiteLLM pricing available."
+        )
+        return {
+            "input_cost": 0,
+            "output_cost": 0,
+            "cache_creation_cost": 0,
+            "cache_read_cost": 0,
+            "total_cost": 0,
+        }
 
         # Fallback to config pricing
         # Calculate costs (convert tokens to millions and multiply by price per million)
