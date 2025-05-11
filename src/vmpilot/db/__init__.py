@@ -11,12 +11,7 @@ import logging
 
 from vmpilot.config import config
 
-from .connection import (
-    close_db_connection,
-    get_db_connection,
-    initialize_db,
-    update_schema,
-)
+from .connection import close_db_connection, get_db_connection, initialize_db
 from .crud import ConversationRepository
 
 # Configure logging
@@ -27,9 +22,6 @@ try:
     if config.is_database_enabled():
         logger.debug("Initializing SQLite database for conversation persistence")
         initialize_db()
-        # Update schema for existing databases
-        update_schema()
-        logger.debug("Database initialization and schema update complete")
 
         # Register the database connection closure with atexit
         # This ensures the connection is closed when the program exits
@@ -44,7 +36,6 @@ except Exception as e:
 __all__ = [
     "get_db_connection",
     "initialize_db",
-    "update_schema",
     "close_db_connection",
     "ConversationRepository",
 ]

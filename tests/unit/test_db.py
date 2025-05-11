@@ -13,11 +13,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from alembic import command
+from alembic.config import Config
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from vmpilot.db.connection import get_db_connection, get_db_path, initialize_db
 from vmpilot.db.crud import ConversationRepository
-from vmpilot.db.models import SCHEMA_SQL
 
 
 class TestDatabaseConnection(unittest.TestCase):
@@ -53,11 +54,17 @@ class TestDatabaseConnection(unittest.TestCase):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        # Execute the schema to initialize tables directly
-        for sql in SCHEMA_SQL:
-            print(f"Executing SQL: {sql[:30]}...")
-            cursor.executescript(sql)
-        conn.commit()
+        # Run Alembic migrations to initialize tables
+        alembic_ini = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../src/vmpilot/db/alembic.ini")
+        )
+        migrations_dir = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../src/vmpilot/db/migrations")
+        )
+        alembic_cfg = Config(alembic_ini)
+        alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.db_path}")
+        alembic_cfg.set_main_option("script_location", migrations_dir)
+        command.upgrade(alembic_cfg, "head")
         print(f"Database created at {self.db_path}")
 
         # Verify that the database file was created
@@ -97,15 +104,19 @@ class TestConversationRepository(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.db_path = Path(self.temp_dir.name) / "test.db"
 
-        # Create a connection to the in-memory database
-        self.conn = sqlite3.connect(":memory:")
+        # Run Alembic migrations to initialize tables
+        alembic_ini = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../src/vmpilot/db/alembic.ini")
+        )
+        migrations_dir = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../src/vmpilot/db/migrations")
+        )
+        alembic_cfg = Config(alembic_ini)
+        self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
-
-        # Create the schema
-        cursor = self.conn.cursor()
-        for sql in SCHEMA_SQL:
-            cursor.executescript(sql)
-        self.conn.commit()
+        alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.db_path}")
+        alembic_cfg.set_main_option("script_location", migrations_dir)
+        command.upgrade(alembic_cfg, "head")
 
         # Create a repository with the in-memory connection
         self.repo = ConversationRepository()
