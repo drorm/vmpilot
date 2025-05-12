@@ -66,6 +66,18 @@ def setup_tools(llm=None):
             tools.append(shell_tool)
             tools.append(EditTool())  # for editing
             tools.append(CreateFileTool())  # for creating files
+            # Conditionally add Web Content tool if enabled
+            from vmpilot.config import web_fetch_config
+            from vmpilot.tools.web_content_tool import WebContentTool
+
+            if web_fetch_config.enabled:
+                try:
+                    web_tool = WebContentTool()
+                    tools.append(web_tool)
+                    logger.debug("Web Content Tool added to available tools")
+                except Exception as e:
+                    logger.error(f"Error creating Web Content Tool: {e}")
+                    logger.error("".join(traceback.format_tb(e.__traceback__)))
 
             # Conditionally add Google Search tool if enabled
             if is_google_search_enabled():

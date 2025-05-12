@@ -14,6 +14,24 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 
 
+# Web Fetch configuration class
+class WebFetchConfig(BaseModel):
+    """Configuration for Web Content Fetching"""
+
+    enabled: bool = Field(default=True)
+    max_lines: int = Field(default=100)
+
+    @classmethod
+    def from_config(cls, parser: ConfigParser) -> "WebFetchConfig":
+        if not parser.has_section("web_fetch"):
+            return cls()
+        section = parser["web_fetch"]
+        return cls(
+            enabled=section.getboolean("enabled", True),
+            max_lines=section.getint("max_lines", 100),
+        )
+
+
 # Google Search configuration class
 class GoogleSearchConfig(BaseModel):
     """Configuration for Google Search API"""
@@ -46,6 +64,26 @@ class GoogleSearchConfig(BaseModel):
         google_cse_id = os.getenv(self.cse_id_env)
 
         return bool(google_api_key and google_cse_id)
+
+
+class DiffbotConfig(BaseModel):
+    """Configuration for Diffbot API"""
+
+    enabled: bool = Field(default=False)
+    api_key_env: str = Field(default="DIFFBOT_API_KEY")
+
+    @classmethod
+    def from_config(cls, parser: ConfigParser) -> "Diffbot":
+        if not parser.has_section("diffbot"):
+            return cls()
+        section = parser["diffbot"]
+        return cls(
+            enabled=section.getboolean("enabled", False),
+            api_key_env=section.get("api_key_env", "DIFFBOT_API_KEY"),
+        )
+
+    def get_token(self) -> str:
+        return os.getenv(self.api_key_env)
 
 
 logger = logging.getLogger(__name__)
@@ -439,6 +477,12 @@ class ModelConfig(BaseModel):
 # Global configuration instance
 config = ModelConfig()
 
+# Web Fetch configuration
+web_fetch_config = WebFetchConfig.from_config(parser)
+logger.debug(
+    f"Web Fetch configuration: enabled={web_fetch_config.enabled}, "
+    + f"max_lines={web_fetch_config.max_lines}"
+)
 # Google Search configuration
 google_search_config = GoogleSearchConfig.from_config(parser)
 logger.debug(
@@ -447,6 +491,9 @@ logger.debug(
     + f"cse_id_env={google_search_config.cse_id_env}, "
     + f"max_results={google_search_config.max_results}"
 )
+
+# Diffbot configuration
+diffbot_config = DiffbotConfig.from_config(parser)
 
 # General configuration
 DEFAULT_PROVIDER = parser.get("general", "default_provider")

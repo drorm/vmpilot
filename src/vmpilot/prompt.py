@@ -89,6 +89,7 @@ Use multiple edit blocks if needed.
 * Use the EditTool tool for editing files.
 * Use the CreateFileTool tool for creating files. Takes path and content as input. **Always use this to create files.**
 * Use the GoogleSearchTool tool for searching the web. The output will be a list of relevant search results.
+* Use the WebContentTool tool for fetching web content. The output will be the content of the page.
 </TOOLS>
 
 <PLUGINS>
