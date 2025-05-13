@@ -1,8 +1,10 @@
 import asyncio
 import logging
 import os
+from typing import Optional
 
 import aiohttp
+from langchain.callbacks.manager import CallbackManagerForToolRun
 from playwright.async_api import TimeoutError as PlaywrightTimeout
 from playwright.async_api import async_playwright
 
@@ -86,23 +88,51 @@ async def fetch_with_playwright(url):
         return None
 
 
-async def get_page_content(url):
-    logger.info(f"Fetching content from {url}...")
+async def get_page_content(
+    url, run_manager: Optional[CallbackManagerForToolRun] = None
+):
+    logger.info(f"get_page_content called with url: {url}, run_manager: {run_manager}")
+    # Instead of using ContextVar directly, we'll use the run_manager to send updates
+
+    async def send_progress(msg):
+        logger.info(msg)
+        if run_manager:
+            logger.info(f"Sending progress update via run_manager for URL: {url}")
+            await run_manager.on_text(msg + "\n")
+
+    # Try Jina first (fastest)
+    await send_progress(f"Attempting to fetch content from {url} using Jina...")
     content = await fetch_with_jina(url)
     if content:
         if "Verify you are human" in content or "captcha" in content.lower():
-            logger.info("[✓] Jina found a captcha: " + url)
+            await send_progress(
+                "[!] Jina encountered a captcha, trying alternate methods..."
+            )
             content = None
         else:
-            logger.info("[✓] Jina succeeded for: " + url)
+            await send_progress("[✓] Successfully retrieved content via Jina.")
             return content
+
+    # Try Playwright next (handles JavaScript)
+    await send_progress(
+        "Jina failed or encountered captcha. Trying Playwright with JavaScript rendering..."
+    )
     content = await fetch_with_playwright(url)
     if content:
-        logger.info("[✓] Playwright succeeded for: " + url)
+        await send_progress("[✓] Successfully retrieved content via Playwright.")
         return content
+
+    # Try Diffbot as a last resort (structured extraction)
+    await send_progress(
+        "Playwright failed. Trying Diffbot for structured content extraction..."
+    )
     content = await fetch_with_diffbot(url)
     if content:
-        logger.info("[✓] Diffbot succeeded for: " + url)
+        await send_progress("[✓] Successfully retrieved content via Diffbot.")
         return content
-    else:
-        return None
+
+    # All methods failed
+    await send_progress(
+        "[✗] All web content extraction methods failed. Unable to retrieve content."
+    )
+    return None
