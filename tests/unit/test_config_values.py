@@ -291,6 +291,8 @@ class TestConfigurationStructure:
             "google",
             "google_search",
             "database",  # Add database as an allowed section
+            "web_fetch",  # Add web_fetch as an allowed section
+            "diffbot",  # Add diffbot as an allowed section
         }
         for section in config.sections():
             assert section in allowed_sections, f"Unexpected section '{section}' found"

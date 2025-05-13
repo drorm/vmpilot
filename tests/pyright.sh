@@ -26,6 +26,7 @@ fi
 # Exit with error if there were issues (for CI/CD pipelines)
 if grep -q "error:" "$REPORTS_DIR/pyright-report.txt"; then
     echo "⚠️ Type checking found issues. See report for details."
+    cat "$REPORTS_DIR/pyright-report.txt"
     exit 1
 else
     echo "✅ Type checking passed successfully!"

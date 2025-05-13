@@ -73,7 +73,7 @@ class DiffbotConfig(BaseModel):
     api_key_env: str = Field(default="DIFFBOT_API_KEY")
 
     @classmethod
-    def from_config(cls, parser: ConfigParser) -> "Diffbot":
+    def from_config(cls, parser: ConfigParser) -> "DiffbotConfig":
         if not parser.has_section("diffbot"):
             return cls()
         section = parser["diffbot"]
@@ -82,7 +82,7 @@ class DiffbotConfig(BaseModel):
             api_key_env=section.get("api_key_env", "DIFFBOT_API_KEY"),
         )
 
-    def get_token(self) -> str:
+    def get_token(self) -> Optional[str]:
         return os.getenv(self.api_key_env)
 
 

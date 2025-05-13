@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Any, Dict, Optional, Type
 
@@ -14,7 +13,7 @@ class Input(BaseModel):
     """Input schema for web content fetch."""
 
     url: str = Field(description="The URL to fetch content from.")
-    max_lines: int = Field(
+    max_lines: Optional[int] = Field(
         description="Number of lines to return (optional, defaults from config)",
         default=None,
     )
@@ -31,7 +30,7 @@ class WebContentTool(BaseTool):
     def _run(
         self,
         url: str,
-        max_lines: int = None,
+        max_lines: Optional[int] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Synchronous version - not used, we use _arun instead."""
@@ -40,7 +39,7 @@ class WebContentTool(BaseTool):
     async def _arun(
         self,
         url: str,
-        max_lines: int = None,
+        max_lines: Optional[int] = None,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         if not web_fetch_config.enabled:

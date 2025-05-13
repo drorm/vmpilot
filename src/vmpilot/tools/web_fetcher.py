@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 from typing import Optional
 
 import aiohttp
@@ -19,7 +18,9 @@ DIFFBOT_URL = "https://api.diffbot.com/v3/article"
 async def fetch_with_jina(url):
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(JINA_PROXY + url, timeout=10) as resp:
+            async with session.get(
+                JINA_PROXY + url, timeout=aiohttp.ClientTimeout(total=10)
+            ) as resp:
                 if resp.status == 200:
                     text = await resp.text()
                     if "Verify you are human" in text or "captcha" in text.lower():
@@ -49,7 +50,9 @@ async def fetch_with_diffbot(url):
     api_url = f"{DIFFBOT_URL}?token={token}&url={url}"
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(api_url, timeout=10) as resp:
+            async with session.get(
+                api_url, timeout=aiohttp.ClientTimeout(total=10)
+            ) as resp:
                 if resp.status == 200:
                     data = await resp.json()
                     if "objects" in data and data["objects"]:
