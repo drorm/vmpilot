@@ -107,16 +107,22 @@ class TestWebContentTool:
             # Create content with many lines
             mock.return_value = "\n".join([f"Line {i}" for i in range(1, 200)])
 
-            tool = WebContentTool()
-            result = await tool._arun(
-                "https://example.com", max_lines=50, run_manager=mock_run_manager
-            )
+            # Patch clean_web_content to be a passthrough so no LLM header is added
+            with patch(
+                "vmpilot.tools.web_content_tool.clean_web_content"
+            ) as clean_mock:
+                clean_mock.side_effect = lambda raw_content, url: raw_content
 
-            # Should only show 50 lines
-            assert "Line 50" in result
-            assert "Line 51" not in result
-            assert "Truncated" in result
-            assert "149 more lines" in result
+                tool = WebContentTool()
+                result = await tool._arun(
+                    "https://example.com", max_lines=50, run_manager=mock_run_manager
+                )
+
+                # Should only show 50 lines (including the actual numbered lines!)
+                assert "Line 50" in result
+                assert "Line 51" not in result
+                assert "Truncated" in result
+                assert "149 more lines" in result
 
     @pytest.mark.asyncio
     async def test_arun_exception(self, mock_config, mock_run_manager):

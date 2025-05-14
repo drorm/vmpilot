@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, Dict, Optional, Type
 
@@ -5,8 +6,48 @@ from langchain.callbacks.manager import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from vmpilot.config import web_fetch_config
+import vmpilot.worker_llm as worker_llm
+from vmpilot.config import config, web_fetch_config
 from vmpilot.tools.web_fetcher import get_page_content
+
+logger = logging.getLogger(__name__)
+
+WEB_CONTENT_CLEAN_SYSTEM_PROMPT = """
+You are a web content cleaning agent for a search assistant. Your job is to remove ALL navigation, cookie messages, ads, unrelated links, headers, footers, and any repeated boilerplate from the input web page text. 
+Keep only the main content of the page, which is usually the article or main text, but could also be a product description or similar.
+Do NOT summarize or rewrite—just return the cleaned content, preserving details and markdown/code formatting.
+"""
+
+
+async def clean_web_content(
+    raw_content: str, url: str, search_query: Optional[str] = None
+) -> str:
+    """Clean raw web content using the LLM worker with a focused system prompt."""
+    if not raw_content or not raw_content.strip():
+        return ""
+    if not url:
+        url = "(unknown)"
+    prompt = f"""Clean the following web page content from {url}.
+
+Search query (if relevant): {search_query or ''}
+
+Raw Content:
+----------------
+{raw_content}
+----------------
+"""
+    try:
+        logger.info(f"Cleaning content from {url} with LLM worker...")
+        cleaned = await worker_llm.run_worker_async(
+            prompt=prompt,
+            system_prompt=WEB_CONTENT_CLEAN_SYSTEM_PROMPT,
+            temperature=getattr(config, "temperature", 0.2),
+        )
+        logger.info(f"Cleaned content from {url}:\n{cleaned}")
+        return cleaned.strip()
+    except Exception as e:
+        logging.error(f"Web content cleaning failed: {e}")
+        return raw_content  # fallback to uncleaned
 
 
 class Input(BaseModel):
@@ -54,12 +95,20 @@ class WebContentTool(BaseTool):
                 )
 
             # Run the content fetching process - now we can use await directly
-            content = await get_page_content(url, run_manager=run_manager)
+            raw_content = await get_page_content(url, run_manager=run_manager)
 
-            if not content:
+            if not raw_content:
                 return f"[✗] Unable to fetch web content for URL: {url}"
 
-            # Process the content
+            # Always apply formatting and truncation, even if skipping LLM cleaning
+            if len(raw_content.splitlines()) < 100:
+                content = raw_content
+            else:
+                if run_manager:
+                    await run_manager.on_text("Cleaning web content...\n")
+                content = await clean_web_content(raw_content, url)
+
+            # Process the content (truncation and formatting)
             lines = content.strip().splitlines()
             maxl = max_lines or getattr(web_fetch_config, "max_lines", 100)
             display = "\n".join(lines[:maxl])

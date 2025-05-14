@@ -23,7 +23,11 @@ async def fetch_with_jina(url):
             ) as resp:
                 if resp.status == 200:
                     text = await resp.text()
-                    if "Verify you are human" in text or "captcha" in text.lower():
+                    if (
+                        "Verify you are human" in text
+                        or "captcha" in text.lower()
+                        and "without captcha" not in text.lower()
+                    ):
                         logger.info("[Jina] Blocked by captcha or anti-bot.")
                         return None
                     return text
@@ -77,10 +81,13 @@ async def fetch_with_diffbot(url):
 async def fetch_with_playwright(url):
     try:
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
+            browser = await p.chromium.launch()
+            context = await browser.new_context()
+            page = await context.new_page()
             await page.goto(url, timeout=10000)
-            content = await page.inner_text("body")
+            content = await page.content()
+            await page.close()
+            await context.close()
             await browser.close()
             return content
     except PlaywrightTimeout:
