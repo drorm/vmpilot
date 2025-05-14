@@ -252,8 +252,6 @@ class Pipeline:
                 return error_generator()
             return error_msg
 
-        from vmpilot.agent import APIProvider, process_messages
-
         # Handle title request
         if body.get("title", False):
             return "VMPilot Pipeline "
