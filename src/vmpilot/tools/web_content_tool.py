@@ -101,27 +101,33 @@ class WebContentTool(BaseTool):
                 return f"[✗] Unable to fetch web content for URL: {url}"
 
             # Always apply formatting and truncation, even if skipping LLM cleaning
+            show_raw = getattr(config, "web_content_show_raw", False)
+            maxl = max_lines or getattr(web_fetch_config, "max_lines", 100)
+
+            def trim(text):
+                lines = text.strip().splitlines()
+                display = "\n".join(lines[:maxl])
+                if len(lines) > maxl:
+                    display += f"\n...\n(Truncated, {len(lines)-maxl} more lines)"
+                return display
+
             if len(raw_content.splitlines()) < 100:
-                content = raw_content
+                cleaned_content = raw_content
             else:
                 if run_manager:
                     await run_manager.on_text("Cleaning web content...\n")
-                content = await clean_web_content(raw_content, url)
+                cleaned_content = await clean_web_content(raw_content, url)
 
-            # Process the content (truncation and formatting)
-            lines = content.strip().splitlines()
-            maxl = max_lines or getattr(web_fetch_config, "max_lines", 100)
-            display = "\n".join(lines[:maxl])
-            if len(lines) > maxl:
-                display += f"\n...\n(Truncated, {len(lines) - maxl} more lines)"
-
-            # Send completion update
-            if run_manager:
-                await run_manager.on_text(
-                    f"Content fetch complete. Retrieved {len(lines)} lines.\n"
+            if show_raw:
+                formatted_result = (
+                    "\n[Raw fetched content]\n````\n" + trim(raw_content) + "\n````\n\n"
+                    "[Cleaned content]\n````\n" + trim(cleaned_content) + "\n````\n"
                 )
+            else:
+                formatted_result = "\n````\n" + trim(cleaned_content) + "\n````\n"
 
-            formatted_result = f"\n````\n{display}\n````\n\n"
+            if run_manager:
+                await run_manager.on_text("Content cleaning complete.\n")
             return formatted_result
         except Exception as e:
             error_msg = f"Error fetching web content: {str(e)}"

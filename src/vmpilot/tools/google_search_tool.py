@@ -121,8 +121,9 @@ class GoogleSearchTool(BaseTool):
                 return "No results found for your query."
 
             formatted_results = "\n".join(formatted_results)
-            formatted_results = f"\n````markdown\n{formatted_results}\n````\n\n"
-            return formatted_results
+            results = f"**Search: {query}**\n"
+            results += f"\n````markdown\n{formatted_results}\n````\n\n"
+            return results
 
         except ConnectionError as e:
             logger.error(f"Connection error during Google search: {str(e)}")
