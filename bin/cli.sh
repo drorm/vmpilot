@@ -30,6 +30,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+VMPILOT_DIR="$SCRIPT_DIR/.."
 # Only set Anthropic API key if not already set in environment
 if [ -z "$ANTHROPIC_API_KEY" ]; then
     if [ -f ~/.anthropic/api_key ]; then
@@ -41,7 +42,7 @@ if [ -z "$ANTHROPIC_API_KEY" ]; then
 fi
 
 export OPENAI_API_KEY=`cat ~/.openai`
-cd "$SCRIPT_DIR/.."
+# cd "$SCRIPT_DIR/.."
 
 # Set Python path for running the CLI
 export PYTHONPATH="$(pwd)"
@@ -55,5 +56,5 @@ else
     export PYTHONLOGLEVEL=WARN
 fi
 
-python3 src/vmpilot/cli.py "$@"
+python3 $VMPILOT_DIR/src/vmpilot/cli.py "$@"
 echo
