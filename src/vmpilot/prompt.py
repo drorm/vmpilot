@@ -33,15 +33,23 @@ def get_plugins_readme():
 
 # Generate system prompt on demand, ensuring current project root is used
 def get_system_prompt():
+    project_md_content = ""
+    current_issue_content = ""
+    full_current_issue = ""
+
     project_root = get_project_root()
-    project_md_content = get_project_description()
-    current_issue_content = get_chat_info()
-    # if it's None or empty,
-    if current_issue_content is None or current_issue_content == "":
-        full_current_issue = ""
+    if not project_root:
+        logger.debug("PROJECT_ROOT is not set. Not using it in the prompt.")
     else:
-        # if it's not empty, use it
-        full_current_issue = f"""
+        logger.debug(f"PROJECT_ROOT is set to {project_root}")
+        project_md_content = get_project_description()
+        current_issue_content = get_chat_info()
+        # if it's None or empty,
+        if current_issue_content is None or current_issue_content == "":
+            full_current_issue = ""
+        else:
+            # if it's not empty, use it
+            full_current_issue = f"""
 <CURRENT ISSUE>
 This is the current issue we're working on. You do not need to fetch it again.
 {current_issue_content}
