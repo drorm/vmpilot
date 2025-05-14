@@ -11,9 +11,7 @@ For OpenAI and Gemini models, token usage is tracked using metadata from the res
 import logging
 from typing import Any, Dict, Optional, Tuple
 
-from litellm import model_cost
-
-from vmpilot.config import Provider, config
+from vmpilot.config import Provider, config, model_cost
 
 logger = logging.getLogger(__name__)
 

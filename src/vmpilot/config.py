@@ -11,6 +11,7 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from litellm import model_cost
 from pydantic import BaseModel, Field
 
 
