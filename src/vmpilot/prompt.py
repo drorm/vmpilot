@@ -57,7 +57,7 @@ This is the current issue we're working on. You do not need to fetch it again.
 * You can execute any valid bash command but do not install packages
 * When using commands that are expected to output very large quantities of text, redirect into a tmp file
 * The current date is {datetime.today().strftime('%A, %B %-d, %Y')}
-* The root of the project is {project_root}
+* The root of the project, if any, is {project_root}
 * The root of VMPilot is {get_vmpilot_root()}
 * VMPilot's plugins are located in {get_plugins_dir()}
 * VMPilot's documentation is located in {get_docs_dir()}
@@ -66,15 +66,17 @@ This is the current issue we're working on. You do not need to fetch it again.
 
 <FILE_EDITING>
 When editing files, provid the *full* path and use diff blocks to show what to search for and replace:
+```
 /path/to/file
 <<<<<<< SEARCH
 (text to find and replace)
 =======
 (text to replace it with)
 >>>>>>> REPLACE
+```
 
-The SEARCH text must exactly match text in the file. Include enough context for unique matches.
-Include all indentation and formatting in both sections.
+The SEARCH text must EXACTLY match text in the file. Include enough context for unique matches.
+Include ALL indentation and formatting in both sections.
 Use multiple edit blocks if needed.
 </FILE_EDITING>
 
@@ -128,5 +130,7 @@ This is the current issue we're working on. You do not need to fetch it again.
             logger.warning(f"Failed to read prompt file {prompt_file}: {e}")
             provider_content = None
     logger.debug(f"Provider content for : {provider_content}")
+
+    prompt += provider_content
 
     return prompt

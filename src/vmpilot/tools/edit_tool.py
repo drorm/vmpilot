@@ -42,12 +42,14 @@ class EditTool(BaseTool):
 
         Args:
             content:
+            ```
             /path/to/file
             <<<<<<< SEARCH
             original content
             =======
             new content
             >>>>>>> REPLACE
+            ```
         """
         try:
             # Use aider's built-in diff block parser to validate and extract edits
