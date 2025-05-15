@@ -3,11 +3,14 @@ Prompt for the agent
 """
 
 import logging
+import os
 import pathlib
 import platform
 from datetime import datetime
 
 from vmpilot.config import TOOL_OUTPUT_LINES
+from vmpilot.config import Provider as APIProvider
+from vmpilot.config import current_provider
 from vmpilot.env import (
     get_docs_dir,
     get_plugins_dir,
@@ -33,6 +36,7 @@ def get_plugins_readme():
 
 # Generate system prompt on demand, ensuring current project root is used
 def get_system_prompt():
+
     project_root = get_project_root()
     project_md_content = get_project_description()
     current_issue_content = get_chat_info()
@@ -99,12 +103,30 @@ Use multiple edit blocks if needed.
 This is the current issue we're working on. You do not need to fetch it again.
 {full_current_issue}
 </CURRENT ISSUE>
-<WORKFLOW_CONTROL>
-Follow this sequence:
-1. **Investigate**: Collect necessary information (e.g., from files or system state) to understand the task.
-2. **Plan**: Present a clear plan to the user, including what you intend to change or create. Wait for explicit approval.
-3. **Implement**: Only proceed with actions (e.g., file edits or shell commands) *after* the user confirms the plan.
-</WORKFLOW_CONTROL>
 """
-    logger.debug(f"Prompt: {current_issue_content}")
+    # Determine current provider
+    provider_name = ""
+    provider = current_provider.get()
+
+    if provider == APIProvider.ANTHROPIC:
+        provider_name = "anthropic"
+    elif provider == APIProvider.OPENAI:
+        provider_name = "openai"
+    elif provider == APIProvider.GOOGLE:
+        provider_name = "google"
+
+    # Try to load a prompt file for the provider
+    prompts_dir = pathlib.Path(__file__).parent / "prompts"
+    prompt_file = prompts_dir / f"{provider}.md"
+    provider_content = ""
+    if prompt_file.exists():
+        try:
+            with open(prompt_file, "r") as f:
+                provider_content = f.read()
+            logger.debug(f"Loaded provider-specific prompt from {prompt_file}")
+        except Exception as e:
+            logger.warning(f"Failed to read prompt file {prompt_file}: {e}")
+            provider_content = None
+    logger.debug(f"Provider content for : {provider_content}")
+
     return prompt

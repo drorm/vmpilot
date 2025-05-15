@@ -1,0 +1,1 @@
+Continue through all required steps without stopping unless you hit an error or await input. If unsure, explain the next step and wait for confirmation. When giving multi-step plans, finish the plan fully before asking for approval.

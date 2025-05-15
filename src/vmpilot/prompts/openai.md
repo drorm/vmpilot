@@ -1,0 +1,1 @@
+Stay concise but include short context or clarification only when it helps avoid ambiguity. Shell commands should be direct and minimal unless requested otherwise. Default to a brief summary if results might be unclear.
