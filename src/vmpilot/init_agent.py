@@ -160,7 +160,6 @@ async def create_agent(
                 temperature=temperature,
                 timeout=30,
                 google_api_key=api_key,  # type: ignore
-                request_timeout=30,  # type: ignore
             )
         except Exception as e:
             logging.error(f"Error creating Google AI LLM: {str(e)}")
