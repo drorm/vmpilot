@@ -3,7 +3,6 @@ Prompt for the agent
 """
 
 import logging
-import os
 import pathlib
 import platform
 from datetime import datetime
@@ -119,18 +118,18 @@ This is the current issue we're working on. You do not need to fetch it again.
 
     # Try to load a prompt file for the provider
     prompts_dir = pathlib.Path(__file__).parent / "prompts"
-    prompt_file = prompts_dir / f"{provider}.md"
-    provider_content = ""
+    prompt_file = prompts_dir / f"{provider_name}.md"
+    provider_prompt = ""
     if prompt_file.exists():
         try:
             with open(prompt_file, "r") as f:
-                provider_content = f.read()
+                provider_prompt = f.read()
             logger.debug(f"Loaded provider-specific prompt from {prompt_file}")
         except Exception as e:
             logger.warning(f"Failed to read prompt file {prompt_file}: {e}")
-            provider_content = None
-    logger.debug(f"Provider content for : {provider_content}")
+            provider_prompt = ""
+    logger.debug(f"Provider prompt: {provider_prompt}")
 
-    prompt += provider_content
+    prompt += provider_prompt
 
     return prompt

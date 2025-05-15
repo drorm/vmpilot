@@ -1,6 +1,5 @@
 import logging
-from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
@@ -9,7 +8,7 @@ from pydantic import SecretStr as PydanticSecretStr
 
 from vmpilot.agent_logging import log_conversation_messages
 from vmpilot.caching.chat_models import ChatAnthropic
-from vmpilot.config import MAX_TOKENS, TEMPERATURE, TOOL_OUTPUT_MAX_LINES
+from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config, current_provider
 from vmpilot.prompt import get_system_prompt
