@@ -61,19 +61,27 @@ class Usage:
 
         response_metadata = getattr(message, "response_metadata", {})
 
+        # Store the model name if available
+        if response_metadata.get("model_name"):
+            model_name = response_metadata["model_name"]
+            if (
+                model_name
+                and isinstance(model_name, str)
+                and model_name.startswith("models/")
+            ):
+                # Strip "models/" prefix from the model name. At some point gemini changed the model name format
+                model_name = model_name[7:]
+            self.model_name = model_name
+        else:
+            # try to get it from config
+            self.model_name = config.providers[self.provider].default_model
+
         # Check for token usage in response_metadata (OpenAI format)
         if "token_usage" in response_metadata:
             token_usage = response_metadata["token_usage"]
             logger.debug(
                 f"Found OpenAI token usage in response metadata: {token_usage}"
             )
-
-            # Store the model name if available
-            if response_metadata.get("model_name"):
-                self.model_name = response_metadata["model_name"]
-            else:
-                # try to get it from config
-                self.model_name = config.providers[self.provider].default_model
 
             # Extract token usage
             prompt_tokens = token_usage.get("prompt_tokens", 0)
@@ -102,13 +110,6 @@ class Usage:
             logger.debug(
                 f"Adding tokens from message: {usage_metadata} for model {response_metadata.get('model_name')}"
             )
-            # Store the model name if available
-            if response_metadata.get("model_name"):
-                self.model_name = response_metadata["model_name"]
-            else:
-                # try to get it from config
-                self.model_name = config.providers[self.provider].default_model
-
             # Gemini/openai format
             # Handle cached tokens if available
             input_token_details = usage_metadata.get("input_token_details", {})
