@@ -11,12 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from vmpilot.db.connection import (
-    close_db_connection,
-    get_db_connection,
-    get_db_path,
-    initialize_db,
-)
+from vmpilot.db.connection import close_db_connection, get_db_connection, get_db_path
 
 
 class TestDatabaseConnectionManagement(unittest.TestCase):

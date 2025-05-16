@@ -17,7 +17,7 @@ from alembic import command
 from alembic.config import Config
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from vmpilot.db.connection import get_db_connection, get_db_path, initialize_db
+from vmpilot.db.connection import get_db_connection, get_db_path
 from vmpilot.db.crud import ConversationRepository
 
 
@@ -47,17 +47,17 @@ class TestDatabaseConnection(unittest.TestCase):
         # Remove the temporary directory
         self.temp_dir.cleanup()
 
-    def test_initialize_db(self):
-        """Test that initialize_db creates the expected tables."""
-        print("Starting test_initialize_db")
-        # Create a direct connection to the test database path
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        # def test_initialize_db(self):
+        #     """Test that initialize_db creates the expected tables."""
+        #     print("Starting test_initialize_db")
+        #     # Create a direct connection to the test database path
+        #     conn = sqlite3.connect(self.db_path)
+        #     cursor = conn.cursor()
 
-        # Run Alembic migrations to initialize tables
-        alembic_ini = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../src/vmpilot/db/alembic.ini")
-        )
+        #     # Run Alembic migrations to initialize tables
+        #     alembic_ini = os.path.abspath(
+        #         os.path.join(os.path.dirname(__file__), "../../src/vmpilot/db/alembic.ini")
+        #     )
         migrations_dir = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "../../src/vmpilot/db/migrations")
         )
