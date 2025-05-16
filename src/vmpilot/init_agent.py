@@ -1,6 +1,8 @@
-import logging
-from typing import Any
+import logging  # Make sure logging is imported
+from typing import Any, Dict, List, Union  # Add Union
 
+from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
+from langchain_core.callbacks import BaseCallbackHandler, CallbackManager
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
@@ -163,12 +165,18 @@ async def create_agent(
     # Set up tools with LLM for fencing capability
     tools = setup_tools(llm=llm)
 
+    # Setup streaming handler + manager for tool output
+    stream_handler = AsyncIteratorCallbackHandler()
+    callback_manager = CallbackManager([stream_handler])
+
     # Create React agent
-    agent = create_react_agent(
+    agent_executor = create_react_agent(  # Renamed to agent_executor for clarity
         llm,
         tools,
         state_modifier=modify_state_messages,  # type: ignore
         checkpointer=MemorySaver(),
+        callback_manager=PrintOnTextHandler(),
     )
 
-    return agent
+    # The stream_handler and callback_manager will be used when invoking the agent_executor
+    return agent_executor, callback_manager, stream_handler.aiter()

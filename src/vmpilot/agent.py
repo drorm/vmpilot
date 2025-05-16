@@ -2,6 +2,7 @@
 LangChain-based implementation for VMPilot's agent functionality.
 """
 
+import asyncio
 import logging
 from typing import Any, Callable, Dict, List
 
@@ -70,6 +71,8 @@ async def process_messages(
     Returns:
         List of processed messages
     """
+    logger.warning("AGENT_DEBUG: process_messages STARTING")
+
     logger.debug(
         f"------------- Processing new message: model={model}, provider={provider} --------------- "
     )
@@ -159,10 +162,25 @@ async def process_messages(
     # Handle prompt caching for Anthropic provider
 
     logger.debug("DEBUG: Creating agent")
-    # Create agent
-    agent = await create_agent(
+
+    # Create agent and get the callback_manager and tool_output_aiter
+    agent_executor, callback_manager, tool_output_aiter = await create_agent(
         model, api_key, provider, system_prompt_suffix, temperature, max_tokens
     )
+
+    logger.warning(
+        "AGENT_DEBUG: Before creating log_tool_outputs task"
+    )  # <--- ADD THIS
+
+    # Asynchronously log tool outputs
+    async def log_tool_outputs():
+        logger.warning("Logging TOOL outputs...")
+        async for chunk in tool_output_aiter:
+            logger.warning(f"TOOL_OUTPUT_STREAM: {chunk}")
+
+    asyncio.create_task(log_tool_outputs())
+
+    # The callback_manager will be passed to send_request
 
     # for openai and google preprend the system prompt
     if provider == APIProvider.GOOGLE or provider == APIProvider.OPENAI:
@@ -279,7 +297,7 @@ async def process_messages(
 
     # Run the stream processor
     response, collected_tool_calls = await send_request(
-        agent,
+        agent_executor,
         chat,
         exchange,
         recursion_limit,

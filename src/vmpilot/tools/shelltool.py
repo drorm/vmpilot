@@ -33,13 +33,27 @@ class ShellTool(BaseTool):
             The output will be automatically formatted with appropriate markdown syntax."""
     args_schema: Type[BaseModel] = ShellInput
 
-    def _run(
+    async def _run(
         self,
         command: str,
         language: str = "bash",
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Execute shell command and return formatted output."""
+        if run_manager:
+            logger.warning(
+                "SETUP_SHELL_DEBUG: run_manager IS PRESENT in _arun"
+            )  # <--- ADD
+        else:
+            logger.warning(
+                "SETUP_SHELL_DEBUG: run_manager IS NONE in _arun"
+            )  # <--- ADD
+        (
+            await run_manager.on_text(f"Executing command: {command}")
+            if run_manager
+            else None
+        )
+        logger.info(f"Executing SHELL command: {command}")
         try:
             # Execute the command
             output = subprocess.run(
@@ -74,4 +88,7 @@ class ShellTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Run the shell command asynchronously."""
-        return self._run(command=command, language=language, run_manager=run_manager)
+        result = await self._run(
+            command=command, language=language, run_manager=run_manager
+        )
+        return result

@@ -1,7 +1,9 @@
 import logging
 import traceback
 
+from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.config import RunnableConfig
 
 from .agent_logging import log_message_content, log_message_received
@@ -43,19 +45,25 @@ async def send_request(
     output_callback: Callable[[Dict[str, Any]], None],
     tool_output_callback: Callable[[Dict[str, Any], str], None],
     usage: Any,
+    callback_manager: Optional[CallbackManager] = None,
 ) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, str]]]:
     collected_tool_calls = []
     response = None  # Initialize response variable
+
+    run_config_dict = {
+        "recursion_limit": recursion_limit,
+        "configurable": {
+            "thread_id": chat.chat_id,
+            "run_name": f"vmpilot-run-{chat.chat_id}",
+        },
+    }
+    if callback_manager:
+        run_config_dict["callbacks"] = callback_manager
+
     try:
         async for agent_response in agent.astream(
-            {"messages": formatted_messages},
-            config=RunnableConfig(
-                recursion_limit=recursion_limit,
-                configurable={
-                    "thread_id": chat.chat_id,  # Use the chat_id directly from the Chat object
-                    "run_name": f"vmpilot-run-{chat.chat_id}",
-                },
-            ),
+            input={"messages": formatted_messages},
+            config=RunnableConfig(**run_config_dict),
             stream_mode="values",
         ):
             logger.debug(f"Got response: {agent_response}")

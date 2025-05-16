@@ -19,14 +19,14 @@ class ShellCommandResponse(BaseModel):
 class SetupShellTool(ShellTool):
     """Tool for executing shell commands with markdown formatting"""
 
-    def _run(
+    async def _arun(
         self,
         command: str,
         language: str = "bash",
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         # Execute command with proper language formatting
-        result = super()._run(
+        result = await super()._arun(
             command=command, language=language, run_manager=run_manager
         )
 
