@@ -4,12 +4,12 @@ Provides a wrapper around the shell command execution functionality.
 """
 
 import logging
-import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 # Export the shell tool definition for use in the agent
 from .tools.shelltool import SHELL_TOOL, execute_shell_command
 
+# Export the shell tool definition for LiteLLM compatibility
 SETUP_SHELL_TOOL = SHELL_TOOL
 
 logger = logging.getLogger(__name__)
@@ -27,39 +27,41 @@ def execute_setup_shell_command(args: Dict[str, Any]) -> str:
     return f"\n{result}"
 
 
-# For LangChain compatibility
-try:
-    from langchain_core.callbacks import CallbackManagerForToolRun
-    from pydantic import BaseModel
+# Import LangChain dependencies
+# We need these for compatibility with the current agent architecture
+from pydantic import BaseModel, Field
 
-    from .tools.shelltool import ShellTool as LangchainShellTool
 
-    class ShellCommandResponse(BaseModel):
-        """Model for structured shell command response"""
+class ShellCommandInput(BaseModel):
+    """Input schema for shell commands."""
 
-        command: str
-        language: str = "plaintext"
+    command: str = Field(description="The shell command to execute")
+    language: str = Field(
+        default="bash",
+        description="Output language for syntax highlighting (e.g. 'bash', 'python', 'text')",
+    )
 
-    class SetupShellTool(LangchainShellTool):
-        """Tool for executing shell commands with markdown formatting"""
 
-        def _run(
-            self,
-            command: str,
-            language: str = "bash",
-            run_manager: Optional[CallbackManagerForToolRun] = None,
-        ) -> str:
-            # Execute command with proper language formatting
-            result = super()._run(
-                command=command, language=language, run_manager=run_manager
-            )
+class SetupShellTool:
+    """Tool for executing shell commands with markdown formatting"""
 
-            return f"\n{result}"
+    name: str = "shell"
+    description: str = """Execute bash commands in the system. Input should be a single command string. Examples:
+            - ls /path
+            - cat file.txt
+            - head -n 10 file.md
+            - grep pattern file
+            The output will be automatically formatted with appropriate markdown syntax."""
+    args_schema: Type[BaseModel] = ShellCommandInput
 
-except ImportError:
-    # If LangChain is not available, provide a stub
-    class SetupShellTool:
-        """Stub for when LangChain is not available"""
+    def _run(self, command: str, language: str = "bash", **kwargs) -> str:
+        """Execute shell command and return formatted output."""
+        args = {"command": command, "language": language}
+        result = execute_shell_command(args)
 
-        def __init__(self, *args, **kwargs):
-            raise ImportError("LangChain is not available")
+        # Add a newline before the result for better formatting
+        return f"\n{result}"
+
+    async def _arun(self, command: str, language: str = "bash", **kwargs) -> str:
+        """Run the shell command asynchronously."""
+        return self._run(command=command, language=language, **kwargs)

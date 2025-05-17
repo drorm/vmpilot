@@ -1,6 +1,5 @@
 """
 Initialize and configure the tools we use as described in the prompt.
-This version uses LiteLLM-compatible tool definitions instead of LangChain.
 """
 
 import logging
@@ -56,32 +55,28 @@ def get_google_search_status() -> str:
 def setup_tools(llm=None):
     """
     Set up and return a list of tools.
-    This is a compatibility function that will be used by both LangChain and LiteLLM.
     """
-    # Suppress warning about shell tool safeguards
-    warnings.filterwarnings(
-        "ignore", category=UserWarning, module="langchain_community.tools.shell.tool"
-    )
 
     tools = []
 
     if llm is not None:
         try:
-            # Continue with LangChain tools for backward compatibility
             from vmpilot.setup_shell import SetupShellTool
 
             # Add core tools
-            shell_tool = SetupShellTool()
+            shell_tool = (
+                SetupShellTool()
+            )  # This now uses the LiteLLM-compatible implementation
             tools.append(shell_tool)
-            tools.append(EditTool())  # for editing
-            tools.append(CreateFileTool())  # for creating files
+            # tools.append(EditTool())  # for editing
+            # tools.append(CreateFileTool())  # for creating files
 
             # Conditionally add Google Search tool if enabled
             if is_google_search_enabled():
                 try:
                     search_tool = GoogleSearchTool()
                     if search_tool.is_configured:
-                        tools.append(search_tool)
+                        # tools.append(search_tool)
                         logger.debug("Google Search Tool added to available tools")
                     else:
                         logger.warning(
