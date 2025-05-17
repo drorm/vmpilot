@@ -8,6 +8,7 @@ import logging
 import os
 import queue
 import threading
+import traceback
 from typing import Any, Dict, Generator, List
 
 import litellm
@@ -15,7 +16,6 @@ import litellm
 from vmpilot.lllm.shelltool import SHELL_TOOL, execute_tool
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Suppress LiteLLM info/debug logs
@@ -87,18 +87,25 @@ def generate_responses(
     # Set up tools - initially just the shell tool
     tools = [SHELL_TOOL]
 
-    # Prepare system prompt
-    system_prompt = (
-        "You are VMPilot, an AI assistant that can help with system operations."
-    )
+    # Prepare system prompt with more context from VMPilot
+    system_prompt = """You are VMPilot, an AI assistant that can help with system operations.
+You can execute shell commands to help users with their tasks.
+Always format command outputs with proper markdown formatting.
+Be concise and helpful in your responses."""
+
+    # Add system prompt suffix if provided
     if system_prompt_suffix:
         system_prompt += "\n\n" + system_prompt_suffix
+
+    # Log system prompt at debug level
+    logger.debug(f"System prompt: {system_prompt}")
 
     # Run agent_loop in a separate thread
     def run_loop():
         try:
             # Get model from pipeline
             model = pipeline_self.valves.model
+            logger.info(f"Using model: {model}")
 
             # Run the agent loop
             result = agent_loop(
@@ -111,7 +118,11 @@ def generate_responses(
             # Put the result in the output queue
             output_queue.put(result)
         except Exception as e:
-            logger.error(f"Error in agent loop: {str(e)}")
+            error_msg = f"Error in agent loop: {str(e)}"
+            logger.error(error_msg)
+            import traceback
+
+            logger.error("".join(traceback.format_tb(e.__traceback__)))
             output_queue.put(f"Error: {str(e)}")
         finally:
             loop_done.set()
@@ -122,12 +133,18 @@ def generate_responses(
     thread.start()
 
     # Yield responses from the queue
+    response_received = False
     while not loop_done.is_set() or not output_queue.empty():
         try:
             response = output_queue.get(timeout=0.1)
+            response_received = True
             yield response
         except queue.Empty:
             pass
+
+    # If no response was received and the loop is done, yield a default message
+    if not response_received and loop_done.is_set():
+        yield "Command executed but no response was generated."
 
 
 def agent_loop(
@@ -147,16 +164,40 @@ def agent_loop(
 
     # Set up configuration from environment variables
     api_key = None
-    if "openai" in model or "gpt" in model:
+
+    # Get provider from model string
+    if "openai" in model.lower() or "gpt" in model.lower():
+        provider = "openai"
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
             return "Error: OPENAI_API_KEY environment variable not set"
-    elif "anthropic" in model or "claude" in model:
+    elif "anthropic" in model.lower() or "claude" in model.lower():
+        provider = "anthropic"
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             return "Error: ANTHROPIC_API_KEY environment variable not set"
+    elif "google" in model.lower() or "gemini" in model.lower():
+        provider = "google"
+        api_key = os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            return "Error: GOOGLE_API_KEY environment variable not set"
     else:
-        return f"Error: Unsupported model {model}"
+        logger.warning(f"Model provider not recognized from model name: {model}")
+        # Try to guess provider from available API keys
+        if os.environ.get("OPENAI_API_KEY"):
+            provider = "openai"
+            api_key = os.environ.get("OPENAI_API_KEY")
+            logger.info(f"Using OpenAI provider for model: {model}")
+        elif os.environ.get("ANTHROPIC_API_KEY"):
+            provider = "anthropic"
+            api_key = os.environ.get("ANTHROPIC_API_KEY")
+            logger.info(f"Using Anthropic provider for model: {model}")
+        elif os.environ.get("GOOGLE_API_KEY"):
+            provider = "google"
+            api_key = os.environ.get("GOOGLE_API_KEY")
+            logger.info(f"Using Google provider for model: {model}")
+        else:
+            return f"Error: No API key found for model {model}"
 
     # Main agent loop
     max_iterations = 10  # Safety limit to prevent infinite loops

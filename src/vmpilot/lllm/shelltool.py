@@ -42,6 +42,12 @@ def execute_shell_tool(args: Dict[str, Any]) -> str:
     command = args.get("command")
     language = args.get("language", "bash")
 
+    if not command:
+        return "Error: No command provided"
+
+    # Log the command
+    logger.info(f"Executing shell command: {command}")
+
     try:
         # Execute the command
         output = subprocess.run(
@@ -50,21 +56,36 @@ def execute_shell_tool(args: Dict[str, Any]) -> str:
             capture_output=True,
             text=True,
             executable="/bin/bash",
+            timeout=60,  # 1-minute timeout
         )
 
-        # Combine stdout and stderr if there's an error
-        if output.returncode != 0:
-            result = f"{output.stdout}\n{output.stderr}".strip()
-        else:
-            result = output.stdout.strip()
+        # Get stdout and stderr
+        stdout = output.stdout.strip()
+        stderr = output.stderr.strip()
+        return_code = output.returncode
 
-        # Format the output with the specified language and include the original command
+        # Format the output
         formatted_result = f"**$ {command}**\n"
-        if result:
-            # we use 4 backticks to escape the 3 backticks that might be in the markdown
-            formatted_result += f"\n````{language}\n{result}\n````\n\n"
+
+        # Add stdout if available
+        if stdout:
+            formatted_result += f"\n````{language}\n{stdout}\n````\n\n"
+
+        # Add stderr if available and there was an error
+        if stderr and return_code != 0:
+            formatted_result += (
+                f"\n**Error (code {return_code}):**\n````text\n{stderr}\n````\n\n"
+            )
+
+        # Add a message for empty output
+        if not stdout and not stderr:
+            formatted_result += "\n*Command executed with no output*\n"
+
         return formatted_result
 
+    except subprocess.TimeoutExpired:
+        logger.error(f"Command timed out after 300 seconds: {command}")
+        return f"Error: Command timed out after 300 seconds: {command}"
     except Exception as e:
         logger.error(f"Error executing command '{command}': {str(e)}")
         return f"Error: {str(e)}"
