@@ -181,23 +181,6 @@ def agent_loop(
         api_key = os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             return "Error: GOOGLE_API_KEY environment variable not set"
-    else:
-        logger.warning(f"Model provider not recognized from model name: {model}")
-        # Try to guess provider from available API keys
-        if os.environ.get("OPENAI_API_KEY"):
-            provider = "openai"
-            api_key = os.environ.get("OPENAI_API_KEY")
-            logger.info(f"Using OpenAI provider for model: {model}")
-        elif os.environ.get("ANTHROPIC_API_KEY"):
-            provider = "anthropic"
-            api_key = os.environ.get("ANTHROPIC_API_KEY")
-            logger.info(f"Using Anthropic provider for model: {model}")
-        elif os.environ.get("GOOGLE_API_KEY"):
-            provider = "google"
-            api_key = os.environ.get("GOOGLE_API_KEY")
-            logger.info(f"Using Google provider for model: {model}")
-        else:
-            return f"Error: No API key found for model {model}"
 
     # Main agent loop
     max_iterations = 10  # Safety limit to prevent infinite loops
