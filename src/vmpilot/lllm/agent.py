@@ -13,7 +13,7 @@ from typing import Any, Dict, Generator, List
 
 import litellm
 
-from vmpilot.lllm.shelltool import SHELL_TOOL, execute_tool
+from vmpilot.tools.shelltool import SHELL_TOOL
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -214,7 +214,12 @@ def agent_loop(
                 tool_args = tool_call["arguments"]
 
                 logger.info(f"Executing tool: {tool_name}")
-                tool_result = execute_tool(tool_name, tool_args)
+                if tool_name == "shell":
+                    from vmpilot.tools.shelltool import execute_shell_command
+
+                    tool_result = execute_shell_command(tool_args)
+                else:
+                    tool_result = f"Error: Tool '{tool_name}' not implemented"
 
                 # Add the tool call and result to messages
                 messages.append(
