@@ -23,28 +23,24 @@ The LiteLLM implementation provides a simpler, more direct approach to interacti
 
 ## Integration with VMPilot
 
-The LiteLLM implementation is integrated with VMPilot through a feature flag system. When the `VMPILOT_USE_LITELLM` environment variable is set to `true`, VMPilot will use the LiteLLM-based agent instead of the LangChain-based agent.
+The LiteLLM implementation is now the default for VMPilot. The LangChain-based implementation has been deprecated and is no longer supported.
 
 ```bash
-# Enable LiteLLM implementation
-export VMPILOT_USE_LITELLM=true
-
-# Optionally specify a model
+# Optionally specify a model (default is gpt-4o)
 export VMPILOT_LITELLM_MODEL="anthropic/claude-3-sonnet"
 
-# Run VMPilot with LiteLLM
+# Run VMPilot
 python -m vmpilot.cli "your command here"
 ```
 
 You can also use the provided scripts:
 
 ```bash
-# Run VMPilot with LiteLLM
-./scripts/run_with_litellm.sh "your command here"
-
 # Test the LiteLLM integration
 ./scripts/test_litellm_integration.sh
 ```
+
+Note: The `run_with_litellm.sh` script is no longer needed as LiteLLM is now the default implementation.
 
 ## Usage
 

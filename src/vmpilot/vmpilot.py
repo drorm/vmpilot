@@ -306,22 +306,13 @@ class Pipeline:
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
 
-            # Check if we should use the LiteLLM implementation
             try:
-                from vmpilot.lllm import use_litellm
-
-                use_lllm = use_litellm()
-            except ImportError:
-                use_lllm = False
-
-            if use_lllm:
                 from vmpilot.lllm import generate_responses
 
                 logger.info("Using LiteLLM implementation")
-            else:
-                from vmpilot.response import generate_responses
-
-                logger.info("Using LangChain implementation")
+            except ImportError as e:
+                logger.error(f"Failed to import LiteLLM implementation: {e}")
+                return "Error: LiteLLM implementation not available"
 
             """
             In a typical llm chat streaming means that the output is sent to the user as it is generated.

@@ -8,6 +8,7 @@ from the LLM and tools, and yield responses as they come in.
 
 import asyncio
 import logging
+import os
 import queue
 import threading
 import traceback
@@ -25,7 +26,21 @@ def generate_responses(
     """
     Generates responses from the LLM and tools, handling streaming and output callbacks.
     This function is intended to be called from within the pipeline logic.
+
+    This is a compatibility layer that redirects to the LiteLLM implementation.
     """
+
+    logger.info("Redirecting to LiteLLM implementation from legacy response.py")
+    try:
+        from vmpilot.lllm import generate_responses as litellm_generate_responses
+
+        return litellm_generate_responses(
+            body, pipeline_self, messages, system_prompt_suffix, formatted_messages
+        )
+    except ImportError:
+        logger.error("Failed to import LiteLLM implementation")
+        return "Error: LiteLLM implementation not available"
+
     output_queue = queue.Queue()
     loop_done = threading.Event()
 

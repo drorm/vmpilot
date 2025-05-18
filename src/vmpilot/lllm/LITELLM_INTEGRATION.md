@@ -30,19 +30,22 @@ This document summarizes the changes made to integrate the LiteLLM implementatio
 
 ### Environment Variables
 
-- `VMPILOT_USE_LITELLM`: Set to `true`, `1`, or `yes` to enable the LiteLLM implementation
 - `VMPILOT_LITELLM_MODEL`: The model to use with LiteLLM (default: `gpt-4o`)
 
-### Running with LiteLLM
+Note: The `VMPILOT_USE_LITELLM` environment variable is no longer needed as LiteLLM is now the default implementation.
+
+### Running VMPilot
 
 ```bash
-# Using the provided script
-./scripts/run_with_litellm.sh "your command here"
-
-# Or manually setting environment variables
-export VMPILOT_USE_LITELLM=true
-export VMPILOT_LITELLM_MODEL="anthropic/claude-3-sonnet"  # Optional
+# Run VMPilot (LiteLLM is now the default)
 python -m vmpilot.cli "your command here"
+
+# Or using the CLI script
+./bin/cli.sh "your command here"
+
+# Optionally specify a model
+export VMPILOT_LITELLM_MODEL="anthropic/claude-3-sonnet"
+./bin/cli.sh "your command here"
 ```
 
 ### Testing the Integration

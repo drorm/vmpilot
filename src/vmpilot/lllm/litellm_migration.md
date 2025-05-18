@@ -26,7 +26,7 @@ The LiteLLM implementation provides a simpler, more direct approach to interacti
 
 ## Integration with VMPilot
 
-The LiteLLM implementation is integrated with VMPilot through a feature flag system. When the `VMPILOT_USE_LITELLM` environment variable is set to `true`, VMPilot will use the LiteLLM-based agent instead of the LangChain-based agent.
+The LiteLLM implementation is now the default implementation for VMPilot. The LangChain-based implementation has been deprecated and is no longer supported.
 
 ### Feature Flag Implementation
 

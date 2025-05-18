@@ -55,5 +55,9 @@ else
     export PYTHONLOGLEVEL=WARN
 fi
 
+# Always use LiteLLM implementation
+export VMPILOT_USE_LITELLM=true
+export VMPILOT_LITELLM_MODEL="${VMPILOT_LITELLM_MODEL:-gpt-4o}"
+
 python3 src/vmpilot/cli.py "$@"
 echo

@@ -13,6 +13,9 @@ from typing import Any, Dict, Generator, List
 
 import litellm
 
+from vmpilot.lllm.shelltool import ShellToolResult
+
+# Import shell tool
 from vmpilot.tools.shelltool import SHELL_TOOL
 
 # Configure logging

@@ -8,7 +8,8 @@ from typing import Optional
 
 def use_litellm() -> bool:
     """Check if the LiteLLM implementation should be used."""
-    return os.environ.get("VMPILOT_USE_LITELLM", "").lower() in ("true", "1", "yes")
+    # Always return True since we're now using LiteLLM by default
+    return True
 
 
 def get_default_model() -> str:
