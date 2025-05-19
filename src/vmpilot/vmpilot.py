@@ -252,6 +252,8 @@ class Pipeline:
                 return error_generator()
             return error_msg
 
+        from vmpilot.response import generate_responses
+
         # Handle title request
         if body.get("title", False):
             return "VMPilot Pipeline "
@@ -305,14 +307,6 @@ class Pipeline:
             # Message truncation is now handled by the Chat class in agent.py
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
-
-            try:
-                from vmpilot.lllm import generate_responses
-
-                logger.info("Using LiteLLM implementation")
-            except ImportError as e:
-                logger.error(f"Failed to import LiteLLM implementation: {e}")
-                return "Error: LiteLLM implementation not available"
 
             """
             In a typical llm chat streaming means that the output is sent to the user as it is generated.

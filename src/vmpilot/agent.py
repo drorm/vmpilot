@@ -1,345 +1,387 @@
 """
-LangChain-based implementation for VMPilot's agent functionality.
+Agent implementation for LiteLLM Migration MVP.
+Provides a simple agent loop with tool support using LiteLLM.
 """
 
+import json
 import logging
-from typing import Any, Callable, Dict, List
+import os
+import queue
+import threading
+import traceback
+from typing import Any, Dict, Generator, List
 
-from langchain_core.messages import AIMessage, HumanMessage
+import litellm
 
-from vmpilot.config import MAX_TOKENS, TEMPERATURE
-from vmpilot.config import Provider as APIProvider
-from vmpilot.config import config, current_provider, prompt_suffix
-from vmpilot.exchange import Exchange
-from vmpilot.init_agent import create_agent
-from vmpilot.prompt import get_system_prompt
-from vmpilot.request import send_request
-from vmpilot.unified_memory import (
-    clear_conversation_state,
-    get_conversation_state,
-    save_conversation_state,
-)
-from vmpilot.usage import Usage
+# Import shell tool from lllm implementation
+# TODO: This will need to be updated to use the main tools system later
+from vmpilot.lllm.shelltool import SHELL_TOOL, ShellToolResult, execute_tool
 
 # Configure logging
-from .agent_logging import log_message_processing
-
-logging.basicConfig(level=logging.INFO)
-# Set logging levels for specific loggers
 logger = logging.getLogger(__name__)
 
-
-# Flag to enable beta features in Anthropic API
-COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
-PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
-
-"""
-Process user's message through the agent and handle outputs
-"""
+# Suppress LiteLLM info/debug logs
+logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+logging.getLogger("litellm").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
-async def process_messages(
-    *,
-    model: str,
-    provider: APIProvider,
-    system_prompt_suffix: str,
-    messages: List[dict],
-    output_callback: Callable[[Dict], None],
-    tool_output_callback: Callable[[Any, str], None],
-    api_key: str,
-    max_tokens: int = MAX_TOKENS,
-    temperature: float = TEMPERATURE,
-    disable_logging: bool = False,
-    recursion_limit: int | None = None,  # Maximum number of steps to run in the request
-) -> List[dict]:
-    """Process messages through the agent and handle outputs.
-
-    Args:
-        model: The LLM model to use
-        provider: The API provider (OpenAI/Anthropic)
-        system_prompt_suffix: Additional text to append to the system prompt
-        messages: List of messages to process
-        output_callback: Function to call with output chunks
-        tool_output_callback: Function to call with tool outputs
-        api_key: API key for the provider
-        max_tokens: Maximum tokens to generate
-        temperature: Temperature for generation
-        disable_logging: Whether to disable detailed logging
-        recursion_limit: Maximum number of steps to run in the request
+def parse_tool_calls(response) -> tuple:
+    """
+    Extract tool calls and content from the LLM response.
 
     Returns:
-        List of processed messages
+        tuple: (tool_calls, content) where content is the text message if present
     """
-    logger.debug(
-        f"------------- Processing new message: model={model}, provider={provider} --------------- "
-    )
-    """Process messages through the agent and handle outputs."""
-    # Get recursion limit from config if not explicitly set
-    if recursion_limit is None:
-        provider_config = config.get_provider_config(provider)
-        recursion_limit = provider_config.recursion_limit
+    tool_calls = []
+    content = None
 
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    if disable_logging:
-        # Disable all logging if flag is set
-        logging.getLogger("vmpilot").setLevel(logging.WARNING)
-        logging.getLogger("httpx").setLevel(logging.ERROR)
-        logging.getLogger("httpcore").setLevel(logging.ERROR)
-        logging.getLogger("asyncio").setLevel(logging.ERROR)
-        logger.setLevel(logging.ERROR)
-
-    # Set prompt suffix and provider
-    prompt_suffix.set(system_prompt_suffix)
-    current_provider.set(provider)
-
-    # Create or retrieve Chat object to handle conversation state
-    from .chat import Chat
-
-    # Create Chat object to manage conversation state
     try:
-        chat = Chat(
-            messages=messages,
-            output_callback=output_callback,
-            system_prompt_suffix=system_prompt_suffix,
-        )
-        logger.debug(f"Using chat_id: {chat.chat_id}")
+        # Extract tool calls from the response
+        message = response.choices[0].message
 
-        # Check if project structure is invalid and user needs to make a choice
-        if hasattr(chat, "done") and chat.done is True:
-            logger.info(
-                "Project structure is invalid. Ending chat to allow user to choose an option."
-            )
-            # Add a placeholder assistant message to ensure proper display
-            if output_callback:
-                # Message already sent through the chat output callback
-                pass
-            # Return early with just the existing messages
-            return messages
+        # Get content if available
+        if hasattr(message, "content") and message.content:
+            content = message.content
 
+        if hasattr(message, "tool_calls") and message.tool_calls:
+            for tool_call in message.tool_calls:
+                # Parse arguments from JSON string to dict
+                try:
+                    arguments = json.loads(tool_call.function.arguments)
+                except json.JSONDecodeError:
+                    arguments = {"error": "Failed to parse arguments"}
+
+                tool_calls.append(
+                    {
+                        "id": tool_call.id,
+                        "name": tool_call.function.name,
+                        "arguments": arguments,
+                    }
+                )
     except Exception as e:
-        logger.error(f"Error creating Chat object: {e}")
-        raise
+        logger.error(f"Error parsing tool calls: {str(e)}")
 
-    # Create an Exchange object to track this user-LLM interaction with Git tracking
-    user_message = messages[-1] if messages else {"role": "user", "content": ""}
-    exchange = Exchange(
-        chat_id=chat.chat_id,  # Use the chat_id directly from the Chat object
-        user_message=user_message,
-        output_callback=output_callback,
-    )
+    return tool_calls, content
 
-    # Initialize usage tracking for this exchange with the current provider
-    usage = Usage(provider=provider)
 
-    # Check Git repository status and handle dirty_repo_action
-    if not exchange.check_git_status():
-        logger.debug("Git repository has uncommitted changes before LLM operation")
+def generate_responses(
+    body: Dict[str, Any],
+    pipeline_self: Any,
+    messages: list,  # Original messages, potentially for history
+    system_prompt_suffix: str,
+    formatted_messages: list,  # Messages formatted for the current LLM call
+) -> Generator[str, None, None]:
+    """
+    LiteLLM version of generate_responses that uses agent_loop.
+    This function is intended to be called from vmpilot.response.py.
 
-        # Check if we should stop processing based on dirty_repo_action config
-        if config.git_config.dirty_repo_action.lower() == "stop":
-            # Return a message to the user instead of processing with the LLM
-            error_message = "Sorry, the git repository has unsaved changes and the config is set to: *dirty_repo_action = stop*.\n I cannot make any changes."
-            # Call output callback with the error message
-            output_callback({"type": "text", "text": error_message})
-            logger.warning(
-                "Dirty repo and dirty_repo_action is set to stop. Stop processing."
+    Args:
+        body: Request body from the pipeline/caller.
+        pipeline_self: Reference to the pipeline object (for model, API key access).
+        messages: The original list of messages (potentially for chat history context).
+        system_prompt_suffix: Additional text to append to the system prompt.
+        formatted_messages: Messages specifically formatted for the current LLM call (usually the latest user message + context).
+
+    Yields:
+        Response chunks as they become available from the agent_loop.
+    """
+    output_queue = queue.Queue()
+    loop_done = threading.Event()
+
+    # Extract the user input from formatted_messages
+    # TODO: Revisit how user input is best obtained; this assumes last message is user input.
+    user_input = ""
+    if formatted_messages and formatted_messages[-1].get("role") == "user":
+        # Content can be a list of dicts (e.g. for images) or a simple string.
+        # For now, we assume text based on current agent_loop's expectation.
+        content_item = formatted_messages[-1].get("content", "")
+        if isinstance(content_item, list) and content_item:
+            # Find the first text item if content is a list
+            for item in content_item:
+                if item.get("type") == "text":
+                    user_input = item.get("text", "")
+                    break
+        elif isinstance(content_item, str):
+            user_input = content_item
+
+    if not user_input:
+        logger.error("No user input found in formatted_messages or input is not text")
+        yield "Error: No user text input found for the agent."
+        return
+
+    # TODO: Integrate get_system_prompt() from vmpilot.prompt here (Step 2 of Issue #88)
+    system_prompt = """You are VMPilot, an AI assistant that can help with system operations.
+You can execute shell commands to help users with their tasks.
+Always format command outputs with proper markdown formatting.
+Be concise and helpful in your responses."""
+
+    if system_prompt_suffix:
+        system_prompt += "\n\n" + system_prompt_suffix
+
+    logger.debug(f"System prompt for agent_loop: {system_prompt}")
+
+    # TODO: Integrate the full toolset from vmpilot.tools (Step 6 of Issue #88)
+    # For now, using the MVP shell tool.
+    tools = [SHELL_TOOL]
+
+    # Get model and API key from pipeline_self (passed from vmpilot.py)
+    # This replaces direct os.environ access in the original lllm/agent.py
+    model = pipeline_self.valves.model
+    api_key = pipeline_self._api_key  # Access the centrally managed API key
+    # Determine provider for LiteLLM if needed, or rely on LiteLLM's model name parsing
+    # provider = pipeline_self.valves.provider.value
+
+    logger.info(f"LiteLLM agent using model: {model}")
+
+    def run_loop():
+        try:
+            # The agent_loop in the MVP returned a single string.
+            # To fit the streaming model of generate_responses, we will iterate if it's a generator,
+            # or put the single string onto the queue.
+            # For full LiteLLM migration, agent_loop itself will become a generator.
+            # For now, let's adapt based on the current agent_loop from lllm/agent.py
+            # which returns a single string. We'll modify lllm/agent.py's agent_loop
+            # to be a generator as part of this refactoring.
+
+            # MODIFICATION: agent_loop will be changed to be a generator
+            result_generator = agent_loop(
+                user_input=user_input,
+                system_prompt=system_prompt,
+                tools=tools,
+                model=model,
+                api_key=api_key,
+                # messages_history=messages # Pass full history if agent_loop is adapted
             )
+            for chunk in result_generator:  # agent_loop will now yield chunks
+                output_queue.put(chunk)
 
-            # Log empty usage since we're exiting early
-            logger.info(
-                "TOTAL_TOKEN_USAGE: {'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'input_tokens': 0, 'output_tokens': 0}"
-            )
+        except Exception as e:
+            error_msg = f"Error in agent_loop thread: {str(e)}"
+            logger.error(error_msg)
+            logger.error("".join(traceback.format_tb(e.__traceback__)))
+            output_queue.put(f"Error: {str(e)}")
+        finally:
+            loop_done.set()
 
-            # Return early with just the error message
-            return messages + [
-                {"role": "assistant", "content": error_message}
-            ]  # Convert to dict format
-        # For other actions (stash), continue processing
+    thread = threading.Thread(target=run_loop)
+    thread.daemon = True
+    thread.start()
 
-    # Handle prompt caching for Anthropic provider
+    response_received = False
+    while not loop_done.is_set() or not output_queue.empty():
+        try:
+            response_chunk = output_queue.get(timeout=0.1)
+            response_received = True
+            yield response_chunk
+        except queue.Empty:
+            pass
 
-    logger.debug("DEBUG: Creating agent")
-    # Create agent
-    agent = await create_agent(
-        model, api_key, provider, system_prompt_suffix, temperature, max_tokens
-    )
+    if not response_received and loop_done.is_set():
+        logger.warning("Agent loop finished but no response was yielded to the queue.")
+        yield "Agent processing complete; no explicit response generated."
 
-    # for openai and google preprend the system prompt
-    if provider == APIProvider.GOOGLE or provider == APIProvider.OPENAI:
-        # Prepend system prompt to messages for OpenAI
-        system_prompt = get_system_prompt() + (
-            "\n\n" + system_prompt_suffix if system_prompt_suffix else ""
-        )
-        messages.insert(
-            0,
-            {
-                "role": "assistant",
-                "content": system_prompt,
-            },
-        )  # type: ignore  # Ignoring list item type issue
 
-    logger.debug("DEBUG: Agent created successfully")
+def agent_loop(
+    user_input: str,
+    system_prompt: str,
+    tools: List[Dict[str, Any]],
+    model: str,
+    api_key: str,  # Added api_key parameter
+    # messages_history: List[Dict[str,Any]] = None # Potential future parameter for history
+) -> Generator[str, None, None]:  # Changed to generator
+    """
+    Main agent loop that processes user input, sends it to LiteLLM,
+    executes tools, and yields responses/tool outputs.
+    """
+    # TODO: Integrate Chat class and unified_memory for history (Steps 3 & 4 of Issue #88)
+    current_messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_input},
+    ]
+    # if messages_history:
+    #     # Logic to prepend history, truncate, etc.
+    #     pass
 
-    # Check if we have a previous conversation state for this chat session
-    formatted_messages = []
-    cache_info = {}
+    max_iterations = 10
+    iteration = 0
 
-    # Determine if this is a new chat session by checking the conversation state
-    previous_messages, previous_cache_info = get_conversation_state(chat.chat_id)
+    while iteration < max_iterations:
+        iteration += 1
+        logger.info(f"LiteLLM Agent loop iteration {iteration}")
 
-    # If there are no previous messages OR this is explicitly a new chat (len <= 2)
-    # then we treat it as a new chat session
-    is_new_chat = (not previous_messages) or len(messages) <= 2
-
-    if is_new_chat:
-        # For new chats, clear any existing conversation state
-        clear_conversation_state(chat.chat_id)
-        logger.debug(f"Started new chat session with chat_id: {chat.chat_id}")
-    else:
-        # This is a continuing chat, use the previous conversation state
-        logger.info(
-            f"Retrieved previous conversation state with {len(previous_messages)} messages for chat_id: {chat.chat_id}"
-        )
-        formatted_messages.extend(previous_messages)
-        cache_info = previous_cache_info
-        # Use the Chat class to determine if we should truncate messages
-        if messages:
-            # Let the Chat class handle message truncation
-            messages = chat.get_formatted_messages(messages)
-            logger.debug(f"Using formatted messages from Chat: {messages}")
-
-    # Convert messages from openai to LangChain format
-    try:
-        for msg in messages:
-            logger.debug(f"Processing message: {msg}")
-            log_message_processing(msg["role"], type(msg["content"]).__name__)
-            if msg["role"] == "user":
-                if isinstance(msg["content"], str):
-                    logger.debug("Processing single message")
-                    formatted_messages.append(
-                        HumanMessage(content=msg["content"], additional_kwargs={})
-                    )
-                elif isinstance(msg["content"], list):
-                    logger.debug("Processing list of messages")
-                    # Handle structured content
-                    for item in msg["content"]:
-                        if item["type"] == "text":
-                            # Preserve cache control if present
-                            additional_kwargs = {}
-                            if "cache_control" in item:
-                                additional_kwargs["cache_control"] = item[
-                                    "cache_control"
-                                ]
-                            formatted_messages.append(
-                                HumanMessage(
-                                    content=item["text"],
-                                    cache_control=item.get("cache_control"),
-                                    additional_kwargs=(
-                                        additional_kwargs if additional_kwargs else {}
-                                    ),
-                                )
-                            )
-            elif msg["role"] == "assistant":
-                if isinstance(msg["content"], str):
-                    formatted_messages.append(AIMessage(content=msg["content"]))
-                elif isinstance(msg["content"], list):
-                    # Combine all content parts into one message
-                    content_parts = []
-                    for item in msg["content"]:
-                        if item["type"] == "text":
-                            content_parts.append(item["text"])
-                        elif item["type"] == "tool_use":
-                            # Include tool name and output in the message
-                            tool_output = item.get("output", "")
-                            if isinstance(tool_output, dict):
-                                tool_output = tool_output.get("output", "")
-                            content_parts.append(
-                                f"Tool use: {item['name']}\nOutput: {tool_output}"
-                            )
-                    if content_parts:
-                        formatted_messages.append(
-                            AIMessage(content="\n".join(content_parts))
-                        )
-
-        logger.debug(f"Formatted {len(formatted_messages)} messages")
-    except Exception as e:
-        logger.error(f"Error formatting messages: {e}")
-        raise
-
-    # Stream agent responses
-    logger.debug(
-        f"Starting agent stream with {len(formatted_messages)} messages and chat_id: {chat.chat_id}"
-    )
-
-    """Send the request and process the stream of messages from the agent."""
-
-    # Store the latest response for saving the conversation state later
-    response = {"messages": formatted_messages}
-    # Track tool calls for the Exchange
-
-    # Run the stream processor
-    response, collected_tool_calls = await send_request(
-        agent,
-        chat,
-        exchange,
-        recursion_limit,
-        formatted_messages,
-        output_callback,
-        tool_output_callback,
-        usage,
-    )
-
-    # Complete the Exchange with the assistant's response and tool calls
-    if response and "messages" in response:
-        # Get the assistant's response message (last AI message)
-        assistant_messages = [
-            msg for msg in response["messages"] if isinstance(msg, AIMessage)
-        ]
-        if assistant_messages:
-            assistant_message = assistant_messages[-1]
-
-            # Complete the exchange with collected tool calls and commit any changes
-            exchange.complete(assistant_message, collected_tool_calls)
-
-            # Save the full conversation state to ensure all messages are preserved
-            save_conversation_state(chat.chat_id, response["messages"], cache_info)
+        try:
             logger.debug(
-                f"Saved complete conversation state with {len(response['messages'])} messages for chat_id: {chat.chat_id}"
+                f"Sending to LiteLLM: Model={model}, Messages={current_messages}, Tools={tools is not None}"
+            )
+            response_stream = litellm.completion(  # Renamed for clarity
+                model=model,
+                messages=current_messages,
+                tools=tools,
+                api_key=api_key,
+                temperature=0,  # TODO: Make configurable
+                max_tokens=4000,  # TODO: Make configurable
+                stream=True,
             )
 
-            # Log exchange summary
-            exchange_summary = exchange.get_exchange_summary()
-            logger.debug(f"Exchange completed: {exchange_summary}")
+            accumulated_content = ""
+            tool_calls_aggregated = []
 
-            # If changes were committed, log the commit message
-            if exchange_summary.get("git_changes_committed"):
-                logger.info("Git changes committed successfully")
-    else:
-        # In case of error or no response, still try to save what we have
-        exchange.complete(AIMessage(content="Error occurred during processing"), [])
+            # Iterate through stream chunks
+            for chunk in response_stream:
+                # Check if chunk itself is None, or if choices list is empty
+                if not chunk or not chunk.choices:
+                    continue
 
-    # --- Store exchange and cost data in DB ---
-    try:
-        # Prepare values
-        chat_id = exchange.chat_id
-        request = getattr(exchange.user_message, "content", str(exchange.user_message))
-        if len(request) > 500:
-            request = request[:500] + "..."
-        _, cost_dict = usage.get_cost_summary()
-        start = exchange.started_at.isoformat()
-        end = exchange.completed_at.isoformat() if exchange.completed_at else start
-        usage.store_cost_in_db(chat_id, model, request, cost_dict, start, end)
-    except Exception as e:
-        logger.error(f"Could not persist exchange/cost info: {e}")
+                delta = chunk.choices[0].delta
+                # If delta is None (can happen with some model/provider end-of-stream markers)
+                if delta is None:
+                    continue
 
-    # Log the total token usage and cost for this exchange
-    usage.get_cost_summary()
+                if delta.content:
+                    yield delta.content
+                    accumulated_content += delta.content
 
-    # Get cost message from usage module - it will handle display settings internally
-    cost_message = usage.get_cost_message(chat_id=exchange.chat_id)
-    if cost_message:  # Only output if there's a message to display
-        logger.debug(cost_message)
-        # append cost message to the Messages
-        output_callback({"type": "text", "text": cost_message})
+                if delta.tool_calls:
+                    for tc_chunk in delta.tool_calls:
+                        # This logic attempts to aggregate streamed tool calls.
+                        # LiteLLM's streaming behavior for tool calls can vary.
+                        # For robust handling, it's often better to get the full tool_calls array
+                        # from the message once the content stream is finished, if the provider supports that.
+                        # If tool calls are guaranteed to be complete in one delta chunk (or aggregated by LiteLLM already),
+                        # this can be simpler.
+                        # For now, assuming a basic aggregation or that they come in full.
 
-    return messages
+                        # A common pattern is that `id` and `name` appear first, then `arguments` stream.
+                        # We need to find by id and append to arguments or create new.
+                        existing_tc = next(
+                            (
+                                tc
+                                for tc in tool_calls_aggregated
+                                if tc_chunk.id and tc["id"] == tc_chunk.id
+                            ),
+                            None,
+                        )
+                        if existing_tc:
+                            if tc_chunk.function and tc_chunk.function.arguments:
+                                existing_tc["function"][
+                                    "arguments"
+                                ] += tc_chunk.function.arguments
+                        elif (
+                            tc_chunk.id and tc_chunk.function and tc_chunk.function.name
+                        ):  # Ensure essential fields are present
+                            tool_calls_aggregated.append(
+                                {
+                                    "id": tc_chunk.id,
+                                    "type": "function",  # Default type
+                                    "function": {
+                                        "name": tc_chunk.function.name,
+                                        "arguments": tc_chunk.function.arguments
+                                        or "",  # Ensure arguments is a string
+                                    },
+                                }
+                            )
+
+            # Add accumulated assistant message (if any) to history
+            # This should happen *after* the streaming loop for the current LLM call concludes.
+            if accumulated_content:  # If assistant said something
+                current_messages.append(
+                    {"role": "assistant", "content": accumulated_content}
+                )
+
+            # Process tool calls after stream is complete and content is gathered
+            parsed_tool_calls = []
+            if tool_calls_aggregated:
+                # Add the raw tool_calls object that the assistant wanted to make
+                # (before we add the actual tool results)
+                assistant_message_with_tools = {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": tool_calls_aggregated,
+                }
+                current_messages.append(assistant_message_with_tools)
+
+                for tc_data in tool_calls_aggregated:
+                    try:
+                        # Ensure arguments string is valid JSON before parsing
+                        args_str = tc_data["function"]["arguments"]
+                        if not args_str.strip():  # Handle empty arguments string
+                            arguments = {}
+                        else:
+                            arguments = json.loads(args_str)
+                    except json.JSONDecodeError as e:
+                        logger.error(
+                            f"Tool call argument JSON parsing error: {e} for arguments: {args_str}"
+                        )
+                        arguments = {
+                            "error": "Failed to parse arguments",
+                            "raw_arguments": args_str,
+                        }
+
+                    parsed_tool_calls.append(
+                        {
+                            "id": tc_data["id"],
+                            "name": tc_data["function"]["name"],
+                            "arguments": arguments,
+                        }
+                    )
+
+            if not parsed_tool_calls:
+                if (
+                    not accumulated_content
+                    and iteration == 1
+                    and not messages[-1].get("tool_calls")
+                ):  # Check if the last message has tool_calls
+                    logger.info(
+                        "No content or tool calls from LLM in the first iteration."
+                    )
+                # If there was no textual output yielded during the stream,
+                # and no tool calls, this generation cycle for the agent is done.
+                return
+
+            # Execute tools
+            for tool_call in parsed_tool_calls:
+                tool_name = tool_call["name"]
+                tool_args = tool_call["arguments"]
+                tool_call_id = tool_call["id"]
+
+                logger.info(f"Executing tool: {tool_name} with args: {tool_args}")
+                # TODO: Integrate with the main tool execution system (Step 6 of Issue #88)
+                if tool_name == "shell":  # Assumes SHELL_TOOL is the only one for now
+                    tool_result_str = execute_tool("shell", tool_args)
+                    yield f"\n--- Tool Output ({tool_name}) ---\n{tool_result_str}\n----------------------------\n"
+                else:
+                    tool_result_str = (
+                        f"Error: Tool '{tool_name}' not implemented or recognized."
+                    )
+                    yield f"\n--- Tool Error ({tool_name}) ---\n{tool_result_str}\n--------------------------\n"
+
+                current_messages.append(
+                    {
+                        "role": "tool",
+                        "content": tool_result_str,
+                        "tool_call_id": tool_call_id,
+                    }
+                )
+            # Loop back to LLM with tool results (if any tools were called)
+
+        except Exception as e:
+            error_message = (
+                f"Error in LiteLLM agent_loop: {str(e)}\n{traceback.format_exc()}"
+            )
+            logger.error(error_message)
+            yield f"\n--- Agent Error ---\n{error_message}\n---------------------\n"
+            return  # Stop generation on error
+
+        logger.warning("Maximum iterations reached in agent_loop.")
+        yield "\n--- Agent Warning ---\nMaximum iterations reached.\n----------------------\n"
+
+
+# TODO (Post-MVP, during full integration):
+# - Integrate vmpilot.config for model, temperature, max_tokens settings.
+# - Integrate vmpilot.prompt.get_system_prompt().
+# - Replace lllm.shelltool with the main tool system (vmpilot.tools and tool_execution).
+# - Integrate vmpilot.chat.Chat and vmpilot.unified_memory for history.
+# - Integrate vmpilot.exchange.Exchange and vmpilot.usage.Usage.
+# - Robust error handling and streaming for tool calls.
+# - Graceful handling of different content types in messages.
