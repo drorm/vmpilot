@@ -13,10 +13,8 @@ from typing import Any, Dict, Generator, List
 
 import litellm
 
-from vmpilot.lllm.shelltool import ShellToolResult
-
-# Import shell tool
-from vmpilot.tools.shelltool import SHELL_TOOL
+# Import shell tool from lllm implementation
+from vmpilot.lllm.shelltool import SHELL_TOOL, ShellToolResult, execute_tool
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -27,13 +25,24 @@ logging.getLogger("litellm").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
-def parse_tool_calls(response) -> List[Dict[str, Any]]:
-    """Extract tool calls from the LLM response."""
+def parse_tool_calls(response) -> tuple:
+    """
+    Extract tool calls and content from the LLM response.
+
+    Returns:
+        tuple: (tool_calls, content) where content is the text message if present
+    """
     tool_calls = []
+    content = None
 
     try:
         # Extract tool calls from the response
         message = response.choices[0].message
+
+        # Get content if available
+        if hasattr(message, "content") and message.content:
+            content = message.content
+
         if hasattr(message, "tool_calls") and message.tool_calls:
             for tool_call in message.tool_calls:
                 # Parse arguments from JSON string to dict
@@ -52,7 +61,7 @@ def parse_tool_calls(response) -> List[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Error parsing tool calls: {str(e)}")
 
-    return tool_calls
+    return tool_calls, content
 
 
 def generate_responses(
@@ -189,6 +198,10 @@ def agent_loop(
     max_iterations = 10  # Safety limit to prevent infinite loops
     iteration = 0
 
+    # Track all tool results for final output
+    all_tool_results = []
+    final_response = ""
+
     while iteration < max_iterations:
         iteration += 1
         logger.info(f"Agent loop iteration {iteration}")
@@ -204,12 +217,25 @@ def agent_loop(
                 max_tokens=4000,
             )
 
-            # Parse tool calls from response
-            tool_calls = parse_tool_calls(response)
+            # Parse tool calls and content from response
+            tool_calls, content = parse_tool_calls(response)
 
-            # If no tool calls, return the final response
+            # Store initial message from LLM if present
+            if content and iteration == 1:
+                all_tool_results.append(content)
+
+            # If no tool calls, we've reached the final response
             if not tool_calls:
-                return response.choices[0].message.content
+                final_response = content or response.choices[0].message.content
+                # If we have tool results, include them before the final response
+                if all_tool_results and all_tool_results[-1] != final_response:
+                    # Don't duplicate the final response if it's already the last item
+                    combined_output = (
+                        "\n".join(all_tool_results) + "\n" + final_response
+                    )
+                    return combined_output
+                else:
+                    return final_response
 
             # Execute each tool call and add results to messages
             for tool_call in tool_calls:
@@ -217,12 +243,14 @@ def agent_loop(
                 tool_args = tool_call["arguments"]
 
                 logger.info(f"Executing tool: {tool_name}")
+                # Execute tool using our lllm implementation
                 if tool_name == "shell":
-                    from vmpilot.tools.shelltool import execute_shell_command
-
-                    tool_result = execute_shell_command(tool_args)
+                    tool_result = execute_tool("shell", tool_args)
+                    # Add to our tracked results
+                    all_tool_results.append(tool_result)
                 else:
                     tool_result = f"Error: Tool '{tool_name}' not implemented"
+                    all_tool_results.append(tool_result)
 
                 # Add the tool call and result to messages
                 messages.append(
@@ -252,5 +280,12 @@ def agent_loop(
         except Exception as e:
             logger.error(f"Error in agent loop: {str(e)}")
             return f"Error: {str(e)}"
+
+    # If we've reached max iterations but have tool results, return those with an error message
+    if all_tool_results:
+        return (
+            "\n".join(all_tool_results)
+            + "\n\nError: Maximum iterations reached without a final response"
+        )
 
     return "Error: Maximum iterations reached without a final response"
