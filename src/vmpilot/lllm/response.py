@@ -4,13 +4,15 @@ Handles generating responses from the LLM and tools, managing streaming, and out
 This module calls the agent_loop from lllm_agent.py.
 """
 
+import asyncio
 import logging
 import queue
 import threading
 import traceback
 from typing import Generator
 
-from vmpilot.lllm.agent import SHELL_TOOL, agent_loop
+from vmpilot.config import MAX_TOKENS, RECURSION_LIMIT, TEMPERATURE, TOOL_OUTPUT_LINES
+from vmpilot.lllm.agent import SHELL_TOOL, process_messages
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +53,7 @@ def generate_responses(
     tools = [SHELL_TOOL]
 
     # Prepare system prompt with more context from VMPilot
-    system_prompt = """You are VMPilot, an AI assistant that can help with system operations.
-You can execute shell commands to help users with their tasks.
-Always format command outputs with proper markdown formatting.
-Be concise and helpful in your responses."""
+    system_prompt = """You are VMPilot, an AI assistant that can help with system operations.\nYou can execute shell commands to help users with their tasks.\nAlways format command outputs with proper markdown formatting.\nBe concise and helpful in your responses."""
 
     # Add system prompt suffix if provided
     if system_prompt_suffix:
@@ -63,32 +62,98 @@ Be concise and helpful in your responses."""
     # Log system prompt at debug level
     logger.debug(f"System prompt: {system_prompt}")
 
-    # Run agent_loop in a separate thread
+    # Import config dynamically to avoid circular imports
+    from vmpilot.config import TOOL_OUTPUT_LINES
+
+    def handle_exception(e):
+        logger.error(f"Error: {e}")
+        logger.error("".join(traceback.format_tb(e.__traceback__)))
+        output_queue.put(f"Error: {str(e)}")
+
+    # Callbacks for LLM and tool outputs
+    def output_callback(content):
+        logger.debug(f"Received content: {content}")
+        if isinstance(content, dict) and content.get("type") == "text":
+            logger.debug(f"Assistant: {content['text']}")
+            output_queue.put(content["text"])
+        elif isinstance(content, str):
+            output_queue.put(content)
+
+    def tool_callback(result, tool_id=None):
+        logger.debug(f"Tool callback received result: {result}")
+        outputs = []
+        if isinstance(result, dict):
+            if "error" in result and result["error"]:
+                outputs.append(result["error"])
+            if "output" in result and result["output"]:
+                outputs.append(result["output"])
+        elif hasattr(result, "error") and result.error:
+            if hasattr(result, "exit_code") and result.exit_code:
+                outputs.append(f"Exit code: {result.exit_code}")
+            outputs.append(result.error)
+        else:
+            outputs.append(str(result))
+        logger.debug("Tool callback queueing outputs:")
+        for output in outputs:
+            output_lines = str(output).splitlines()
+            truncated_output = "\n".join(output_lines[:TOOL_OUTPUT_LINES])
+            if len(output_lines) > (TOOL_OUTPUT_LINES + 1):
+                truncated_output += f"\n...\n````\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
+            else:
+                truncated_output += "\n"
+            output_queue.put(truncated_output)
+
     def run_loop():
+        loop = None
         try:
-            # Get model from pipeline
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            # Set exception handler for the loop to catch unhandled exceptions
+            def handle_exception(loop, context):
+                exception = context.get("exception")
+                if exception:
+                    logger.error(f"Caught asyncio exception: {exception}")
+                    logger.error("".join(traceback.format_tb(exception.__traceback__)))
+                else:
+                    logger.error(f"Asyncio error: {context['message']}")
+
+            loop.set_exception_handler(handle_exception)
+
             model = pipeline_self.valves.model
-            logger.info(f"Using model: {model}")
-
-            # Run the agent loop and stream results to the queue
-            for item in agent_loop(
-                user_input=user_input,
-                system_prompt=system_prompt,
-                tools=tools,  # tools are passed to litellm.completion inside agent_loop
+            provider = getattr(pipeline_self.valves.provider, "value", None)
+            api_key = getattr(pipeline_self, "_api_key", None)
+            # Build messages and params for process_messages
+            coroutine = process_messages(
                 model=model,
-            ):
-                output_queue.put(item)
+                provider=provider,
+                system_prompt_suffix=system_prompt_suffix,
+                messages=formatted_messages,
+                output_callback=output_callback,
+                tool_output_callback=tool_callback,
+                api_key=api_key,
+                max_tokens=MAX_TOKENS,
+                temperature=TEMPERATURE,
+                disable_logging=body.get("disable_logging", False),
+                recursion_limit=None,
+            )
+            loop.run_until_complete(coroutine)
         except Exception as e:
-            # This top-level exception catch in run_loop might be redundant if agent_loop handles its errors by yielding them
-            # However, it can catch errors from agent_loop's setup or if agent_loop itself fails to instantiate/run
-            error_msg = f"Error in agent_loop dispatcher: {str(e)}"
-            logger.error(error_msg)
-            import traceback
-
-            logger.error("".join(traceback.format_tb(e.__traceback__)))
-            output_queue.put(f"Error: {str(e)}")
+            handle_exception(e)
         finally:
             loop_done.set()
+            if loop:
+                try:
+                    pending = asyncio.all_tasks(loop)
+                    for task in pending:
+                        task.cancel()
+                    if pending:
+                        loop.run_until_complete(
+                            asyncio.gather(*pending, return_exceptions=True)
+                        )
+                    loop.close()
+                except Exception as e:
+                    logger.warning(f"Error during loop cleanup: {e}")
 
     # Start the thread
     thread = threading.Thread(target=run_loop)
@@ -105,7 +170,7 @@ Be concise and helpful in your responses."""
         except queue.Empty:
             continue
         except Exception as e:
-            logger.error(f"Error getting output: {e}")
+            handle_exception(e)
             break
 
     # If no response was received and the loop is done, yield a default message

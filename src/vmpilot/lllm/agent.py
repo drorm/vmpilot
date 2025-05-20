@@ -69,6 +69,63 @@ def parse_tool_calls(response) -> tuple:
     return tool_calls, content
 
 
+import asyncio
+
+
+async def process_messages(
+    model,
+    provider,
+    system_prompt_suffix,
+    messages,
+    output_callback,
+    tool_output_callback,
+    api_key,
+    max_tokens,
+    temperature,
+    disable_logging=False,
+    recursion_limit=None,
+):
+    """
+    Coroutine for LiteLLM agent: processes messages, streams LLM and tool responses via output/tool callbacks.
+    Accepts the same signature as the original for compatibility.
+    """
+    # Compose system prompt
+    system_prompt = "You are VMPilot, an AI assistant that can help with system operations.\nYou can execute shell commands to help users with their tasks.\nAlways format command outputs with proper markdown formatting.\nBe concise and helpful in your responses."
+    if system_prompt_suffix:
+        system_prompt += f"\n\n{system_prompt_suffix}"
+    # Compose user input (last user message)
+    user_input = ""
+    for msg in messages:
+        if msg.get("role") == "user":
+            user_input = msg.get("content", "")
+            break
+    # Set up tools
+    tools = [SHELL_TOOL]
+    # Call agent_loop and stream outputs through the correct callback
+    try:
+        for item in agent_loop(
+            user_input=user_input,
+            system_prompt=system_prompt,
+            tools=tools,
+            model=model,
+        ):
+            # Heuristic: if item looks like tool output, call tool_output_callback; else output_callback
+            if isinstance(item, dict) and ("output" in item or "error" in item):
+                if tool_output_callback:
+                    tool_output_callback(item, None)
+            else:
+                if output_callback:
+                    output_callback({"type": "text", "text": item})
+            await asyncio.sleep(0)  # Yield control to event loop for streaming
+    except Exception as e:
+        if output_callback:
+            output_callback({"type": "text", "text": f"Error: {str(e)}"})
+        raise
+
+
+# The original synchronous agent_loop entry point remains for internal use
+
+
 def agent_loop(
     user_input: str,
     system_prompt: str,
