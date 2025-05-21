@@ -7,10 +7,10 @@ from typing import Any, Dict, Optional, Type
 logger = logging.getLogger(__name__)
 
 # Tool definition for LiteLLM
-SHELL_TOOL = {
+shell_tool = {
     "type": "function",
     "function": {
-        "name": "shell",
+        "name": "shell",  # Changed from shell_tool to shell to match the example
         "description": "Execute bash commands in the system. Input should be a single command string. Examples:\n"
         "            - ls /path\n"
         "            - cat file.txt\n"
@@ -44,6 +44,7 @@ def execute_shell_command(args: Dict[str, Any]) -> str:
     if not command:
         return "Error: No command provided"
 
+    logger.info(f"Executing command: {command}")
     try:
         # Execute the command
         output = subprocess.run(
@@ -85,60 +86,3 @@ def execute_shell_command(args: Dict[str, Any]) -> str:
     except Exception as e:
         logger.error(f"Error executing command '{command}': {str(e)}")
         return f"Error: {str(e)}"
-
-
-# For LangChain compatibility
-try:
-    from langchain_core.callbacks import CallbackManagerForToolRun
-    from langchain_core.tools import BaseTool
-    from pydantic import BaseModel, Field
-
-    class ShellInput(BaseModel):
-        """Input schema for shell commands."""
-
-        command: str = Field(description="The shell command to execute")
-        language: str = Field(
-            default="bash",
-            description="Output language for syntax highlighting (e.g. 'bash', 'python', 'text')",
-        )
-
-    class ShellTool(BaseTool):
-        """Tool for executing shell commands with formatted output."""
-
-        name: str = "shell"
-        description: str = """Execute bash commands in the system. Input should be a single command string. Examples:
-                - ls /path
-                - cat file.txt
-                - head -n 10 file.md
-                - grep pattern file
-                The output will be automatically formatted with appropriate markdown syntax."""
-        args_schema: Type[BaseModel] = ShellInput
-
-        def _run(
-            self,
-            command: str,
-            language: str = "bash",
-            run_manager: Optional[CallbackManagerForToolRun] = None,
-        ) -> str:
-            """Execute shell command and return formatted output."""
-            args = {"command": command, "language": language}
-            return execute_shell_command(args)
-
-        async def _arun(
-            self,
-            command: str,
-            language: str = "bash",
-            run_manager: Optional[CallbackManagerForToolRun] = None,
-        ) -> str:
-            """Run the shell command asynchronously."""
-            return self._run(
-                command=command, language=language, run_manager=run_manager
-            )
-
-except ImportError:
-    # If LangChain is not available, provide a stub
-    class ShellTool:
-        """Stub for when LangChain is not available"""
-
-        def __init__(self, *args, **kwargs):
-            raise ImportError("LangChain is not available")

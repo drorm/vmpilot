@@ -1,4 +1,8 @@
 """
+DEPRECATED: This file is kept for legacy/LangChain compatibility only.
+All new shell tool logic, schema, and registration are handled in tools/shelltool.py and tools/setup_tools.py.
+Remove references to this file when LangChain support is no longer needed.
+
 Setup shell tool for VMPilot.
 Provides a wrapper around the shell command execution functionality.
 """
@@ -7,10 +11,7 @@ import logging
 from typing import Any, Dict, Optional, Type
 
 # Export the shell tool definition for use in the agent
-from .tools.shelltool import SHELL_TOOL, execute_shell_command
-
-# Export the shell tool definition for LiteLLM compatibility
-SETUP_SHELL_TOOL = SHELL_TOOL
+from .tools.shelltool import execute_shell_command, shell_tool
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class ShellCommandInput(BaseModel):
 class SetupShellTool:
     """Tool for executing shell commands with markdown formatting"""
 
-    name: str = "shell"
+    name: str = "shell_tool"
     description: str = """Execute bash commands in the system. Input should be a single command string. Examples:
             - ls /path
             - cat file.txt

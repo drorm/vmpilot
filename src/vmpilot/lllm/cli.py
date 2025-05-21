@@ -7,7 +7,7 @@ import argparse
 import sys
 
 from vmpilot.lllm.agent import agent_loop
-from vmpilot.lllm.shelltool import SHELL_TOOL
+from vmpilot.tools.shelltool import shell_tool
 
 
 def main():
@@ -34,7 +34,7 @@ Always format command outputs with proper markdown formatting.
 Be concise and helpful in your responses."""
 
     # Available tools
-    tools = [SHELL_TOOL]
+    tools = [shell_tool]
 
     # Run the agent loop
     response = agent_loop(user_input, system_prompt, tools, model=args.model)

@@ -14,11 +14,15 @@ from typing import Any, Dict, Generator, List
 import litellm
 
 # Import shell tool from lllm implementation
-from vmpilot.lllm.shelltool import SHELL_TOOL
-from vmpilot.lllm.shelltool import execute_tool as lllm_execute_tool_original
-from vmpilot.tools.shelltool import (
-    ShellTool as VMPilotShellTool,  # For direct shell execution
-)
+from vmpilot.tools.setup_tools import setup_tools
+from vmpilot.tools.shelltool import execute_shell_command
+
+# Tool executors mapping
+TOOL_EXECUTORS = {
+    "shell_tool": execute_shell_command,
+    "shell": execute_shell_command,  # Add the new name to match our tool definition
+    # Add additional tool executors here as needed
+}
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -98,8 +102,8 @@ async def process_messages(
         if msg.get("role") == "user":
             user_input = msg.get("content", "")
             break
-    # Set up tools
-    tools = [SHELL_TOOL]
+    # Set up tools using the standard setup_tools function
+    tools = setup_tools()
     # Call agent_loop and stream outputs through the correct callback
     try:
         for item in agent_loop(
@@ -120,9 +124,6 @@ async def process_messages(
         if output_callback:
             output_callback({"type": "text", "text": f"Error: {str(e)}"})
         raise
-
-
-# The original synchronous agent_loop entry point remains for internal use
 
 
 def agent_loop(
@@ -179,7 +180,7 @@ def agent_loop(
         pass
 
     # Main agent loop
-    max_iterations = 10  # Safety limit to prevent infinite loops
+    max_iterations = 20  # Safety limit to prevent infinite loops
     iteration = 0
 
     while iteration < max_iterations:
@@ -188,10 +189,18 @@ def agent_loop(
 
         try:
             # Call LLM via LiteLLM
+            # Extract just the schema part for LiteLLM
+            tool_schemas = [t.get("schema") for t in tools]
+
+            # Debug logging
+            logger.info(
+                f"Using tools: {[t.get('schema', {}).get('function', {}).get('name') for t in tools]}"
+            )
+
             response = litellm.completion(
                 model=model,
                 messages=messages,
-                tools=tools,
+                tools=tool_schemas,  # Pass only the schemas
                 temperature=0,
                 api_key=api_key,
                 max_tokens=4000,
@@ -287,50 +296,84 @@ def agent_loop(
                 logger.info(f"Executing tool: {tool_name}")
                 tool_result_for_history = ""
 
-                if tool_name == "shell":
-                    command_to_run = tool_args.get("command")
-                    language = tool_args.get("language", "bash")
+                # General tool execution: find the tool by name and call its executor
+                matched_tool = None
+                for tool in tools:
+                    schema = tool.get("schema")
+                    logger.info(f"Checking tool: {schema}")
 
-                    if command_to_run:
-                        yield f"**$ {command_to_run}**\n"  # Yield command string first
-
-                        try:
-                            shell_tool_instance = VMPilotShellTool()
-                            tool_output_string = lllm_execute_tool_original(
-                                "shell",
-                                {"command": command_to_run, "language": language},
-                            )
-
-                            # Yield the entire formatted string from the tool.
-                            yield tool_output_string
-                            tool_result_for_history = tool_output_string
-
-                        except (
-                            Exception
-                        ) as e:  # Catch any exception from the tool call itself
-                            error_msg = (
-                                f"Error executing shell command via tool: {str(e)}"
-                            )
-                            yield error_msg + "\n"
-                            tool_result_for_history = error_msg
+                    # LiteLLM tool schemas have a standard format: {"type": "function", "function": {...}}
+                    if isinstance(schema, dict):
+                        if schema.get("type") == "function" and isinstance(
+                            schema.get("function"), dict
+                        ):
+                            # Extract function name from the nested structure
+                            schema_name = schema.get("function", {}).get("name")
+                        else:
+                            # Direct name extraction (old format)
+                            schema_name = schema.get("name")
+                    elif hasattr(schema, "name"):
+                        schema_name = schema.name
                     else:
-                        error_msg = "Error: 'command' argument missing for shell tool"
+                        schema_name = None
+
+                    logger.info(f"Tool name from schema: {schema_name}")
+
+                    if schema_name == tool_name:
+                        matched_tool = tool
+                        break
+                if matched_tool is not None:
+                    try:
+                        # Optionally, special handling if you want to yield the command first for shell
+                        if (
+                            tool_name == "shell_tool" or tool_name == "shell"
+                        ) and tool_args.get("command"):
+                            yield f"**$ {tool_args['command']}**\n"
+
+                        # Ensure the executor exists
+                        if "executor" not in matched_tool:
+                            error_msg = f"Error: Tool '{tool_name}' found but has no executor function"
+                            logger.error(error_msg)
+                            yield error_msg
+                        else:
+                            tool_output = matched_tool["executor"](tool_args)
+                            yield (
+                                tool_output
+                                if isinstance(tool_output, str)
+                                else str(tool_output)
+                            )
+                        tool_result_for_history = (
+                            tool_output
+                            if isinstance(tool_output, str)
+                            else str(tool_output)
+                        )
+                    except Exception as e:
+                        error_msg = f"Error executing {tool_name} tool: {str(e)}"
+                        logger.error(error_msg)
+                        logger.error(traceback.format_exc())
                         yield error_msg + "\n"
                         tool_result_for_history = error_msg
                 else:
-                    # Fallback to original lllm_execute_tool for other tools or if shell fails in a different way
-                    try:
-                        # This part assumes lllm_execute_tool_original returns a string or string-convertible
-                        tool_output_obj = lllm_execute_tool_original(
-                            tool_name, tool_args
-                        )
-                        tool_result_for_history = str(tool_output_obj)
-                        yield tool_result_for_history + "\n"  # Yield the output directly
-                    except Exception as e:
-                        tool_result_for_history = (
-                            f"Error executing tool {tool_name}: {str(e)}"
-                        )
-                        yield tool_result_for_history + "\n"
+                    # List all available tools for debugging
+                    available_tools = []
+                    for t in tools:
+                        schema = t.get("schema")
+                        if isinstance(schema, dict):
+                            if schema.get("type") == "function" and isinstance(
+                                schema.get("function"), dict
+                            ):
+                                available_tools.append(
+                                    schema.get("function", {}).get("name")
+                                )
+                            else:
+                                available_tools.append(schema.get("name"))
+                        elif hasattr(schema, "name"):
+                            available_tools.append(schema.name)
+
+                    error_msg = f"Error: Tool '{tool_name}' not found. Available tools: {', '.join(available_tools) if available_tools else 'None'}"
+                    logger.error(error_msg)
+                    yield error_msg + "\n"
+                    tool_result_for_history = error_msg
 
                 # Add the tool result to messages for the next LLM call
                 messages.append(

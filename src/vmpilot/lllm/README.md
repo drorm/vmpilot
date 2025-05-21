@@ -56,7 +56,7 @@ The LiteLLM implementation is located in the `src/vmpilot/lllm` directory and co
   - `parse_tool_calls`: Helper function to extract tool calls from LLM responses
 
 - `shelltool.py`: Shell tool implementation
-  - `SHELL_TOOL`: Tool definition for the shell tool
+  - `shell_tool`: Tool definition for the shell tool
   - `execute_shell_tool`: Function to execute shell commands
 
 - `cli.py`: Standalone CLI for direct interaction with the LiteLLM agent

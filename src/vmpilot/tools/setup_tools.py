@@ -7,10 +7,10 @@ import traceback
 import warnings
 
 from vmpilot.config import google_search_config
-from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
 from vmpilot.tools.google_search_tool import GoogleSearchTool
+from vmpilot.tools.shelltool import execute_shell_command, shell_tool
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -51,56 +51,69 @@ def get_google_search_status() -> str:
     return "Google Search is enabled and properly configured"
 
 
-def setup_tools(llm=None):
-
+def setup_tools():
+    """Set up the tools used by the agent."""
     tools = []
 
-    if llm is not None:
-        try:
-            from vmpilot.setup_shell import SetupShellTool
+    # Always add the core shell tool
+    # shell_tool is already in the correct format with "type": "function"
+    tools.append({"schema": shell_tool, "executor": execute_shell_command})
 
-            # Add core tools
-            shell_tool = SetupShellTool()
-            tools.append(shell_tool)
-            # tools.append(EditTool())  # for editing
-            # tools.append(CreateFileTool())  # for creating files
+    # Optionally, add other tools here as needed (EditTool, CreateFileTool, etc.)
+    # Example:
+    # tools.append({"schema": ..., "executor": ...})
 
-            # Conditionally add Google Search tool if enabled
-            if is_google_search_enabled():
-                try:
-                    search_tool = GoogleSearchTool()
-                    if search_tool.is_configured:
-                        # tools.append(search_tool)
+    # Conditionally add Google Search tool if enabled
+    try:
+        if is_google_search_enabled():
+            try:
+                # Create Google Search tool and ensure it has the right format for LiteLLM
+                search_tool = GoogleSearchTool()
+                if getattr(search_tool, "is_configured", False):
+                    # Get the schema using the get_schema method
+                    if hasattr(search_tool, "get_schema") and callable(
+                        search_tool.get_schema
+                    ):
+                        schema = search_tool.get_schema()
+                        # Format for LiteLLM compatibility
+                        # The schema should already have the name, description, and parameters
+                        litellm_schema = {"type": "function", "function": schema}
+                        tools.append(
+                            {"schema": litellm_schema, "executor": search_tool._run}
+                        )
                         logger.debug("Google Search Tool added to available tools")
                     else:
-                        logger.warning(
-                            "Google Search Tool initialization failed, not adding to tools"
+                        logger.debug(
+                            "Google Search Tool doesn't have the required get_schema method"
                         )
-                except Exception as e:
-                    logger.error(f"Error creating Google Search Tool: {e}")
-                    logger.error("".join(traceback.format_tb(e.__traceback__)))
-            else:
-                if google_search_config.enabled:
-                    import os
-
-                    missing_vars = []
-                    if not os.getenv(google_search_config.api_key_env):
-                        missing_vars.append(google_search_config.api_key_env)
-                    if not os.getenv(google_search_config.cse_id_env):
-                        missing_vars.append(google_search_config.cse_id_env)
-
-                    logger.warning(
-                        "Google Search is enabled in configuration but environment variables are missing. "
-                        f"Please set: {', '.join(missing_vars)}"
-                    )
                 else:
-                    logger.debug(
-                        "Google Search Tool not enabled in configuration, skipping"
+                    logger.warning(
+                        "Google Search Tool initialization failed, not adding to tools"
                     )
+            except Exception as e:
+                logger.error(f"Error creating Google Search Tool: {e}")
+                logger.error("".join(traceback.format_tb(e.__traceback__)))
+        else:
+            if google_search_config.enabled:
+                import os
 
-        except Exception as e:
-            logger.error(f"Error: Error creating tools: {e}")
-            logger.error("".join(traceback.format_tb(e.__traceback__)))
+                missing_vars = []
+                if not os.getenv(google_search_config.api_key_env):
+                    missing_vars.append(google_search_config.api_key_env)
+                if not os.getenv(google_search_config.cse_id_env):
+                    missing_vars.append(google_search_config.cse_id_env)
+
+                logger.warning(
+                    "Google Search is enabled in configuration but environment variables are missing. "
+                    f"Please set: {', '.join(missing_vars)}"
+                )
+            else:
+                logger.debug(
+                    "Google Search Tool not enabled in configuration, skipping"
+                )
+    except Exception as e:
+        logger.error(f"Error creating tools: {e}")
+        logger.error("".join(traceback.format_tb(e.__traceback__)))
 
     # Return all tools
     return tools

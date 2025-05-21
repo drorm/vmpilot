@@ -9,7 +9,8 @@ __version__ = "0.1.0"
 # Core functionality
 from vmpilot.lllm.agent import agent_loop, parse_tool_calls
 from vmpilot.lllm.response import generate_responses
-from vmpilot.lllm.shelltool import SHELL_TOOL, execute_shell_tool, execute_tool
+from vmpilot.tools.shelltool import execute_shell_command as execute_tool
+from vmpilot.tools.shelltool import shell_tool
 
 __all__ = [
     # Agent functionality
@@ -17,7 +18,7 @@ __all__ = [
     "generate_responses",
     "parse_tool_calls",
     # Tools
-    "SHELL_TOOL",
+    "shell_tool",
     "execute_shell_tool",
     "execute_tool",
 ]
