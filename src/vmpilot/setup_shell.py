@@ -27,7 +27,6 @@ def execute_setup_shell_command(args: Dict[str, Any]) -> str:
     return f"\n{result}"
 
 
-# Import LangChain dependencies
 # We need these for compatibility with the current agent architecture
 from pydantic import BaseModel, Field
 

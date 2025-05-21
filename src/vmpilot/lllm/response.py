@@ -12,7 +12,7 @@ import traceback
 from typing import Generator
 
 from vmpilot.config import MAX_TOKENS, RECURSION_LIMIT, TEMPERATURE, TOOL_OUTPUT_LINES
-from vmpilot.lllm.agent import SHELL_TOOL, process_messages
+from vmpilot.lllm.agent import process_messages
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,6 @@ def generate_responses(
         logger.error("No user input found in formatted_messages")
         yield "Error: No user input found"
         return
-
-    # Set up tools - initially just the shell tool
-    tools = [SHELL_TOOL]
 
     # Prepare system prompt with more context from VMPilot
     system_prompt = """You are VMPilot, an AI assistant that can help with system operations.\nYou can execute shell commands to help users with their tasks.\nAlways format command outputs with proper markdown formatting.\nBe concise and helpful in your responses."""

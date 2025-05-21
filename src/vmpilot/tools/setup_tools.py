@@ -3,12 +3,11 @@ Initialize and configure the tools we use as described in the prompt.
 """
 
 import logging
-import os
 import traceback
 import warnings
 
 from vmpilot.config import google_search_config
-from vmpilot.setup_shell import SETUP_SHELL_TOOL
+from vmpilot.setup_shell import SetupShellTool
 from vmpilot.tools.create_file import CreateFileTool
 from vmpilot.tools.edit_tool import EditTool
 from vmpilot.tools.google_search_tool import GoogleSearchTool
@@ -53,9 +52,6 @@ def get_google_search_status() -> str:
 
 
 def setup_tools(llm=None):
-    """
-    Set up and return a list of tools.
-    """
 
     tools = []
 
@@ -64,9 +60,7 @@ def setup_tools(llm=None):
             from vmpilot.setup_shell import SetupShellTool
 
             # Add core tools
-            shell_tool = (
-                SetupShellTool()
-            )  # This now uses the LiteLLM-compatible implementation
+            shell_tool = SetupShellTool()
             tools.append(shell_tool)
             # tools.append(EditTool())  # for editing
             # tools.append(CreateFileTool())  # for creating files
