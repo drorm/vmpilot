@@ -13,6 +13,10 @@ from typing import Any, Dict, Generator, List
 
 import litellm
 
+from vmpilot.config import MAX_TOKENS, TEMPERATURE
+from vmpilot.config import Provider as APIProvider
+from vmpilot.config import config, current_provider, prompt_suffix
+
 # Import shell tool from lllm implementation
 from vmpilot.tools.setup_tools import setup_tools
 from vmpilot.tools.shelltool import execute_shell_command
@@ -92,10 +96,19 @@ async def process_messages(
     Coroutine for LiteLLM agent: processes messages, streams LLM and tool responses via output/tool callbacks.
     Accepts the same signature as the original for compatibility.
     """
+    # Import for dynamic system prompt
+    from vmpilot.prompt import get_system_prompt
+
     # Compose system prompt
-    system_prompt = "You are VMPilot, an AI assistant that can help with system operations.\nYou can execute shell commands to help users with their tasks.\nAlways format command outputs with proper markdown formatting.\nBe concise and helpful in your responses."
-    if system_prompt_suffix:
-        system_prompt += f"\n\n{system_prompt_suffix}"
+    base_system_prompt = get_system_prompt()
+    final_system_prompt = base_system_prompt
+    if prompt_suffix:  # From config.py
+        final_system_prompt += f"\n\n{prompt_suffix}"
+    if system_prompt_suffix:  # From argument
+        final_system_prompt += f"\n\n{system_prompt_suffix}"
+
+    system_prompt = final_system_prompt  # To be used by agent_loop
+
     # Compose user input (last user message)
     user_input = ""
     for msg in messages:
@@ -106,11 +119,12 @@ async def process_messages(
     tools = setup_tools()
     # Call agent_loop and stream outputs through the correct callback
     try:
+        # agent_loop now uses MAX_TOKENS, TEMPERATURE, and current_provider.api_key from config
         for item in agent_loop(
             user_input=user_input,
-            system_prompt=system_prompt,
+            system_prompt=system_prompt,  # Now using the dynamically constructed prompt
             tools=tools,
-            model=model,
+            model=model,  # model is passed correctly
         ):
             # Heuristic: if item looks like tool output, call tool_output_callback; else output_callback
             if isinstance(item, dict) and ("output" in item or "error" in item):
@@ -141,43 +155,10 @@ def agent_loop(
         {"role": "user", "content": user_input},
     ]
 
-    # Set up configuration from environment variables
-    api_key = None
-
-    # Get provider from model string
-    # TODO: This provider logic should ideally be centralized or handled by LiteLLM's env variables.
-    if "openai" in model.lower() or "gpt" in model.lower():
-        provider = "openai"
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            yield "Error: OPENAI_API_KEY environment variable not set"
-            return
-    elif "anthropic" in model.lower() or "claude" in model.lower():
-        provider = "anthropic"
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
-        if not api_key:
-            yield "Error: ANTHROPIC_API_KEY environment variable not set"
-            return
-    elif "google" in model.lower() or "gemini" in model.lower():
-        provider = "google"
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            yield "Error: GOOGLE_API_KEY environment variable not set"
-            return
-    # Ensure api_key is set if a provider was matched, otherwise LiteLLM might pick one with no key.
-    # For providers that don't require explicit keys if configured elsewhere (e.g. Bedrock),
-    # this logic might need adjustment or rely on LiteLLM's own key management.
-    # For now, if a known provider pattern is matched, we expect a key.
-    elif provider not in [
-        "openai",
-        "anthropic",
-        "google",
-    ]:  # Check if provider was not set
-        # Assuming LiteLLM can handle other models without explicit key here if not in known list.
-        # Or, this could be an error:
-        # yield f"Error: Unknown model provider for {model}"
-        # return
-        pass
+    # API key, provider, max_tokens, and temperature are now sourced from config.py
+    # (current_provider.api_key, current_provider.name, MAX_TOKENS, TEMPERATURE)
+    # The 'model' variable is passed as an argument to this function.
+    # The 'api_key' for litellm.completion will use current_provider.api_key.
 
     # Main agent loop
     max_iterations = 20  # Safety limit to prevent infinite loops
@@ -201,9 +182,11 @@ def agent_loop(
                 model=model,
                 messages=messages,
                 tools=tool_schemas,  # Pass only the schemas
-                temperature=0,
-                api_key=api_key,
-                max_tokens=4000,
+                temperature=TEMPERATURE,  # This is a float, not a ContextVar
+                api_key=config.get_api_key(
+                    current_provider.get()
+                ),  # Fetch API key correctly
+                max_tokens=MAX_TOKENS,  # This is an int, not a ContextVar
             )
 
             # Parse tool calls and content from response
