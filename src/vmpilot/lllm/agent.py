@@ -9,24 +9,18 @@ import os
 import queue
 import threading
 import traceback
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Generator, List, Optional
 
 import litellm
 
+# Import Chat class
+from vmpilot.chat import Chat
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config, current_provider, prompt_suffix
 
 # Import shell tool from lllm implementation
 from vmpilot.tools.setup_tools import setup_tools
-from vmpilot.tools.shelltool import execute_shell_command
-
-# Tool executors mapping
-TOOL_EXECUTORS = {
-    "shell_tool": execute_shell_command,
-    "shell": execute_shell_command,  # Add the new name to match our tool definition
-    # Add additional tool executors here as needed
-}
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -116,12 +110,60 @@ async def process_messages(
             user_input = msg.get("content", "")
             break
     # Set up tools using the standard setup_tools function
-    tools = setup_tools()
+    tools = (
+        setup_tools()
+    )  # This returns a list of tool dictionaries, including their schemas and executors
+
+    # Create Chat object to manage conversation state
+    # This is a simplified version for lllm, focusing on message formatting for now
+    # Full chat persistence, project checks etc. are not yet integrated here.
+    try:
+        chat = Chat(
+            messages=messages,  # Original messages list
+            output_callback=output_callback,  # Pass for potential chat_id announcement
+            system_prompt_suffix=system_prompt_suffix,  # Pass for potential project dir extraction
+        )
+        logger.debug(f"LiteLLM agent using chat_id: {chat.chat_id}")
+
+        # If chat.done is True, it means Project found an issue and sent a message.
+        # We should stop further processing in lllm/agent.py similar to original agent.py
+        if hasattr(chat, "done") and chat.done is True:
+            logger.info(
+                "Project structure is invalid (detected by Chat object). Ending lllm agent processing."
+            )
+            # The message to the user was already sent by the Chat/Project object via output_callback.
+            # No need to send another message here. Just return.
+            return  # Stop processing
+
+    except Exception as e:
+        logger.error(f"Error creating Chat object in lllm.agent: {e}")
+        # We might want to yield an error message or re-raise depending on desired behavior
+        if output_callback:
+            output_callback(
+                {"type": "text", "text": f"Error initializing chat: {str(e)}"}
+            )
+        raise  # Re-raise for now, as this is a fundamental part
+
+    # Prepare messages for LiteLLM based on chat object's logic
+    # The lllm agent_loop expects a list of messages in OpenAI format.
+    # The original agent.py has complex logic for new vs. continued chats and memory.
+    # For now, we'll use the chat object to get potentially truncated messages.
+    # This part will need to align with how unified_memory is integrated later.
+
+    # The current `messages` variable holds the input from the vmpilot.py level.
+    # The `chat` object's `get_formatted_messages` can be used if we decide to truncate.
+    # However, the existing `agent_loop` in lllm builds its own message history internally
+    # starting from the initial system prompt and user_input.
+    # For now, we will pass the *original* `messages` to `agent_loop` and let it manage its own history.
+    # The `chat` object created above is mostly for `chat_id` and project checks at this stage.
+
     # Call agent_loop and stream outputs through the correct callback
     try:
         # agent_loop now uses MAX_TOKENS, TEMPERATURE, and current_provider.api_key from config
         for item in agent_loop(
-            user_input=user_input,
+            user_input=user_input,  # Still needed for the first turn in agent_loop's internal history
+            initial_messages=messages,  # Pass original messages for context if needed by agent_loop
+            chat_object=chat,  # Pass the chat object for potential future use or context
             system_prompt=system_prompt,  # Now using the dynamically constructed prompt
             tools=tools,
             model=model,  # model is passed correctly
@@ -145,6 +187,8 @@ def agent_loop(
     system_prompt: str,
     tools: List[Dict[str, Any]],
     model: str = "gpt-4o",
+    initial_messages: Optional[List[Dict[str, Any]]] = None,  # Added
+    chat_object: Optional[Any] = None,  # Added (using Any for now for Chat type)
 ) -> Generator[str, None, None]:
     """
     Simple agent loop that processes user input, sends it to the LLM,
