@@ -13,9 +13,8 @@ from typing import Any, Dict, Generator, List
 
 import litellm
 
-# ShellToolResult will be used for history formatting, execute_tool for non-shell or as fallback
 # Import shell tool from lllm implementation
-from vmpilot.lllm.shelltool import SHELL_TOOL, ShellToolResult
+from vmpilot.lllm.shelltool import SHELL_TOOL
 from vmpilot.lllm.shelltool import execute_tool as lllm_execute_tool_original
 from vmpilot.tools.shelltool import (
     ShellTool as VMPilotShellTool,  # For direct shell execution
@@ -296,63 +295,22 @@ def agent_loop(
                         yield f"**$ {command_to_run}**\n"  # Yield command string first
 
                         try:
-                            # The ShellTool class from shelltool.py is a LangChain BaseTool.
-                            # Its execution method is _run, not execute.
-                            # It also doesn't return a dict like default_api.shell, but the formatted string directly.
                             shell_tool_instance = VMPilotShellTool()
-                            # Call the LangChain tool's execution method _run
-                            # It returns the fully formatted string including the command, stdout, and stderr.
-                            # We need to parse this or, better, call execute_shell_command directly for more control.
-
-                            # Let's call execute_shell_command directly to get components separately if needed for streaming.
-                            # However, the current streaming logic yields command, then output separately.
-                            # execute_shell_command itself formats the entire block (command + output).
-
-                            # Option 1: Use execute_shell_command and parse (complex)
-                            # Option 2: Modify execute_shell_command to return parts (invasive)
-                            # Option 3: Construct output parts here, similar to how execute_shell_command does.
-
-                            # Going with a simplified version of Option 3 for now, using subprocess like execute_shell_command
-                            # to get raw output first, then format and yield.
-
-                            import subprocess
-
-                            process_output = subprocess.run(
-                                command_to_run,
-                                shell=True,
-                                capture_output=True,
-                                text=True,
-                                executable="/bin/bash",
-                                timeout=60,
-                            )
-                            stdout = process_output.stdout.strip()
-                            stderr = process_output.stderr.strip()
-                            return_code = process_output.returncode
-
-                            if stdout:
-                                yield f"```{language}\n{stdout}\n```\n"
-                            if stderr and return_code != 0:
-                                yield f"**Error (code {return_code}):**\n```text\n{stderr}\n```\n"
-                            if not stdout and not stderr:
-                                yield "*Command executed with no output*\n"
-
-                            # For history, format it as ShellToolResult expects (command + its full output)
-                            # We can call execute_shell_command to get this full formatted block for history
-                            # This avoids duplicating formatting logic here and keeps history consistent.
-                            from vmpilot.tools.shelltool import (
-                                execute_shell_command as format_shell_for_history,
+                            tool_output_string = lllm_execute_tool_original(
+                                "shell",
+                                {"command": command_to_run, "language": language},
                             )
 
-                            tool_result_for_history = format_shell_for_history(
-                                {"command": command_to_run, "language": language}
-                            )
+                            # Yield the entire formatted string from the tool.
+                            yield tool_output_string
+                            tool_result_for_history = tool_output_string
 
-                        except subprocess.TimeoutExpired:
-                            error_msg = f"Error: Command timed out after 60 seconds: {command_to_run}"
-                            yield error_msg + "\n"
-                            tool_result_for_history = error_msg
-                        except Exception as e:
-                            error_msg = f"Error executing shell command: {str(e)}"
+                        except (
+                            Exception
+                        ) as e:  # Catch any exception from the tool call itself
+                            error_msg = (
+                                f"Error executing shell command via tool: {str(e)}"
+                            )
                             yield error_msg + "\n"
                             tool_result_for_history = error_msg
                     else:
