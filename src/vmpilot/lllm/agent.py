@@ -393,60 +393,6 @@ def agent_loop(
     # If we've reached max iterations
     yield "Error: Maximum iterations reached without a final response"
 
-    # The following commented out code appears to be the source of the problem
-    # and should be removed.
-
-    # Remove this append as messages are added for tool results above
-    #                messages.append(
-    #                    {
-    #                        "role": "assistant",
-    #                        "content": None, # Or the actual assistant message if it had text + tool_calls
-    #                        "tool_calls": [
-    #                            {
-    #                                "id": tool_call["id"],
-    #                                "type": "function",
-    #                                "function": {
-    #                                    "name": tool_name,
-    #                                    "arguments": json.dumps(tool_args), # LiteLLM expects string here
-    #                                },
-    #                            }
-    #                        ],
-    #                    }
-    #                )
-    #                messages.append(
-    #                    {
-    #                        "role": "tool",
-    #                        "content": tool_result,
-    #                        "tool_call_id": tool_call["id"],
-    #                    }
-    #                )
-    #
-    #        except Exception as e:
-    #            logger.error(f"Error in agent loop: {str(e)}")
-    #            return f"Error: {str(e)}"
-    #
-    #    # If we've reached max iterations but have tool results, return those with an error message
-    #    if all_tool_results:
-    #        return (
-    #            "\n".join(all_tool_results)
-    #            + "\n\nError: Maximum iterations reached without a final response"
-    #        )
-    #
-    #    return "Error: Maximum iterations reached without a final response"
-    #                )
-    #                messages.append(
-    #                    {
-    #                        "role": "tool",
-    #                        "content": tool_result,
-    #                        "tool_call_id": tool_call["id"],
-    #                    }
-    #                )
-    #
-    #        except Exception as e:
-    #            logger.error(f"Error in agent loop: {str(e)}")
-    #            return f"Error: {str(e)}"
-    #
-    #    # If we've reached max iterations but have tool results, return those with an error message
     if all_tool_results:
         return (
             "\n".join(all_tool_results)
