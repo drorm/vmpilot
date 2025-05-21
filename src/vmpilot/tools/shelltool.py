@@ -62,7 +62,7 @@ def execute_shell_command(args: Dict[str, Any]) -> str:
         return_code = output.returncode
 
         # Format the output
-        formatted_result = f"**$ {command}**\n"
+        formatted_result = ""
 
         # Add stdout if available
         if stdout:
