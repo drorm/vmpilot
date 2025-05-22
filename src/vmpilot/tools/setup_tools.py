@@ -7,8 +7,8 @@ import traceback
 import warnings
 
 from vmpilot.config import google_search_config
-from vmpilot.tools.create_file import CreateFileTool
-from vmpilot.tools.edit_tool import EditTool
+from vmpilot.tools.create_file import create_file_executor, get_create_file_schema
+from vmpilot.tools.edit_tool import edit_file_executor, get_edit_file_schema
 from vmpilot.tools.google_search_tool import GoogleSearchTool
 from vmpilot.tools.shelltool import execute_shell_command, shell_tool
 
@@ -59,9 +59,13 @@ def setup_tools():
     # shell_tool is already in the correct format with "type": "function"
     tools.append({"schema": shell_tool, "executor": execute_shell_command})
 
-    # Optionally, add other tools here as needed (EditTool, CreateFileTool, etc.)
-    # Example:
-    # tools.append({"schema": ..., "executor": ...})
+    # Add create_file tool
+    create_file_schema = {"type": "function", "function": get_create_file_schema()}
+    tools.append({"schema": create_file_schema, "executor": create_file_executor})
+
+    # Add edit_file tool
+    edit_file_schema = {"type": "function", "function": get_edit_file_schema()}
+    tools.append({"schema": edit_file_schema, "executor": edit_file_executor})
 
     # Conditionally add Google Search tool if enabled
     try:
