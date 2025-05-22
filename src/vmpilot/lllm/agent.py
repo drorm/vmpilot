@@ -110,7 +110,7 @@ async def process_messages(
 
     # Compose user input (last user message)
     user_input = ""
-    for msg in messages:
+    for msg in reversed(messages):
         if msg.get("role") == "user":
             user_input = msg.get("content", "")
             break
@@ -172,6 +172,8 @@ async def process_messages(
 
     if previous_messages:
         messages = previous_messages
+        # and append the new user user_input
+        messages.append({"role": "user", "content": user_input})
     else:
         messages = [
             {"role": "system", "content": system_prompt},
