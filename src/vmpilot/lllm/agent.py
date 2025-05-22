@@ -21,6 +21,11 @@ from vmpilot.config import config, current_provider, prompt_suffix
 
 # Import shell tool from lllm implementation
 from vmpilot.tools.setup_tools import setup_tools
+from vmpilot.unified_memory import (
+    clear_conversation_state,
+    get_conversation_state,
+    save_conversation_state,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -144,6 +149,36 @@ async def process_messages(
             )
         raise  # Re-raise for now, as this is a fundamental part
 
+    # load conversation state --
+    if chat and hasattr(chat, "chat_id"):
+        chat_id = chat.chat_id
+    else:
+        chat_id = None
+    previous_messages, previous_cache_info = get_conversation_state(chat_id)
+
+    # If there are no previous messages OR this is explicitly a new chat (len <= 2)
+    # then we treat it as a new chat session
+    is_new_chat = (not previous_messages) or len(messages) <= 2
+
+    if is_new_chat:
+        # For new chats, clear any existing conversation state
+        clear_conversation_state(chat.chat_id)
+        logger.debug(f"Started new chat session with chat_id: {chat.chat_id}")
+    else:
+        # This is a continuing chat, use the previous conversation state
+        logger.info(
+            f"Retrieved previous conversation state with {len(previous_messages)} messages for chat_id: {chat.chat_id}"
+        )
+
+    if previous_messages:
+        messages = previous_messages
+    else:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_input},
+        ]
+    cache_info = previous_cache_info or {}
+
     # Prepare messages for LiteLLM based on chat object's logic
     # The lllm agent_loop expects a list of messages in OpenAI format.
     # The original agent.py has complex logic for new vs. continued chats and memory.
@@ -162,7 +197,7 @@ async def process_messages(
         # agent_loop now uses MAX_TOKENS, TEMPERATURE, and current_provider.api_key from config
         for item in agent_loop(
             user_input=user_input,  # Still needed for the first turn in agent_loop's internal history
-            initial_messages=messages,  # Pass original messages for context if needed by agent_loop
+            messages=messages,  # Pass original messages for context if needed by agent_loop
             chat_object=chat,  # Pass the chat object for potential future use or context
             system_prompt=system_prompt,  # Now using the dynamically constructed prompt
             tools=tools,
@@ -180,6 +215,10 @@ async def process_messages(
         if output_callback:
             output_callback({"type": "text", "text": f"Error: {str(e)}"})
         raise
+    # Save conversation state after every assistant message
+    if chat and hasattr(chat, "chat_id"):
+        save_conversation_state(chat.chat_id, messages, {})
+        logger.info(f"Saved conversation state for chat_id: {chat.chat_id}")
 
 
 def agent_loop(
@@ -187,17 +226,14 @@ def agent_loop(
     system_prompt: str,
     tools: List[Dict[str, Any]],
     model: str = "gpt-4o",
-    initial_messages: Optional[List[Dict[str, Any]]] = None,  # Added
-    chat_object: Optional[Any] = None,  # Added (using Any for now for Chat type)
+    messages: Optional[List[Dict[str, Any]]] = None,  # Added
+    chat_object: Optional[Any] = Chat,
 ) -> Generator[str, None, None]:
     """
     Simple agent loop that processes user input, sends it to the LLM,
     executes tools when requested, and yields responses and tool outputs as they are generated.
     """
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_input},
-    ]
+    messages = messages or []
 
     # API key, provider, max_tokens, and temperature are now sourced from config.py
     # (current_provider.api_key, current_provider.name, MAX_TOKENS, TEMPERATURE)
