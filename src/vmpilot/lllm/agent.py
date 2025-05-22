@@ -195,20 +195,9 @@ async def process_messages(
             {"role": "user", "content": user_input},
         ]
     cache_info = previous_cache_info or {}
+    logger.debug(f"Messages for agent loop: {messages}")
 
-    # Prepare messages for LiteLLM based on chat object's logic
     # The lllm agent_loop expects a list of messages in OpenAI format.
-    # The original agent.py has complex logic for new vs. continued chats and memory.
-    # For now, we'll use the chat object to get potentially truncated messages.
-    # This part will need to align with how unified_memory is integrated later.
-
-    # The current `messages` variable holds the input from the vmpilot.py level.
-    # The `chat` object's `get_formatted_messages` can be used if we decide to truncate.
-    # However, the existing `agent_loop` in lllm builds its own message history internally
-    # starting from the initial system prompt and user_input.
-    # For now, we will pass the *original* `messages` to `agent_loop` and let it manage its own history.
-    # The `chat` object created above is mostly for `chat_id` and project checks at this stage.
-
     # Call agent_loop and stream outputs through the correct callback
     try:
         # agent_loop now uses MAX_TOKENS, TEMPERATURE, and current_provider.api_key from config

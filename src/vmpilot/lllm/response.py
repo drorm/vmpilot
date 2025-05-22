@@ -49,16 +49,6 @@ def generate_responses(
         yield "Error: No user input found"
         return
 
-    # Prepare system prompt with more context from VMPilot
-    system_prompt = """You are VMPilot, an AI assistant that can help with system operations.\nYou can execute shell commands to help users with their tasks.\nAlways format command outputs with proper markdown formatting.\nBe concise and helpful in your responses."""
-
-    # Add system prompt suffix if provided
-    if system_prompt_suffix:
-        system_prompt += "\n\n" + system_prompt_suffix
-
-    # Log system prompt at debug level
-    logger.debug(f"System prompt: {system_prompt}")
-
     # Import config dynamically to avoid circular imports
     from vmpilot.config import TOOL_OUTPUT_LINES
 
