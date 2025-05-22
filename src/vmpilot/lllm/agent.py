@@ -18,6 +18,7 @@ from vmpilot.chat import Chat
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config, current_provider, prompt_suffix
+from vmpilot.exchange import Exchange
 
 # Import shell tool from lllm implementation
 from vmpilot.tools.setup_tools import setup_tools
@@ -26,6 +27,7 @@ from vmpilot.unified_memory import (
     get_conversation_state,
     save_conversation_state,
 )
+from vmpilot.usage import Usage
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -114,6 +116,8 @@ async def process_messages(
         if msg.get("role") == "user":
             user_input = msg.get("content", "")
             break
+    user_message = {"role": "user", "content": user_input}
+
     # Set up tools using the standard setup_tools function
     tools = (
         setup_tools()
@@ -170,10 +174,21 @@ async def process_messages(
             f"Retrieved previous conversation state with {len(previous_messages)} messages for chat_id: {chat.chat_id}"
         )
 
+    # Create an Exchange object to track this user-LLM interaction with Git tracking
+    exchange = Exchange(
+        chat_id=chat.chat_id,  # Use the chat_id directly from the Chat object
+        user_message=user_message,
+        output_callback=output_callback,
+    )
+    logger.info(f"Exchange created for chat_id: {chat.chat_id}")
+
+    # Initialize usage tracking for this exchange with the current provider
+    usage = Usage(provider=provider)
+
     if previous_messages:
         messages = previous_messages
         # and append the new user user_input
-        messages.append({"role": "user", "content": user_input})
+        messages.append(user_message)
     else:
         messages = [
             {"role": "system", "content": system_prompt},
@@ -204,6 +219,8 @@ async def process_messages(
             system_prompt=system_prompt,  # Now using the dynamically constructed prompt
             tools=tools,
             model=model,  # model is passed correctly
+            exchange=exchange,  # Pass exchange for tracking
+            usage=usage,  # Pass usage for token tracking
         ):
             # Heuristic: if item looks like tool output, call tool_output_callback; else output_callback
             if isinstance(item, dict) and ("output" in item or "error" in item):
@@ -213,6 +230,30 @@ async def process_messages(
                 if output_callback:
                     output_callback({"type": "text", "text": item})
             await asyncio.sleep(0)  # Yield control to event loop for streaming
+
+        # After agent loop completes, handle usage tracking and cost display
+        if usage:
+            # Store usage in database
+            totals, costs = usage.get_cost_summary()
+            usage.store_cost_in_db(
+                chat_id=chat.chat_id,
+                model=usage.model_name or model,
+                request=user_input,
+                cost=costs,
+                start=exchange.started_at.isoformat() if exchange else "",
+                end=(
+                    exchange.completed_at.isoformat()
+                    if exchange and exchange.completed_at
+                    else ""
+                ),
+            )
+
+            # Display cost information if enabled
+            cost_message = usage.get_cost_message(chat.chat_id)
+            if cost_message:
+                if output_callback:
+                    output_callback({"type": "text", "text": cost_message})
+
     except Exception as e:
         if output_callback:
             output_callback({"type": "text", "text": f"Error: {str(e)}"})
@@ -230,6 +271,8 @@ def agent_loop(
     model: str = "gpt-4o",
     messages: Optional[List[Dict[str, Any]]] = None,  # Added
     chat_object: Optional[Any] = Chat,
+    exchange: Optional[Exchange] = None,
+    usage: Optional[Usage] = None,
 ) -> Generator[str, None, None]:
     """
     Simple agent loop that processes user input, sends it to the LLM,
@@ -245,6 +288,7 @@ def agent_loop(
     # Main agent loop
     max_iterations = 20  # Safety limit to prevent infinite loops
     iteration = 0
+    all_tool_calls = []  # Track all tool calls for exchange completion
 
     while iteration < max_iterations:
         iteration += 1
@@ -271,6 +315,56 @@ def agent_loop(
                 max_tokens=MAX_TOKENS,  # This is an int, not a ContextVar
             )
 
+            # Track usage from the response if usage tracking is enabled
+            if usage:
+                # LiteLLM response structure is different - need to convert to expected format
+                if hasattr(response, "usage") and response.usage:
+                    # Create a mock message object with usage metadata for the Usage class
+                    class MockMessage:
+                        def __init__(self, usage_data, model_name):
+                            self.usage_metadata = {
+                                "input_tokens": usage_data.prompt_tokens,
+                                "output_tokens": usage_data.completion_tokens,
+                            }
+                            # Handle completion_tokens_details if present
+                            if hasattr(usage_data, "completion_tokens_details"):
+                                details = usage_data.completion_tokens_details
+                                if hasattr(details, "reasoning_tokens"):
+                                    self.usage_metadata["reasoning_tokens"] = (
+                                        details.reasoning_tokens
+                                    )
+
+                            # Handle prompt_tokens_details if present (for cached tokens)
+                            if hasattr(usage_data, "prompt_tokens_details"):
+                                details = usage_data.prompt_tokens_details
+                                if hasattr(details, "cached_tokens"):
+                                    self.usage_metadata["input_token_details"] = {
+                                        "cache_read": details.cached_tokens
+                                    }
+
+                            self.response_metadata = {
+                                "model_name": model_name,
+                                "token_usage": {
+                                    "prompt_tokens": usage_data.prompt_tokens,
+                                    "completion_tokens": usage_data.completion_tokens,
+                                    "total_tokens": usage_data.total_tokens,
+                                },
+                            }
+                            # Add prompt_tokens_details if available
+                            if hasattr(usage_data, "prompt_tokens_details"):
+                                self.response_metadata["token_usage"][
+                                    "prompt_tokens_details"
+                                ] = {
+                                    "cached_tokens": getattr(
+                                        usage_data.prompt_tokens_details,
+                                        "cached_tokens",
+                                        0,
+                                    )
+                                }
+
+                    mock_message = MockMessage(response.usage, model)
+                    usage.add_tokens(mock_message)
+
             # Parse tool calls and content from response
             tool_calls, content = parse_tool_calls(response)
 
@@ -280,6 +374,11 @@ def agent_loop(
 
             # If no tool calls, we've reached the final response from the LLM for this turn
             if not tool_calls:
+                # Complete the exchange with the final assistant message
+                if exchange:
+                    assistant_message = response.choices[0].message
+                    exchange.complete(assistant_message, [])
+
                 # If there was no textual content, but the LLM didn't call a tool,
                 # it might be an empty response or an implicit end of operation.
                 # The original code had: final_response = content or response.choices[0].message.content
@@ -349,6 +448,9 @@ def agent_loop(
 
             messages.append(history_assistant_msg)
 
+            # Add tool calls to collection for exchange tracking
+            all_tool_calls.extend(tool_calls)
+
             # Execute each tool call and add results to messages
             for (
                 tool_call
@@ -365,7 +467,7 @@ def agent_loop(
                 matched_tool = None
                 for tool in tools:
                     schema = tool.get("schema")
-                    logger.info(f"Checking tool: {schema}")
+                    logger.debug(f"Checking tool: {schema}")
 
                     # LiteLLM tool schemas have a standard format: {"type": "function", "function": {...}}
                     if isinstance(schema, dict):
@@ -454,15 +556,20 @@ def agent_loop(
         except Exception as e:
             logger.error(f"Error in agent loop: {str(e)}\n{traceback.format_exc()}")
             yield f"Error: {str(e)}"
+            # Complete exchange with error if there's an exception
+            if exchange:
+                error_message = {"content": f"Error: {str(e)}", "role": "assistant"}
+                exchange.complete(error_message, all_tool_calls)
             return
 
-    # If we've reached max iterations
-    yield "Error: Maximum iterations reached without a final response"
+    # If we've reached max iterations, complete the exchange
+    if exchange:
+        error_message = {
+            "content": "Error: Maximum iterations reached without a final response",
+            "role": "assistant",
+        }
+        exchange.complete(error_message, all_tool_calls)
 
-    if all_tool_results:
-        return (
-            "\n".join(all_tool_results)
-            + "\n\nError: Maximum iterations reached without a final response"
-        )
+    yield "Error: Maximum iterations reached without a final response"
 
     return "Error: Maximum iterations reached without a final response"
