@@ -12,6 +12,17 @@ from .edit_diff import do_replace, find_original_update_blocks
 logger = logging.getLogger(__name__)
 
 
+class EditTool:
+    """Wrapper to provide class interface for test compatibility"""
+
+    def run(self, args) -> str:
+        # Accept both dict and string input for compatibility with tests
+        if isinstance(args, dict):
+            return edit_file_executor(args)
+        else:
+            return edit_file_executor({"content": args})
+
+
 def edit_file_executor(args: Dict[str, Any]) -> str:
     """
     LiteLLM-compatible executor function for editing files using aider's diff format.

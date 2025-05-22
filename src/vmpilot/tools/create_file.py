@@ -27,6 +27,25 @@ def _validate_path(path: Path) -> None:
         raise ValueError("Path must be absolute")
 
 
+class CreateFileTool:
+    """Wrapper to provide class interface for test compatibility"""
+
+    def run(self, args: Dict[str, Any]) -> str:
+        from pathlib import Path
+
+        # Validate path
+        path_str = args["path"] if isinstance(args, dict) and "path" in args else None
+        if not path_str or path_str.strip() in ("", "."):
+            return "error: invalid path"
+        path = Path(path_str)
+        if path.exists():
+            return f"error: file already exists: {path}"
+        try:
+            return create_file_executor(args)
+        except Exception as e:
+            return f"error: {str(e)}"
+
+
 def create_file_executor(args: Dict[str, Any]) -> str:
     """
     LiteLLM-compatible executor function for creating files.

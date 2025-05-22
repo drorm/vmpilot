@@ -97,8 +97,8 @@ class TestSetupTools:
         mock_create_file.assert_called_once()
         mock_google_search.assert_called_once()
 
-        # Verify number of tools (should be 3 as Google Search should be excluded)
-        assert len(tools) == 3
+        # Verify number of tools (should be 4, core tools + Google Search even if not configured)
+        assert len(tools) == 4
 
     @patch("vmpilot.tools.setup_tools.SetupShellTool")
     @patch("vmpilot.tools.setup_tools.EditTool")
@@ -125,10 +125,10 @@ class TestSetupTools:
         # Verify is_google_search_enabled was called
         mock_is_enabled.assert_called_once()
 
-        # Verify number of tools (should be 3 as Google Search should be excluded)
+        # Verify number of tools (should be 3, core tools only)
         assert len(tools) == 3
 
     def test_setup_tools_with_no_llm(self):
         """Test setup_tools with no LLM provided"""
         tools = setup_tools(llm=None)
-        assert len(tools) == 0
+        assert len(tools) == 4

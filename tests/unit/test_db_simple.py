@@ -4,9 +4,9 @@ Simplified unit tests for the database module.
 
 import unittest
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
 from vmpilot.db.crud import ConversationRepository
+
+# from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 
 class TestConversationRepository(unittest.TestCase):
@@ -21,9 +21,9 @@ class TestConversationRepository(unittest.TestCase):
 
         # Sample messages for testing
         messages = [
-            SystemMessage(content="You are a helpful assistant."),
-            HumanMessage(content="Hello, how are you?"),
-            AIMessage(content="I'm doing well, thank you for asking!"),
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello, how are you?"},
+            {"role": "assistant", "content": "I'm doing well, thank you for asking!"},
         ]
 
         # Serialize messages
@@ -38,9 +38,9 @@ class TestConversationRepository(unittest.TestCase):
 
         # Verify that deserialized messages match original messages
         self.assertEqual(len(deserialized), 3)
-        self.assertEqual(deserialized[0].content, messages[0].content)
-        self.assertEqual(deserialized[1].content, messages[1].content)
-        self.assertEqual(deserialized[2].content, messages[2].content)
+        self.assertEqual(deserialized[0]["content"], messages[0]["content"])
+        self.assertEqual(deserialized[1]["content"], messages[1]["content"])
+        self.assertEqual(deserialized[2]["content"], messages[2]["content"])
 
 
 if __name__ == "__main__":

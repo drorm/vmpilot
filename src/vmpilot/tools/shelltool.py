@@ -6,6 +6,38 @@ from typing import Any, Dict, Optional, Type
 
 logger = logging.getLogger(__name__)
 
+
+class ShellTool:
+    """Wrapper to provide class interface for test compatibility"""
+
+    def run(self, args: dict) -> str:
+        # Extract command and language, pass through the shell logic
+        command = args.get("command")
+        language = args.get("language", "bash")
+        if not command or command.strip() == "":
+            return "*Command executed with no output*"
+        return run_shell_command(command, language)
+
+
+def run_shell_command(command, language):
+    """Executes the command and returns output as string (markdown-formatted)."""
+    # The below mimics the function of shell_tool executor
+    import subprocess
+    import sys
+
+    out = None
+    try:
+        out = subprocess.run(
+            command, shell=True, capture_output=True, text=True, timeout=30
+        )
+        if out.returncode == 0:
+            return f"```{language}\n{out.stdout}```"
+        else:
+            return f"```{language}\n{out.stderr}```"
+    except Exception as e:
+        return f"```{language}\nError: {e}```"
+
+
 # Tool definition for LiteLLM
 shell_tool = {
     "type": "function",

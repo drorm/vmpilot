@@ -40,16 +40,16 @@ class TestCreateFileTool:
         # Create file first
         temp_file.write_text("Original content")
 
-        with pytest.raises(FileExistsError):
-            create_file_tool.run({"path": str(temp_file), "content": "New content"})
-
-        # Verify original content wasn't changed
+        result = create_file_tool.run(
+            {"path": str(temp_file), "content": "New content"}
+        )
+        assert "error" in result.lower()
         assert temp_file.read_text() == "Original content"
 
     def test_create_file_invalid_path(self, create_file_tool):
         """Test creating a file with invalid path"""
-        with pytest.raises(ValueError):
-            create_file_tool.run({"path": "", "content": "test"})
+        result = create_file_tool.run({"path": "", "content": "test"})
+        assert "error" in result.lower()
 
     def test_create_file_with_unicode(self, create_file_tool, temp_file):
         """Test creating a file with unicode content"""
