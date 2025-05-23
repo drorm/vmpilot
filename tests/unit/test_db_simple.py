@@ -6,8 +6,6 @@ import unittest
 
 from vmpilot.db.crud import ConversationRepository
 
-# from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
 
 class TestConversationRepository(unittest.TestCase):
     """Simplified test cases for the ConversationRepository class."""

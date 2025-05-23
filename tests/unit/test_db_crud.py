@@ -11,8 +11,6 @@ from unittest.mock import MagicMock, patch
 
 from vmpilot.db.crud import ConversationRepository
 
-# from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
 
 class TestConversationRepositoryCRUD(unittest.TestCase):
     """Test cases for ConversationRepository CRUD operations."""

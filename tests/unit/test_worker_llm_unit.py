@@ -9,7 +9,6 @@ import asyncio
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import SecretStr
 
 from vmpilot.config import Provider as APIProvider
@@ -119,10 +118,10 @@ class TestRunWorker:
         # Check that both system and human messages were included
         call_args = mock_llm.invoke.call_args[0][0]
         assert len(call_args) == 2
-        assert isinstance(call_args[0], SystemMessage)
-        assert call_args[0].content == "System instructions"
-        assert isinstance(call_args[1], HumanMessage)
-        assert call_args[1].content == "Test prompt"
+        assert call_args[0]["role"] == "system"
+        assert call_args[0]["content"] == "System instructions"
+        assert call_args[1]["role"] == "user"
+        assert call_args[1]["content"] == "Test prompt"
 
         # Check that whitespace was stripped from response
         assert result == "LLM response"
@@ -148,8 +147,8 @@ class TestRunWorker:
         # Check that only human message was included
         call_args = mock_llm.invoke.call_args[0][0]
         assert len(call_args) == 1
-        assert isinstance(call_args[0], HumanMessage)
-        assert call_args[0].content == "Test prompt"
+        assert call_args[0]["role"] == "user"
+        assert call_args[0]["content"] == "Test prompt"
 
         assert result == "LLM response"
 
@@ -191,10 +190,10 @@ class TestRunWorkerAsync:
         # Check that both system and human messages were included
         call_args = mock_llm.ainvoke.call_args[0][0]
         assert len(call_args) == 2
-        assert isinstance(call_args[0], SystemMessage)
-        assert call_args[0].content == "Async system instructions"
-        assert isinstance(call_args[1], HumanMessage)
-        assert call_args[1].content == "Test async prompt"
+        assert call_args[0]["role"] == "system"
+        assert call_args[0]["content"] == "Async system instructions"
+        assert call_args[1]["role"] == "user"
+        assert call_args[1]["content"] == "Test async prompt"
 
         # Check that whitespace was stripped from response
         assert result == "Async LLM response"
@@ -223,8 +222,8 @@ class TestRunWorkerAsync:
         # Check that only human message was included
         call_args = mock_llm.ainvoke.call_args[0][0]
         assert len(call_args) == 1
-        assert isinstance(call_args[0], HumanMessage)
-        assert call_args[0].content == "Test async prompt"
+        assert call_args[0]["role"] == "user"
+        assert call_args[0]["content"] == "Test async prompt"
 
         assert result == "Async LLM response"
 
@@ -283,7 +282,7 @@ class TestEdgeCases:
         # Verify
         call_args = mock_llm.invoke.call_args[0][0]
         assert len(call_args) == 1
-        assert call_args[0].content == ""  # Empty prompt
+        assert call_args[0]["content"] == ""  # Empty prompt
         assert result == "Response to empty prompt"
 
     @pytest.mark.asyncio
@@ -303,7 +302,7 @@ class TestEdgeCases:
         # Verify
         call_args = mock_llm.ainvoke.call_args[0][0]
         assert len(call_args) == 1
-        assert call_args[0].content == ""  # Empty prompt
+        assert call_args[0]["content"] == ""  # Empty prompt
         assert result == "Async response to empty prompt"
 
     @patch("vmpilot.worker_llm.get_worker_llm")
@@ -325,7 +324,7 @@ class TestEdgeCases:
         # Verify
         call_args = mock_llm.invoke.call_args[0][0]
         assert len(call_args) == 1
-        assert call_args[0].content == long_prompt
+        assert call_args[0]["content"] == long_prompt
         assert result == "Response to long prompt"
 
 

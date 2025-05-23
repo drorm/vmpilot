@@ -17,8 +17,6 @@ from vmpilot.db.connection import get_db_connection, get_db_path, initialize_db
 from vmpilot.db.crud import ConversationRepository
 from vmpilot.db.models import SCHEMA_SQL
 
-# from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
 
 class TestDatabaseConnection(unittest.TestCase):
     """Test cases for database connection management."""
