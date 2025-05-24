@@ -49,9 +49,6 @@ def generate_responses(
         yield "Error: No user input found"
         return
 
-    # Import config dynamically to avoid circular imports
-    from vmpilot.config import TOOL_OUTPUT_LINES
-
     def handle_exception(e):
         logger.error(f"Error: {e}")
         logger.error("".join(traceback.format_tb(e.__traceback__)))
@@ -122,7 +119,7 @@ def generate_responses(
                 max_tokens=MAX_TOKENS,
                 temperature=TEMPERATURE,
                 disable_logging=body.get("disable_logging", False),
-                recursion_limit=None,
+                recursion_limit=RECURSION_LIMIT,
             )
             loop.run_until_complete(coroutine)
         except Exception as e:
