@@ -7,24 +7,10 @@ import traceback
 import warnings
 
 from vmpilot.config import google_search_config
-from vmpilot.tools.create_file import (
-    CreateFileTool,
-    create_file_executor,
-    get_create_file_schema,
-)
-from vmpilot.tools.edit_tool import EditTool, edit_file_executor, get_edit_file_schema
+from vmpilot.tools.create_file import create_file_executor, get_create_file_schema
+from vmpilot.tools.edit_tool import edit_file_executor, get_edit_file_schema
 from vmpilot.tools.google_search_tool import GoogleSearchTool
 from vmpilot.tools.shelltool import execute_shell_command, shell_tool
-
-
-# For test patching compatibility (setup_tools expects these names)
-class SetupShellTool:
-    def __init__(self):
-        pass
-
-    def run(self, args):
-        return execute_shell_command(args.get("command"), args.get("language", "bash"))
-
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -65,23 +51,8 @@ def get_google_search_status() -> str:
     return "Google Search is enabled and properly configured"
 
 
-def setup_tools(llm=None):
-    """Set up the tools used by the agent. (accepts llm for test compatibility)"""
-    # If test mocks are patching the tool classes, instantiate them as objects as the tests expect
-    import sys
-
-    thismod = sys.modules[__name__]
-    # Check for test patching context
-    if all(
-        hasattr(thismod, name)
-        for name in ["SetupShellTool", "EditTool", "CreateFileTool", "GoogleSearchTool"]
-    ):
-        tools = [thismod.SetupShellTool(), thismod.EditTool(), thismod.CreateFileTool()]
-        # Only add GoogleSearchTool if enabled
-        if is_google_search_enabled():
-            tools.append(thismod.GoogleSearchTool())
-        return tools
-
+def setup_tools():
+    """Set up the tools used by the agent."""
     tools = []
 
     # Always add the core shell tool
