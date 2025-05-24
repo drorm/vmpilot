@@ -1,6 +1,6 @@
 """
 response.py for LiteLLM implementation
-Handles generating responses from the LLM and tools, managing streaming, and output.
+Generates responses from the LLM and tools, handling streaming and output callbacks.
 This module calls the agent_loop from lllm_agent.py.
 """
 
@@ -97,7 +97,7 @@ def generate_responses(
             asyncio.set_event_loop(loop)
 
             # Set exception handler for the loop to catch unhandled exceptions
-            def asyncio_exception_handler(loop, context):
+            def handle_exception(loop, context):
                 exception = context.get("exception")
                 if exception:
                     logger.error(f"Caught asyncio exception: {exception}")
@@ -105,7 +105,7 @@ def generate_responses(
                 else:
                     logger.error(f"Asyncio error: {context['message']}")
 
-            loop.set_exception_handler(asyncio_exception_handler)
+            loop.set_exception_handler(handle_exception)
 
             model = pipeline_self.valves.model
             provider = getattr(pipeline_self.valves.provider, "value", None)
@@ -129,11 +129,14 @@ def generate_responses(
             handle_exception(e)
         finally:
             loop_done.set()
+            # Safely close the loop
             if loop:
                 try:
+                    # Cancel all running tasks
                     pending = asyncio.all_tasks(loop)
                     for task in pending:
                         task.cancel()
+                    # Allow tasks to respond to cancellation
                     if pending:
                         loop.run_until_complete(
                             asyncio.gather(*pending, return_exceptions=True)
@@ -142,7 +145,7 @@ def generate_responses(
                 except Exception as e:
                     logger.warning(f"Error during loop cleanup: {e}")
 
-    # Start the thread
+    # Start the sampling loop in a separate thread
     thread = threading.Thread(target=run_loop)
     thread.daemon = True
     thread.start()
