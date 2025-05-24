@@ -12,68 +12,6 @@ COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
 
-def modify_state_messages(messages):
-    """
-    For Anthropic: Add cache_control to last 3 messages (LiteLLM format, not LangChain objects).
-    This function modifies messages in place for cache control in Anthropic.
-    """
-    provider = current_provider.get()
-    if provider is None or provider != APIProvider.ANTHROPIC:
-        return messages
-
-    # Only apply caching if prompt caching is enabled
-    provider_config = config.get_provider_config(APIProvider.ANTHROPIC)
-    if not (
-        provider_config
-        and provider_config.beta_flags
-        and PROMPT_CACHING_BETA_FLAG in provider_config.beta_flags
-    ):
-        return messages
-
-    cached = 3
-    messages_to_cache = messages[-cached:] if len(messages) >= cached else messages
-
-    for message in reversed(messages_to_cache):
-        if cached > 0:
-            # Handle different content formats
-            content = message.get("content")
-            if isinstance(content, list):
-                # Content is a list of content blocks
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        block["cache_control"] = {"type": "ephemeral"}
-                        cached -= 1
-                        break  # Only cache one block per message
-            elif isinstance(content, str):
-                # Convert string content to structured format for caching
-                message["content"] = [
-                    {
-                        "type": "text",
-                        "text": content,
-                        "cache_control": {"type": "ephemeral"},
-                    }
-                ]
-                cached -= 1
-            else:
-                # Fallback: add cache_control directly to message
-                message["cache_control"] = {"type": "ephemeral"}
-                cached -= 1
-        else:
-            # Remove cache control from older messages
-            content = message.get("content")
-            if isinstance(content, list):
-                for block in content:
-                    if isinstance(block, dict) and "cache_control" in block:
-                        block.pop("cache_control", None)
-            else:
-                message.pop("cache_control", None)
-
-    logger.debug(
-        f"[LiteLLM] Modified {len(messages_to_cache)} messages for Anthropic cache control"
-    )
-    return messages
-
-
 def build_litellm_config(
     model: str,
     api_key: str,
@@ -162,6 +100,8 @@ def modify_state_messages(messages):
     """
     For Anthropic: Add cache_control to last 3 messages (LiteLLM format, not LangChain objects).
     This function modifies messages in place for cache control in Anthropic.
+
+    Anthropic allows max 4 blocks with cache_control (system prompt uses 1, so 3 for messages).
     """
     provider = current_provider.get()
     if provider is None or provider != APIProvider.ANTHROPIC:
@@ -176,46 +116,39 @@ def modify_state_messages(messages):
     ):
         return messages
 
+    # PHASE 1: Clear ALL cache_control from ALL messages first
+    for message in messages:
+        # Remove cache_control from message level
+        message.pop("cache_control", None)
+
+        # Remove cache_control from content blocks
+        content = message.get("content")
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and "cache_control" in block:
+                    block.pop("cache_control", None)
+
+    # PHASE 2: Apply cache_control to last 3 messages only
     cached = 3
     messages_to_cache = messages[-cached:] if len(messages) >= cached else messages
 
     for message in reversed(messages_to_cache):
         if cached > 0:
-            # Handle different content formats
             content = message.get("content")
             if isinstance(content, list):
-                # Content is a list of content blocks
+                # Find the first text block and add cache_control to it only
                 for block in content:
                     if isinstance(block, dict) and block.get("type") == "text":
                         block["cache_control"] = {"type": "ephemeral"}
                         cached -= 1
                         break  # Only cache one block per message
             elif isinstance(content, str):
-                # Convert string content to structured format for caching
-                message["content"] = [
-                    {
-                        "type": "text",
-                        "text": content,
-                        "cache_control": {"type": "ephemeral"},
-                    }
-                ]
-                cached -= 1
-            else:
-                # Fallback: add cache_control directly to message
+                # For string content, add cache_control at message level to avoid creating extra blocks
                 message["cache_control"] = {"type": "ephemeral"}
                 cached -= 1
-        else:
-            # Remove cache control from older messages
-            content = message.get("content")
-            if isinstance(content, list):
-                for block in content:
-                    if isinstance(block, dict) and "cache_control" in block:
-                        block.pop("cache_control", None)
-            else:
-                message.pop("cache_control", None)
 
     logger.debug(
-        f"[LiteLLM] Modified {len(messages_to_cache)} messages for Anthropic cache control"
+        f"[LiteLLM] Applied cache control to last {3-cached} messages for Anthropic"
     )
     return messages
 

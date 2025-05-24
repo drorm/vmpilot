@@ -300,9 +300,6 @@ class Pipeline:
                     )
                 else:
                     formatted_messages.append({"role": role, "content": content})
-                formatted_messages[-1]["content"][-1]["cache_control"] = {
-                    "type": "ephemeral"
-                }
 
             # Message truncation is now handled by the Chat class in agent.py
 
