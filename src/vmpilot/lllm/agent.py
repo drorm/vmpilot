@@ -19,7 +19,7 @@ from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config, current_provider, prompt_suffix
 from vmpilot.exchange import Exchange
-from vmpilot.lllm.init_agent import create_agent, modify_state_messages
+from vmpilot.init_agent import create_agent, modify_state_messages
 
 # Import shell tool from lllm implementation
 from vmpilot.tools.setup_tools import setup_tools
