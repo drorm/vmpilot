@@ -252,7 +252,7 @@ class Pipeline:
                 return error_generator()
             return error_msg
 
-        from vmpilot.lllm.response import generate_responses
+        from vmpilot.response import generate_responses
 
         # Handle title request
         if body.get("title", False):

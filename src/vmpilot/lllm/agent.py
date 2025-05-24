@@ -1,13 +1,10 @@
 """
-Agent implementation for LiteLLM Migration MVP.
+Agent implementation
 Provides a simple agent loop with tool support using LiteLLM.
 """
 
 import json
 import logging
-import os
-import queue
-import threading
 import traceback
 from typing import Any, Dict, Generator, List, Optional
 
@@ -20,8 +17,6 @@ from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config, current_provider, prompt_suffix
 from vmpilot.exchange import Exchange
 from vmpilot.init_agent import create_agent, modify_state_messages
-
-# Import shell tool from lllm implementation
 from vmpilot.tools.setup_tools import setup_tools
 from vmpilot.unified_memory import (
     clear_conversation_state,
@@ -89,8 +84,8 @@ async def process_messages(
     output_callback,
     tool_output_callback,
     api_key,
-    max_tokens,
-    temperature,
+    max_tokens=MAX_TOKENS,
+    temperature=TEMPERATURE,
     disable_logging=False,
     recursion_limit=None,
 ):
@@ -98,6 +93,25 @@ async def process_messages(
     Coroutine for LiteLLM agent: processes messages, streams LLM and tool responses via output/tool callbacks.
     Accepts the same signature as the original for compatibility.
     """
+    # Get recursion limit from config if not explicitly set
+    if recursion_limit is None:
+        provider_config = config.get_provider_config(provider)
+        recursion_limit = provider_config.recursion_limit
+
+    # Handle logging configuration
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    if disable_logging:
+        # Disable all logging if flag is set
+        logging.getLogger("vmpilot").setLevel(logging.WARNING)
+        logging.getLogger("httpx").setLevel(logging.ERROR)
+        logging.getLogger("httpcore").setLevel(logging.ERROR)
+        logging.getLogger("asyncio").setLevel(logging.ERROR)
+        logger.setLevel(logging.ERROR)
+
+    # Set prompt suffix and provider context variables
+    prompt_suffix.set(system_prompt_suffix)
+    current_provider.set(provider)
+
     # Use create_agent to get provider-specific configuration
     agent_config = await create_agent(
         model=model,
@@ -211,6 +225,7 @@ async def process_messages(
             exchange=exchange,  # Pass exchange for tracking
             usage=usage,  # Pass usage for token tracking
             agent_config=agent_config,  # Pass the full agent configuration
+            recursion_limit=recursion_limit,  # Pass recursion limit
         ):
             # Heuristic: if item looks like tool output, call tool_output_callback; else output_callback
             if isinstance(item, dict) and ("output" in item or "error" in item):
@@ -250,7 +265,7 @@ async def process_messages(
         raise
     # Save conversation state after every assistant message
     if chat and hasattr(chat, "chat_id"):
-        save_conversation_state(chat.chat_id, messages, {})
+        save_conversation_state(chat.chat_id, messages, cache_info)
         logger.info(f"Saved conversation state for chat_id: {chat.chat_id}")
 
 
@@ -264,6 +279,7 @@ def agent_loop(
     exchange: Optional[Exchange] = None,
     usage: Optional[Usage] = None,
     agent_config: Optional[Dict[str, Any]] = None,
+    recursion_limit: Optional[int] = None,
 ) -> Generator[str, None, None]:
     """
     Simple agent loop that processes user input, sends it to the LLM,
@@ -277,7 +293,7 @@ def agent_loop(
     # The 'api_key' for litellm.completion will use current_provider.api_key.
 
     # Main agent loop
-    max_iterations = 20  # Safety limit to prevent infinite loops
+    max_iterations = recursion_limit or 20  # Use recursion_limit or default to 20
     iteration = 0
     all_tool_calls = []  # Track all tool calls for exchange completion
 
