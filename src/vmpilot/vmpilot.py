@@ -4,7 +4,7 @@ author: Assistant
 date: 2024-12-02
 version: 0.2
 license: MIT
-description: A pipeline that enables using an LLM to execute commands via LangChain
+description: A pipeline that enables using an LLM to execute commands
 environment_variables: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
 """
 

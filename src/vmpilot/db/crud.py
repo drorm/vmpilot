@@ -145,7 +145,7 @@ class ConversationRepository:
 
         Args:
             chat_id: The unique identifier for the conversation thread
-            messages: List of LangChain messages representing the conversation state
+            messages: List of messages representing the conversation state
             cache_info: Dictionary containing cache token information (optional)
         """
         if chat_id is None:
@@ -189,7 +189,7 @@ class ConversationRepository:
 
         Returns:
             Tuple containing:
-            - List of LangChain messages representing the conversation state
+            - List of messages representing the conversation state
             - Dictionary with cache token information
         """
         if chat_id is None:
