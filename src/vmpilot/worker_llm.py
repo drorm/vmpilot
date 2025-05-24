@@ -18,14 +18,49 @@ from vmpilot.config import config
 logger = logging.getLogger(__name__)
 
 
-# get_worker_llm function is removed as LiteLLM calls are made directly.
+def get_worker_llm(
+    model: str = "claude-3-7-sonnet-latest",
+    provider: APIProvider = APIProvider.ANTHROPIC,
+    temperature: float = TEMPERATURE,
+    max_tokens: int = MAX_TOKENS,
+):
+    """Get a worker LLM instance.
+
+    Args:
+        model: Model name to use.
+        provider: API provider to use.
+        temperature: Temperature setting for the LLM.
+        max_tokens: Maximum tokens for the LLM response.
+
+    Returns:
+        LLM instance based on the specified provider.
+    """
+    if provider == APIProvider.OPENAI:
+        return ChatOpenAI(
+            model=model,
+            temperature=temperature,
+            # OpenAI uses model_kwargs to pass max_tokens
+            model_kwargs={"max_tokens": max_tokens},
+            api_key=SecretStr(config.get_api_key(provider)),
+        )
+    elif provider == APIProvider.ANTHROPIC:
+        return ChatAnthropic(
+            model_name=model,
+            temperature=temperature,
+            max_tokens_to_sample=max_tokens,
+            timeout=None,  # Adding required timeout parameter
+            stop=None,  # Adding required stop parameter
+            api_key=SecretStr(config.get_api_key(provider)),
+        )
+    else:
+        raise ValueError(f"Unsupported provider: {provider}")
 
 
 def run_worker(
     prompt: str,
     system_prompt: str = "",
-    model: str = "claude-3-sonnet-20240229",  # Updated to a common LiteLLM model identifier
-    provider: APIProvider = APIProvider.ANTHROPIC,  # Provider can still be used for config lookups
+    model: str = "claude-3-7-sonnet-latest",
+    provider: APIProvider = APIProvider.ANTHROPIC,
     temperature: float = TEMPERATURE,
     max_tokens: int = MAX_TOKENS,
 ) -> str:
