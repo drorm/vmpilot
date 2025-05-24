@@ -19,6 +19,7 @@ from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config, current_provider, prompt_suffix
 from vmpilot.exchange import Exchange
+from vmpilot.lllm.init_agent import create_agent, modify_state_messages
 
 # Import shell tool from lllm implementation
 from vmpilot.tools.setup_tools import setup_tools
@@ -97,18 +98,17 @@ async def process_messages(
     Coroutine for LiteLLM agent: processes messages, streams LLM and tool responses via output/tool callbacks.
     Accepts the same signature as the original for compatibility.
     """
-    # Import for dynamic system prompt
-    from vmpilot.prompt import get_system_prompt
+    # Use create_agent to get provider-specific configuration
+    agent_config = await create_agent(
+        model=model,
+        api_key=api_key,
+        provider=provider,
+        system_prompt_suffix=system_prompt_suffix,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
 
-    # Compose system prompt
-    base_system_prompt = get_system_prompt()
-    final_system_prompt = base_system_prompt
-    if prompt_suffix:  # From config.py
-        final_system_prompt += f"\n\n{prompt_suffix}"
-    if system_prompt_suffix:  # From argument
-        final_system_prompt += f"\n\n{system_prompt_suffix}"
-
-    system_prompt = final_system_prompt  # To be used by agent_loop
+    system_prompt = agent_config["system_prompt"]
 
     # Compose user input (last user message)
     user_input = ""
@@ -210,6 +210,7 @@ async def process_messages(
             model=model,  # model is passed correctly
             exchange=exchange,  # Pass exchange for tracking
             usage=usage,  # Pass usage for token tracking
+            agent_config=agent_config,  # Pass the full agent configuration
         ):
             # Heuristic: if item looks like tool output, call tool_output_callback; else output_callback
             if isinstance(item, dict) and ("output" in item or "error" in item):
@@ -262,6 +263,7 @@ def agent_loop(
     chat_object: Optional[Any] = Chat,
     exchange: Optional[Exchange] = None,
     usage: Optional[Usage] = None,
+    agent_config: Optional[Dict[str, Any]] = None,
 ) -> Generator[str, None, None]:
     """
     Simple agent loop that processes user input, sends it to the LLM,
@@ -284,6 +286,9 @@ def agent_loop(
         logger.info(f"Agent loop iteration {iteration}")
 
         try:
+            # Apply modify_state_messages for cache control (Anthropic)
+            modified_messages = modify_state_messages(messages.copy())
+
             # Call LLM via LiteLLM
             # Extract just the schema part for LiteLLM
             tool_schemas = [t.get("schema") for t in tools]
@@ -293,16 +298,43 @@ def agent_loop(
                 f"Using tools: {[t.get('schema', {}).get('function', {}).get('name') for t in tools]}"
             )
 
-            response = litellm.completion(
-                model=model,
-                messages=messages,
-                tools=tool_schemas,  # Pass only the schemas
-                temperature=TEMPERATURE,  # This is a float, not a ContextVar
-                api_key=config.get_api_key(
-                    current_provider.get()
-                ),  # Fetch API key correctly
-                max_tokens=MAX_TOKENS,  # This is an int, not a ContextVar
-            )
+            # Prepare completion parameters
+            completion_params = {
+                "model": model,
+                "messages": modified_messages,
+                "tools": tool_schemas,  # Pass only the schemas
+                "temperature": TEMPERATURE,  # This is a float, not a ContextVar
+                "api_key": (
+                    agent_config.get("api_key")
+                    if agent_config
+                    else config.get_api_key(current_provider.get())
+                ),  # Use agent_config api_key if available, otherwise fallback
+                "max_tokens": MAX_TOKENS,  # This is an int, not a ContextVar
+            }
+
+            # Add provider-specific parameters from agent_config
+            if agent_config:
+                provider = agent_config.get("provider")
+                if provider == APIProvider.ANTHROPIC:
+                    # Handle Anthropic-specific parameters
+                    if "anthropic_system_content" in agent_config:
+                        # For Anthropic, replace system message with structured content
+                        anthropic_messages = []
+                        for msg in modified_messages:
+                            if msg.get("role") == "system":
+                                continue  # Skip system messages in messages array
+                            anthropic_messages.append(msg)
+                        completion_params["messages"] = anthropic_messages
+                        completion_params["system"] = agent_config[
+                            "anthropic_system_content"
+                        ]
+
+                    if "anthropic_extra_headers" in agent_config:
+                        completion_params["extra_headers"] = agent_config[
+                            "anthropic_extra_headers"
+                        ]
+
+            response = litellm.completion(**completion_params)
 
             # Track usage from the response if usage tracking is enabled
             if usage:
