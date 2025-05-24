@@ -11,8 +11,8 @@ import threading
 import traceback
 from typing import Generator
 
+from vmpilot.agent import process_messages
 from vmpilot.config import MAX_TOKENS, RECURSION_LIMIT, TEMPERATURE, TOOL_OUTPUT_LINES
-from vmpilot.lllm.agent import process_messages
 
 logger = logging.getLogger(__name__)
 
