@@ -45,32 +45,32 @@ tests/unit/tools/test_edit_file.py .......                               [ 90%]
 tests/unit/tools/test_edit_file_extended.py ........                     [ 93%]
 tests/unit/tools/test_google_search.py ........                          [ 96%]
 tests/unit/tools/test_setup_tools.py .......                             [ 98%]
-tests/unit/tools/test_shell.py ..../home/dror/.local/lib/python3.11/site-packages/pytest_cov/plugin.py:355: CovFailUnderWarning: Coverage failure: total of 52 is less than fail-under=70
+tests/unit/tools/test_shell.py ..../home/dror/.local/lib/python3.11/site-packages/pytest_cov/plugin.py:355: CovFailUnderWarning: Coverage failure: total of 61 is less than fail-under=70
   warnings.warn(CovFailUnderWarning(message), stacklevel=1)
 
-ERROR: Coverage failure: total of 52 is less than fail-under=70
+ERROR: Coverage failure: total of 61 is less than fail-under=70
                                                                          [100%]
-FAIL Required test coverage of 70.0% not reached. Total coverage: 52.22%
+FAIL Required test coverage of 70.0% not reached. Total coverage: 61.41%
 
 ============================= slowest 10 durations =============================
 0.20s call     tests/unit/test_shell_edge_cases.py::TestShellToolEdgeCases::test_command_with_background_process
 0.04s call     tests/unit/test_pipe_chat_id_integration.py::TestPipeChatIDIntegration::test_message_truncation_with_chat_id
-0.03s call     tests/unit/test_db.py::TestDatabaseConnection::test_initialize_db
+0.02s call     tests/unit/test_unified_memory.py::TestUnifiedMemory::test_uses_agent_memory_when_db_disabled
 0.02s call     tests/unit/test_pipe_chat_id_integration.py::TestPipeChatIDIntegration::test_message_retention_without_chat_id
+0.02s call     tests/unit/test_db.py::TestDatabaseConnection::test_initialize_db
+0.02s call     tests/unit/test_unified_memory.py::TestUnifiedMemory::test_uses_persistent_memory_when_db_enabled
 0.02s call     tests/unit/test_chat_id.py::TestChatID::test_generate_new_chat_id
-0.02s call     tests/unit/test_db_connection.py::TestDatabaseConnectionManagement::test_get_db_path_permission_error
-0.02s call     tests/unit/test_db_connection.py::TestDatabaseConnectionManagement::test_get_db_path_file_not_found_error
-0.02s call     tests/unit/test_db_connection.py::TestDatabaseConnectionManagement::test_get_db_path_creates_directory
-0.02s call     tests/unit/test_chat_id.py::TestChatID::test_empty_messages
-0.02s call     tests/unit/test_git_track.py::TestGitTracker::test_commit_changes_dirty
-============================= 286 passed in 12.80s =============================
+0.02s call     tests/unit/test_shell_edge_cases.py::TestShellToolEdgeCases::test_command_with_pipe_to_multiple_commands
+0.02s call     tests/unit/test_git_track2.py::TestGitTrackerLLMIntegration::test_generate_commit_message
+0.01s call     tests/unit/test_chat_id.py::TestChatID::test_no_chat_id_in_messages
+============================= 286 passed in 9.86s ==============================
 Running end-to-end tests with coverage...
-Creating test environment in /tmp/tmp.EdyGdgaPgP
+Creating test environment in /tmp/tmp.hTmrtsTmnx
 Current working directory: /home/dror/vmpilot/tests
 total 12
--rw------- 1 dror dror  60 May 24 13:23 test1.txt
--rw------- 1 dror dror  81 May 24 13:23 test2.py
--rw------- 1 dror dror 126 May 24 13:23 test_commands.txt
+-rw------- 1 dror dror  60 May 24 17:12 test1.txt
+-rw------- 1 dror dror  81 May 24 17:12 test2.py
+-rw------- 1 dror dror 126 May 24 17:12 test_commands.txt
 Running tests in parallel...
 Starting scripts/api_integration.sh...
 Starting scripts/check_content.sh...
@@ -89,8 +89,8 @@ Running tests: api_integration.sh check_content.sh conversation_persistence.sh c
 Total tests to run: 12
 ✅ run_cli.sh completed (Progress: 1/12 tests completed)
 ✅ test_worker_llm.sh completed (Progress: 2/12 tests completed)
-✅ ls_files.sh completed (Progress: 3/12 tests completed)
-✅ check_content.sh completed (Progress: 4/12 tests completed)
+✅ check_content.sh completed (Progress: 3/12 tests completed)
+✅ ls_files.sh completed (Progress: 4/12 tests completed)
 ✅ test_google_search.sh completed (Progress: 5/12 tests completed)
 ✅ modify_file.sh completed (Progress: 6/12 tests completed)
 ✅ api_integration.sh completed (Progress: 7/12 tests completed)
@@ -108,30 +108,24 @@ Testing SQLite conversation persistence with chat IDs...
 ========================================================
 
 [Step 1] Getting first 3 lines of README.md...
-Successfully extracted chat ID: [1;32m1217HeihS1o2[0m
+Successfully extracted chat ID: [1;32m5697t1rskNpe[0m
 [1;32m✓[0m First command validated successfully
 
-[Step 2] Getting the next 3 lines using chat ID 1217HeihS1o2...
+[Step 2] Getting the next 3 lines using chat ID 5697t1rskNpe...
 [1;32m✓[0m Second command validated successfully
 
 [Step 3] Simulating application restart by using the same chat ID again...
-[1;31mERROR:[0m Third output does not show persistence across the full conversation
-Expected summary to reference both previous commands
-Output was:
-2025-05-24 13:24:08,399 - vmpilot.env - INFO - Calculated VMPILOT_ROOT: /home/dror/vmpilot
-2025-05-24 13:24:08,507 - vmpilot.config - INFO - Using config file at /home/dror/.vmpilot/config.ini
-2025-05-24 13:24:08,517 - vmpilot.config - INFO - Using config file at /home/dror/.vmpilot/config.ini
-2025-05-24 13:24:08,521 - vmpilot.db.connection - INFO - Using database path: /app/data/vmpilot1.db
-2025-05-24 13:24:08,550 - root - INFO - Git tracking disabled via command line
-2025-05-24 13:24:11,826 - httpx - INFO - HTTP Request: GET https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json "HTTP/1.1 200 OK"
-2025-05-24 13:24:16,565 - vmpilot.tools.google_search_tool - INFO - Google Search Tool initialized successfully
-2025-05-24 13:24:21,000 - vmpilot.usage - INFO - Added claude-3-7-sonnet-latest tokens - input: 4, output: 84, cached: 4365
-We've examined the first 6 lines of the VMPilot README.md file. The first 3 lines showed the title "VMPilot" and a description of VMPilot as a chat-based AI development agent that operates in virtual machine environments, combining natural language understanding with development capabilities. The next section contained an image reference to a "hello world" example.
-| Request | **Total** | Cache Creation | Cache Read | Output |
-|--------|----------------|------------|----------|----------|
-| Current |  $0.002582 | $0.000000 | $0.001309 | $0.001260 |
-| All | $0.010978 | $0.000000 | $0.005093 | $0.004680 |
-2025-05-24 13:24:21,123 - vmpilot.db.connection - INFO - Closing database connection
+[1;32m✓[0m Third command validated successfully
+
+[Step 4] Validating token usage and caching effectiveness...
+Token usage entries found for all commands
+
+Cache token values:
+First command - Cache read: 3965, Cache creation: 0
+Second command - Cache read: 3965, Cache creation: 0
+Third command - Cache read: 3965
+[1;31mERROR:[0m Cache creation tokens not found in second command
+Expected positive value for cache_creation_input_tokens
 -----------------
 -------------------
 ❌ test_google_search.sh failed
@@ -140,29 +134,25 @@ We've examined the first 6 lines of the VMPilot README.md file. The first 3 line
 Test 1: Basic search query...
 ❌ Test 1: Search did not return expected results.
 Output:
-Chat id :1229TYOlvV5e
+Chat id :5651iIl3ArZv
 I'll search for information about VMPilot software.
-2025-05-24 13:23:45,573 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
-2025-05-24 13:23:45,574 - vmpilot.tools.google_search_tool - ERROR - Unexpected error during Google search: <HttpError 403 when requesting https://customsearch.googleapis.com/customsearch/v1?q=%7B%27query%27%3A+%27what+is+vmpilot+software%27%7D&cx=36c876cce393141ff&num=10&key=AIzaSyA13j_HiP22IYe1vqd3rJEbMta4XbLkd2Q&alt=json returned "Custom Search API has not been used in project 776487753516 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/customsearch.googleapis.com/overview?project=776487753516 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Custom Search API has not been used in project 776487753516 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/customsearch.googleapis.com/overview?project=776487753516 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
-Error performing search: <HttpError 403 when requesting https://customsearch.googleapis.com/customsearch/v1?q=%7B%27query%27%3A+%27what+is+vmpilot+software%27%7D&cx=36c876cce393141ff&num=10&key=AIzaSyA13j_HiP22IYe1vqd3rJEbMta4XbLkd2Q&alt=json returned "Custom Search API has not been used in project 776487753516 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/customsearch.googleapis.com/overview?project=776487753516 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Custom Search API has not been used in project 776487753516 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/customsearch.googleapis.com/overview?project=776487753516 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
-I apologize for the error with the Google search function. Based on the project overview provided, I can tell you about VMPilot:
+2025-05-24 17:13:09,898 - vmpilot.tools.google_search_tool - ERROR - HTTP error during Google search: 403 Client Error: Forbidden for url: https://www.googleapis.com/customsearch/v1?key=AIzaSyA13j_HiP22IYe1vqd3rJEbMta4XbLkd2Q&cx=36c876cce393141ff&q=query&num=10
+Error: HTTP error from Google Search API. Details: 403 Client Error: Forbidden for url: https://www.googleapis.com/customsearch/v1?key=AIzaSyA13j_HiP22IYe1vqd3rJEbMta4XbLkd2Q&cx=36c876cce393141ff&q=query&num=10
+I apologize, but it seems there's an issue with the Google Search API. However, based on the project overview provided in the context, I can share information about VMPilot:
 
-VMPilot is an AI-driven system operations assistant with CLI and API interfaces that operates directly in virtual machine environments, specializing in software development tasks. It combines natural language understanding with system-level operations to provide comprehensive development assistance.
+VMPilot is an AI-driven system operations assistant with CLI and API interfaces that operates directly in virtual machine environments, specializing in software development tasks. It combines natural language understanding with system-level operations to provide comprehensive development assistance through:
 
-Key features include:
 - Code reading, analysis, and modification
 - GitHub issue tracking and management
 - System command execution and file operations
 - Documentation creation and maintenance
 - Testing implementation and validation
 
-The system uses LangChain framework (though currently migrating to LiteLLM as per the current issue) and supports various LLM providers including OpenAI, Anthropic Claude, and Google Gemini.
-
-Is there anything specific about VMPilot you'd like to know more about?
+The project uses LangChain framework (though it's currently migrating to LiteLLM), has a modular architecture with a plugin system, and supports multiple LLM providers including OpenAI, Anthropic Claude, and Google Gemini.
 | Request | **Total** | Cache Creation | Cache Read | Output |
 |--------|----------------|------------|----------|----------|
-| Current |  $0.006442 | $0.000000 | $0.001234 | $0.003930 |
-| All | $0.006442 | $0.000000 | $0.001234 | $0.003930 |
+| Current |  $0.006488 | $0.000000 | $0.001190 | $0.003855 |
+| All | $0.006488 | $0.000000 | $0.001190 | $0.003855 |
 
 -----------------
 -------------------
@@ -172,30 +162,33 @@ SUMMARY:
 Total: 12
 Cleaning up test environment...
 Combining coverage data...
-Combined data file .coverage.-110746971234882036
-Skipping duplicate data .coverage.-153234181634987427
-Combined data file .coverage.-1839108242780194036
-Combined data file .coverage.-3338969025347976276
-Combined data file .coverage.-3954292334070040074
-Combined data file .coverage.-4338299869102611026
-Skipping duplicate data .coverage.-5304246208978776110
-Skipping duplicate data .coverage.-587425167068727114
-Skipping duplicate data .coverage.-62318086155657891
-Combined data file .coverage.-8565233892702081400
-Skipping duplicate data .coverage.1860431168517662722
-Combined data file .coverage.2206421618185721666
-Skipping duplicate data .coverage.2639159537535751556
-Combined data file .coverage.3355517974433379199
-Combined data file .coverage.3553145001617339979
-Skipping duplicate data .coverage.6547480508302203594
-Combined data file .coverage.7351769553332186812
-Combined data file .coverage.8516586568034678922
+Combined data file .coverage.-3368253981505943765
+Combined data file .coverage.-3871411471094203318
+Combined data file .coverage.-3958688405183752820
+Combined data file .coverage.-4054881419079325430
+Skipping duplicate data .coverage.-4694553292281013817
+Combined data file .coverage.-649122621631355097
+Combined data file .coverage.-8650389757294927732
+Skipping duplicate data .coverage.1104928957873818693
+Skipping duplicate data .coverage.1484566138066240612
+Skipping duplicate data .coverage.2087515641487763099
+Combined data file .coverage.2244235854271595419
+Skipping duplicate data .coverage.2632354795631491561
+Combined data file .coverage.3528910521003431691
+Skipping duplicate data .coverage.4029765697184823432
+Skipping duplicate data .coverage.5015334094458965745
+Skipping duplicate data .coverage.5157248104709918981
+Combined data file .coverage.5673342763676713746
+Combined data file .coverage.7077769417412893172
+Combined data file .coverage.7438461233436672871
+Combined data file .coverage.7545521953043785021
+Skipping duplicate data .coverage.9124351880917249939
 Combined data file .coverage.unit
 Generating coverage report...
 Coverage reports saved to /home/dror/vmpilot/reports
 To combine with pipeline coverage, run bin/combine_coverage.sh after running pipeline tests
 
-Coverage Analysis: PASSED (Duration: 81s)
+Coverage Analysis: PASSED (Duration: 73s)
 
 Step 2: Running pyright type checking
 Running Pyright Type Checking...
@@ -204,27 +197,19 @@ Running pyright type checking...
 Type checking complete. Reports saved to /home/dror/vmpilot/reports/pyright-report.txt
 ⚠️ Type checking found issues. See report for details.
 
-Pyright Type Checking: FAILED (Duration: 8s)
+Pyright Type Checking: FAILED (Duration: 7s)
 
 Step 3: Running deptry dependency analysis
 Running Deptry Dependency Analysis...
 ----------------------------------------
-Scanning 37 files...
+Scanning 33 files...
 
-[1mpyproject.toml[m[36m:[m [1m[31mDEP002[m 'langchain' defined as a dependency but not used in the codebase
-[1mpyproject.toml[m[36m:[m [1m[31mDEP002[m 'langchain-openai' defined as a dependency but not used in the codebase
-[1mpyproject.toml[m[36m:[m [1m[31mDEP002[m 'langgraph' defined as a dependency but not used in the codebase
-[1mpyproject.toml[m[36m:[m [1m[31mDEP002[m 'langchain-anthropic' defined as a dependency but not used in the codebase
-[1mpyproject.toml[m[36m:[m [1m[31mDEP002[m 'langchain-google-genai' defined as a dependency but not used in the codebase
-[1mpyproject.toml[m[36m:[m [1m[31mDEP002[m 'typing-extensions' defined as a dependency but not used in the codebase
-[1m[31mFound 6 dependency issues.[m
+[1m[32mSuccess! No dependency issues found.[m
 
-For more information, see the documentation: https://deptry.com/
-
-Deptry Dependency Analysis: FAILED (Duration: 1s)
+Deptry Dependency Analysis: PASSED (Duration: 0s)
 
 Summary
 =======================================
 ❌ Some tests failed. Check the report for details.
-Test report saved to: /home/dror/vmpilot/reports/test_report_2025-05-24_13-23-13.txt
+Test report saved to: /home/dror/vmpilot/reports/test_report_2025-05-24_17-12-43.txt
 A copy of the report is also available at: /home/dror/vmpilot/reports/latest_test_report.txt
