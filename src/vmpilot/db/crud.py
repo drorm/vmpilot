@@ -126,7 +126,7 @@ class ConversationRepository:
             return "[]"
 
     def deserialize_messages(self, json_str: str) -> List[Dict]:
-        """Deserialize JSON string back to list of BaseMessage objects."""
+        """Deserialize JSON string back to list of message dictionaries."""
         try:
             data = json.loads(json_str)
             return data

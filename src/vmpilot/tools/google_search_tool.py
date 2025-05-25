@@ -1,10 +1,8 @@
 import logging
 import os
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
-from langchain_core.tools import BaseTool
-from langchain_google_community.search import GoogleSearchAPIWrapper
-from pydantic import BaseModel, Field
+import requests
 
 from vmpilot.config import google_search_config
 
@@ -13,16 +11,7 @@ logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
-class Input(BaseModel):
-    """Input schema for Google search."""
-
-    query: str = Field(description="The search query to execute")
-    num_results: int = Field(
-        description="Number of results to return (default: 10)", default=10
-    )
-
-
-class GoogleSearchTool(BaseTool):
+class GoogleSearchTool:
     """Execute Google searches."""
 
     name: str = "google_search"
@@ -31,50 +20,33 @@ class GoogleSearchTool(BaseTool):
             - "how to implement OAuth2"
             - "weather in San Francisco"
             The output will be a list of relevant search results."""
-    args_schema: Type[BaseModel] = Input
-    search: Optional[GoogleSearchAPIWrapper] = None
     is_configured: bool = False
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         """Initialize the Google Search tool."""
-        super().__init__(**kwargs)
-
         # Check if tool is enabled in configuration
         if not google_search_config.enabled:
             logger.info("Google Search Tool is disabled in configuration")
             self.is_configured = False
-            self.search = None
             return
 
         # Check if required environment variables are set
-        google_api_key = os.getenv(google_search_config.api_key_env)
-        google_cse_id = os.getenv(google_search_config.cse_id_env)
+        self.google_api_key = os.getenv(google_search_config.api_key_env)
+        self.google_cse_id = os.getenv(google_search_config.cse_id_env)
 
-        if not google_api_key or not google_cse_id:
+        if not self.google_api_key or not self.google_cse_id:
             logger.warning(
                 "Google Search Tool is not properly configured. "
                 "Missing required environment variables: "
-                f"{google_search_config.api_key_env if not google_api_key else ''}"
-                f"{' and ' if not google_api_key and not google_cse_id else ''}"
-                f"{google_search_config.cse_id_env if not google_cse_id else ''}"
+                f"{google_search_config.api_key_env if not self.google_api_key else ''}"
+                f"{' and ' if not self.google_api_key and not self.google_cse_id else ''}"
+                f"{google_search_config.cse_id_env if not self.google_cse_id else ''}"
             )
             self.is_configured = False
-            self.search = None
             return
 
-        # Initialize the Google Search wrapper
-        try:
-            self.search = GoogleSearchAPIWrapper(
-                google_api_key=google_api_key,
-                google_cse_id=google_cse_id,
-                k=google_search_config.max_results,
-            )
-            self.is_configured = True
-            logger.info("Google Search Tool initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize Google Search Tool: {str(e)}")
-            self.is_configured = False
-            self.search = None
+        self.is_configured = True
+        logger.info("Google Search Tool initialized successfully")
 
     def _run(
         self,
@@ -83,19 +55,17 @@ class GoogleSearchTool(BaseTool):
     ) -> str:
         """Execute Google search."""
         # Check if the search tool is configured
-        if not self.is_configured or self.search is None:
+        if not self.is_configured:
             if not google_search_config.enabled:
                 return (
                     "Google Search is disabled in configuration. "
                     "To enable it, set 'enabled = true' in the [google_search] section of config.ini."
                 )
             else:
-                import os
-
                 missing_vars = []
-                if not os.getenv(google_search_config.api_key_env):
+                if not self.google_api_key:
                     missing_vars.append(google_search_config.api_key_env)
-                if not os.getenv(google_search_config.cse_id_env):
+                if not self.google_cse_id:
                     missing_vars.append(google_search_config.cse_id_env)
 
                 return (
@@ -105,15 +75,29 @@ class GoogleSearchTool(BaseTool):
                 )
 
         try:
-            # Perform the search
-            results = self.search.results(query, num_results)
+            # Perform the search using Google Custom Search API
+            url = "https://www.googleapis.com/customsearch/v1"
+            params = {
+                "key": self.google_api_key,
+                "cx": self.google_cse_id,
+                "q": query,
+                "num": min(
+                    num_results, 10
+                ),  # Google API limits to 10 results per request
+            }
+
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+
+            data = response.json()
+            items = data.get("items", [])
 
             # Format the results
             formatted_results = []
-            for i, result in enumerate(results, 1):
-                title = result.get("title", "No title")
-                link = result.get("link", "No link")
-                snippet = result.get("snippet", "No description")
+            for i, item in enumerate(items, 1):
+                title = item.get("title", "No title")
+                link = item.get("link", "No link")
+                snippet = item.get("snippet", "No description")
 
                 formatted_results.append(f"{i}. **{title}**\n   {snippet}\n   {link}\n")
 
@@ -124,9 +108,12 @@ class GoogleSearchTool(BaseTool):
             formatted_results = f"\n````markdown\n{formatted_results}\n````\n\n"
             return formatted_results
 
-        except ConnectionError as e:
+        except requests.ConnectionError as e:
             logger.error(f"Connection error during Google search: {str(e)}")
             return f"Error: Could not connect to Google Search API. Please check your internet connection. Details: {str(e)}"
+        except requests.HTTPError as e:
+            logger.error(f"HTTP error during Google search: {str(e)}")
+            return f"Error: HTTP error from Google Search API. Details: {str(e)}"
         except ValueError as e:
             logger.error(f"Value error during Google search: {str(e)}")
             return f"Error: Invalid search parameters. Details: {str(e)}"

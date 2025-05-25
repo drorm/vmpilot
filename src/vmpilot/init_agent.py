@@ -98,7 +98,7 @@ def build_litellm_config(
 
 def modify_state_messages(messages):
     """
-    For Anthropic: Add cache_control to last 3 messages (LiteLLM format, not LangChain objects).
+    For Anthropic: Add cache_control to last 3 messages (LiteLLM format).
     This function modifies messages in place for cache control in Anthropic.
 
     Anthropic allows max 4 blocks with cache_control (system prompt uses 1, so 3 for messages).

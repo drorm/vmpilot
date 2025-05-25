@@ -4,9 +4,7 @@ This module provides the same interface as agent_memory.py but uses a database b
 """
 
 import logging
-from typing import Dict, List, Optional, Tuple
-
-from langchain_core.messages import BaseMessage
+from typing import Any, Dict, List, Optional, Tuple
 
 from vmpilot.db.crud import ConversationRepository
 
@@ -19,7 +17,7 @@ _repo = ConversationRepository()
 
 def save_conversation_state(
     thread_id: str,
-    messages: List[BaseMessage],
+    messages: List[Dict[str, Any]],
     cache_info: Optional[Dict[str, int]] = None,
 ) -> None:
     """
@@ -27,7 +25,7 @@ def save_conversation_state(
 
     Args:
         thread_id: The unique identifier for the conversation thread
-        messages: List of LangChain messages representing the conversation state
+        messages: List of messages representing the conversation state
         cache_info: Dictionary containing cache token information (optional)
     """
     if thread_id is None:
@@ -55,7 +53,9 @@ def save_conversation_state(
     )
 
 
-def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str, int]]:
+def get_conversation_state(
+    thread_id: str,
+) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
     """
     Retrieve the conversation state for a given thread_id from the database.
 
@@ -64,7 +64,7 @@ def get_conversation_state(thread_id: str) -> Tuple[List[BaseMessage], Dict[str,
 
     Returns:
         Tuple containing:
-        - List of LangChain messages representing the conversation state
+        - List of messages representing the conversation state
         - Dictionary with cache token information
     """
     if thread_id is None:
