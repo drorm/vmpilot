@@ -12,7 +12,7 @@ import litellm
 
 # Import Chat class
 from vmpilot.chat import Chat
-from vmpilot.config import MAX_TOKENS, TEMPERATURE
+from vmpilot.config import MAX_TOKENS, TEMPERATURE, TOOL_OUTPUT_LINES
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config, current_provider, prompt_suffix
 from vmpilot.exchange import Exchange
@@ -74,6 +74,37 @@ def parse_tool_calls(response) -> tuple:
 
 
 import asyncio
+
+
+def truncate_tool_output_for_ui(result):
+    """
+    Truncate tool output for UI display based on TOOL_OUTPUT_LINES config.
+    This replicates the logic from the old tool_callback function.
+    """
+    outputs = []
+    if isinstance(result, dict):
+        if "error" in result and result["error"]:
+            outputs.append(result["error"])
+        if "output" in result and result["output"]:
+            outputs.append(result["output"])
+    elif hasattr(result, "error") and result.error:
+        if hasattr(result, "exit_code") and result.exit_code:
+            outputs.append(f"Exit code: {result.exit_code}")
+        outputs.append(result.error)
+    else:
+        outputs.append(str(result))
+
+    truncated_outputs = []
+    for output in outputs:
+        output_lines = str(output).splitlines()
+        truncated_output = "\n".join(output_lines[:TOOL_OUTPUT_LINES])
+        if len(output_lines) > (TOOL_OUTPUT_LINES + 1):
+            truncated_output += f"\n...\n````\n(and {len(output_lines) - TOOL_OUTPUT_LINES} more lines)\n"
+        else:
+            truncated_output += "\n"
+        truncated_outputs.append(truncated_output)
+
+    return "".join(truncated_outputs)
 
 
 async def process_messages(
@@ -532,31 +563,33 @@ def agent_loop(
                         if (
                             tool_name == "shell_tool" or tool_name == "shell"
                         ) and tool_args.get("command"):
-                            yield f"**$ {tool_args['command']}**\n"
+                            yield f"\n\n**$ {tool_args['command']}**\n"
 
                         # Ensure the executor exists
                         if "executor" not in matched_tool:
                             error_msg = f"Error: Tool '{tool_name}' found but has no executor function"
                             logger.error(error_msg)
-                            yield error_msg
+                            tool_result_for_history = error_msg
+                            truncated_output = truncate_tool_output_for_ui(error_msg)
+                            yield truncated_output
                         else:
                             tool_output = matched_tool["executor"](tool_args)
-                            yield (
+                            # Store full output for LLM/history
+                            tool_result_for_history = (
                                 tool_output
                                 if isinstance(tool_output, str)
                                 else str(tool_output)
                             )
-                        tool_result_for_history = (
-                            tool_output
-                            if isinstance(tool_output, str)
-                            else str(tool_output)
-                        )
+                            # Yield truncated output for UI
+                            truncated_output = truncate_tool_output_for_ui(tool_output)
+                            yield truncated_output
                     except Exception as e:
                         error_msg = f"Error executing {tool_name} tool: {str(e)}"
                         logger.error(error_msg)
                         logger.error(traceback.format_exc())
-                        yield error_msg + "\n"
                         tool_result_for_history = error_msg
+                        truncated_output = truncate_tool_output_for_ui(error_msg)
+                        yield truncated_output + "\n"
                 else:
                     # List all available tools for debugging
                     available_tools = []
@@ -576,10 +609,14 @@ def agent_loop(
 
                     error_msg = f"Error: Tool '{tool_name}' not found. Available tools: {', '.join(available_tools) if available_tools else 'None'}"
                     logger.error(error_msg)
-                    yield error_msg + "\n"
                     tool_result_for_history = error_msg
+                    truncated_output = truncate_tool_output_for_ui(error_msg)
+                    yield truncated_output + "\n"
 
                 # Add the tool result to messages for the next LLM call
+                logger.debug(
+                    f"Adding tool result to messages: {tool_result_for_history}"
+                )
                 messages.append(
                     {
                         "role": "tool",
