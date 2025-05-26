@@ -4,7 +4,11 @@ from unittest.mock import patch
 import pytest
 
 from vmpilot.tools.google_search_tool import GoogleSearchTool
-from vmpilot.tools.setup_tools import is_google_search_enabled, setup_tools
+from vmpilot.tools.setup_tools import (
+    is_claude_model,
+    is_google_search_enabled,
+    setup_tools,
+)
 
 
 class TestSetupTools:
@@ -107,3 +111,65 @@ class TestSetupTools:
         tools = setup_tools()
         # Should still work and return core tools (3) plus Google Search if enabled (depends on env)
         assert len(tools) >= 3
+
+    def test_is_claude_model(self):
+        """Test Claude model detection"""
+        # Test Claude models
+        assert is_claude_model("claude-3-5-sonnet-20241022") is True
+        assert is_claude_model("claude-3-haiku-20240307") is True
+        assert is_claude_model("claude-3-opus-20240229") is True
+        assert is_claude_model("anthropic/claude-3-5-sonnet-20241022") is True
+
+        # Test non-Claude models
+        assert is_claude_model("gpt-4o") is False
+        assert is_claude_model("gpt-3.5-turbo") is False
+        assert is_claude_model("gemini-pro") is False
+
+        # Test edge cases
+        assert is_claude_model("") is False
+        assert is_claude_model(None) is False
+
+    def test_setup_tools_with_claude_model(self):
+        """Test setup_tools with Claude model includes web search tool"""
+        tools = setup_tools(model="claude-3-5-sonnet-20241022")
+
+        # Find Claude search tool
+        claude_search_found = False
+        for tool in tools:
+            schema = tool.get("schema", {})
+            if (
+                schema.get("type") == "web_search_20250305"
+                and schema.get("name") == "web_search"
+            ):
+                claude_search_found = True
+                assert "executor" in tool
+                break
+
+        assert (
+            claude_search_found
+        ), "Claude search tool should be present for Claude models"
+
+    def test_setup_tools_with_non_claude_model(self):
+        """Test setup_tools with non-Claude model does not include Claude web search tool"""
+        tools = setup_tools(model="gpt-4o")
+
+        # Ensure Claude search tool is not present
+        claude_search_found = False
+        for tool in tools:
+            schema = tool.get("schema", {})
+            if schema.get("type") == "web_search_20250305":
+                claude_search_found = True
+                break
+
+        assert (
+            not claude_search_found
+        ), "Claude search tool should NOT be present for non-Claude models"
+
+    def test_setup_tools_claude_search_executor(self):
+        """Test Claude search tool executor"""
+        from vmpilot.tools.setup_tools import claude_web_search_executor
+
+        # Test the executor function
+        result = claude_web_search_executor({"query": "test query"})
+        assert isinstance(result, str)
+        assert "test query" in result

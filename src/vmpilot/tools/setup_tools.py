@@ -51,7 +51,7 @@ def get_google_search_status() -> str:
     return "Google Search is enabled and properly configured"
 
 
-def setup_tools():
+def setup_tools(model: str = None):
     """Set up the tools used by the agent."""
     tools = []
 
@@ -66,6 +66,18 @@ def setup_tools():
     # Add edit_file tool
     edit_file_schema = {"type": "function", "function": get_edit_file_schema()}
     tools.append({"schema": edit_file_schema, "executor": edit_file_executor})
+
+    # Add Claude web search tool if using Claude model
+    if model and is_claude_model(model):
+        claude_search_schema = {
+            "type": "web_search_20250305",
+            "name": "web_search",
+            "max_uses": 5,
+        }
+        tools.append(
+            {"schema": claude_search_schema, "executor": claude_web_search_executor}
+        )
+        logger.debug("Claude web search tool added to available tools")
 
     # Conditionally add Google Search tool if enabled
     try:
@@ -121,3 +133,23 @@ def setup_tools():
 
     # Return all tools
     return tools
+
+
+def is_claude_model(model: str) -> bool:
+    """Check if the model is a Claude model."""
+    if not model:
+        return False
+    return "claude" in model.lower() or "anthropic" in model.lower()
+
+
+def claude_web_search_executor(tool_args: dict) -> str:
+    """
+    Executor for Claude's web search tool.
+
+    Note: This is a placeholder executor since Claude's web search is handled
+    natively by the model. This function should not be called in practice,
+    but is included for completeness.
+    """
+    query = tool_args.get("query", "")
+    logger.error(f"Claude web search called with query: {query}")
+    return f"Claude web search executed for query: {query}"

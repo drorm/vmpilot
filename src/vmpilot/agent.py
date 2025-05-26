@@ -133,8 +133,8 @@ async def process_messages(
     user_message = {"role": "user", "content": user_input}
 
     # Set up tools using the standard setup_tools function
-    tools = (
-        setup_tools()
+    tools = setup_tools(
+        model=model
     )  # This returns a list of tool dictionaries, including their schemas and executors
 
     # Create Chat object to manage conversation state
