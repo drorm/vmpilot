@@ -9,7 +9,7 @@ import warnings
 from vmpilot.config import google_search_config
 from vmpilot.tools.create_file import create_file_executor, get_create_file_schema
 from vmpilot.tools.edit_tool import edit_file_executor, get_edit_file_schema
-from vmpilot.tools.google_search_tool import GoogleSearchTool
+from vmpilot.tools.google_search_tool import GoogleSearchTool, google_search_executor
 from vmpilot.tools.shelltool import execute_shell_command, shell_tool
 
 # Configure logging
@@ -95,7 +95,10 @@ def setup_tools(model: str = None):
                         # The schema should already have the name, description, and parameters
                         litellm_schema = {"type": "function", "function": schema}
                         tools.append(
-                            {"schema": litellm_schema, "executor": search_tool._run}
+                            {
+                                "schema": litellm_schema,
+                                "executor": google_search_executor,
+                            }
                         )
                         logger.debug("Google Search Tool added to available tools")
                     else:

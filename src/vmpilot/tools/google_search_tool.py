@@ -11,6 +11,27 @@ logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
+def google_search_executor(args: Dict[str, Any]) -> str:
+    """
+    LiteLLM-compatible executor function for Google search.
+
+    Args:
+        args: Dictionary containing 'query' and optional 'num_results' keys
+
+    Returns:
+        Search results as formatted string
+    """
+    query = args.get("query")
+    num_results = args.get("num_results", 10)
+
+    if not query:
+        return "Error: No search query provided"
+
+    # Create GoogleSearchTool instance and execute search
+    search_tool = GoogleSearchTool()
+    return search_tool._run(query, num_results)
+
+
 class GoogleSearchTool:
     """Execute Google searches."""
 
