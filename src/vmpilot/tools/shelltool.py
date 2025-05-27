@@ -2,7 +2,7 @@
 
 import logging
 import subprocess
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,6 @@ def run_shell_command(command, language):
     """Executes the command and returns output as string (markdown-formatted)."""
     # The below mimics the function of shell_tool executor
     import subprocess
-    import sys
 
     out = None
     try:

@@ -74,8 +74,6 @@ def get_conversation_state(
     # Get from database
     messages, cache_info = _repo.get_conversation_state(thread_id)
 
-    from typing import cast
-
     logger.debug(
         f"Retrieved conversation state from database for thread_id {thread_id}: {len(messages)} messages, cache_info: {cache_info}"
     )

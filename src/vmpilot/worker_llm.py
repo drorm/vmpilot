@@ -9,11 +9,13 @@ solution for various LLM-based tasks.
 import logging
 
 import litellm
-from pydantic import SecretStr
 
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
+
+# from pydantic import SecretStr
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,25 +37,11 @@ def get_worker_llm(
     Returns:
         LLM instance based on the specified provider.
     """
-    if provider == APIProvider.OPENAI:
-        return ChatOpenAI(
-            model=model,
-            temperature=temperature,
-            # OpenAI uses model_kwargs to pass max_tokens
-            model_kwargs={"max_tokens": max_tokens},
-            api_key=SecretStr(config.get_api_key(provider)),
-        )
-    elif provider == APIProvider.ANTHROPIC:
-        return ChatAnthropic(
-            model_name=model,
-            temperature=temperature,
-            max_tokens_to_sample=max_tokens,
-            timeout=None,  # Adding required timeout parameter
-            stop=None,  # Adding required stop parameter
-            api_key=SecretStr(config.get_api_key(provider)),
-        )
-    else:
-        raise ValueError(f"Unsupported provider: {provider}")
+    # This function is obsolete in LiteLLM context -- kept for backward compatibility.
+    # Just call run_worker or run_worker_async.
+    raise NotImplementedError(
+        "get_worker_llm is not used in LiteLLM-based implementation. Use run_worker/run_worker_async instead."
+    )
 
 
 def run_worker(
@@ -100,13 +88,18 @@ def run_worker(
             # For Azure, ensure AZURE_API_KEY, AZURE_API_BASE, AZURE_API_VERSION are set or passed if model starts with "azure/"
         )
         # LiteLLM response structure: response.choices[0].message.content
-        result = response.choices[0].message.content.strip()
+        content = getattr(
+            getattr(getattr(response, "choices", [{}])[0], "message", None),
+            "content",
+            None,
+        )
+        result = content.strip() if content else ""
     except Exception as e:
         logger.error(f"Error during LiteLLM call in run_worker: {e}")
         # Log more details if available from LiteLLM exception types
         if hasattr(e, "status_code"):
             logger.error(
-                f"LiteLLM API Error - Status: {e.status_code}, Message: {getattr(e, 'message', str(e))}"
+                f"LiteLLM API Error - Status: {getattr(e, 'status_code', 'unknown')}, Message: {getattr(e, 'message', str(e))}"
             )
         raise
 
@@ -156,12 +149,17 @@ async def run_worker_async(
             # Add other provider-specific params if needed
         )
         # LiteLLM response structure: response.choices[0].message.content
-        result = response.choices[0].message.content.strip()
+        content = getattr(
+            getattr(getattr(response, "choices", [{}])[0], "message", None),
+            "content",
+            None,
+        )
+        result = content.strip() if content else ""
     except Exception as e:
         logger.error(f"Error during LiteLLM async call in run_worker_async: {e}")
         if hasattr(e, "status_code"):
             logger.error(
-                f"LiteLLM API Error - Status: {e.status_code}, Message: {getattr(e, 'message', str(e))}"
+                f"LiteLLM API Error - Status: {getattr(e, 'status_code', 'unknown')}, Message: {getattr(e, 'message', str(e))}"
             )
         raise
 

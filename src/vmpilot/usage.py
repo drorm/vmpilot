@@ -92,6 +92,7 @@ class Usage:
             cached_tokens = prompt_tokens_details.get("cached_tokens", 0)
 
             # Update counters
+            cached_tokens = 0 if cached_tokens is None else cached_tokens
             self.cache_read_input_tokens += cached_tokens
             self.input_tokens += prompt_tokens - cached_tokens  # Subtract cached tokens
             self.output_tokens += completion_tokens

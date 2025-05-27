@@ -94,7 +94,7 @@ def generate_responses(
             asyncio.set_event_loop(loop)
 
             # Set exception handler for the loop to catch unhandled exceptions
-            def handle_exception(loop, context):
+            def handle_asyncio_exception(loop, context):
                 exception = context.get("exception")
                 if exception:
                     logger.error(f"Caught asyncio exception: {exception}")
@@ -102,7 +102,7 @@ def generate_responses(
                 else:
                     logger.error(f"Asyncio error: {context['message']}")
 
-            loop.set_exception_handler(handle_exception)
+            loop.set_exception_handler(handle_asyncio_exception)
 
             model = pipeline_self.valves.model
             provider = getattr(pipeline_self.valves.provider, "value", None)

@@ -46,7 +46,10 @@ def parse_tool_calls(response) -> tuple:
 
     try:
         # Extract tool calls from the response
-        message = response.choices[0].message
+        if hasattr(response, "choices") and len(response.choices) > 0:
+            message = response.choices[0].message
+        else:
+            return tool_calls, content
 
         # Get content if available
         if hasattr(message, "content") and message.content:
@@ -203,7 +206,8 @@ async def process_messages(
         chat_id = chat.chat_id
     else:
         chat_id = None
-    previous_messages, previous_cache_info = get_conversation_state(chat_id)
+    thread_id = str(chat_id) if chat_id is not None else ""
+    previous_messages, previous_cache_info = get_conversation_state(thread_id)
 
     # If there are no previous messages OR this is explicitly a new chat (len <= 2)
     # then we treat it as a new chat session
@@ -270,7 +274,7 @@ async def process_messages(
         # After agent loop completes, handle usage tracking and cost display
         if usage:
             # Store usage in database
-            totals, costs = usage.get_cost_summary()
+            _, costs = usage.get_cost_summary()
             usage.store_cost_in_db(
                 chat_id=chat.chat_id,
                 model=usage.model_name or model,
@@ -391,7 +395,8 @@ def agent_loop(
             # Track usage from the response if usage tracking is enabled
             if usage:
                 # LiteLLM response structure is different - need to convert to expected format
-                if hasattr(response, "usage") and response.usage:
+                usage_data = getattr(response, "usage", None)
+                if usage_data is not None:
                     # Create a mock message object with usage metadata for the Usage class
                     class MockMessage:
                         def __init__(self, usage_data, model_name):
@@ -435,8 +440,21 @@ def agent_loop(
                                     )
                                 }
 
-                    mock_message = MockMessage(response.usage, model)
-                    usage.add_tokens(mock_message)
+                    # Patch: .usage may not exist on all response types
+                    usage_data = getattr(response, "usage", None)
+                    if usage_data is not None:
+                        mock_message = MockMessage(usage_data, model)
+                        usage.add_tokens(mock_message)
+                    else:
+                        # Some streaming wrappers (CustomStreamWrapper) may keep usage as an attribute in .__dict__
+                        if (
+                            hasattr(response, "__dict__")
+                            and "usage" in response.__dict__
+                        ):
+                            mock_message = MockMessage(
+                                response.__dict__["usage"], model
+                            )
+                            usage.add_tokens(mock_message)
 
             # Parse tool calls and content from response
             tool_calls, content = parse_tool_calls(response)
@@ -449,8 +467,15 @@ def agent_loop(
             if not tool_calls:
                 # Complete the exchange with the final assistant message
                 if exchange:
-                    assistant_message = response.choices[0].message
-                    exchange.complete(assistant_message, [])
+                    choices = getattr(response, "choices", None)
+                    if choices and len(choices) > 0 and hasattr(choices[0], "message"):
+                        assistant_message = choices[0].message
+                        if hasattr(assistant_message, "__dict__"):
+                            exchange.complete(vars(assistant_message), [])
+                        else:
+                            exchange.complete({"content": str(assistant_message)}, [])
+                    else:
+                        exchange.complete({}, [])
 
                 # If there was no textual content, but the LLM didn't call a tool,
                 # it might be an empty response or an implicit end of operation.
@@ -458,16 +483,22 @@ def agent_loop(
                 # If content was None, but there was a message, yield that.
                 # However, parse_tool_calls should already put message.content into `content`.
                 # If content is still None and no tools, it's likely the end.
-                if (
-                    not content and response.choices[0].message.content
-                ):  # Ensure full message is out
-                    yield response.choices[0].message.content
+                if not content:
+                    choices = getattr(response, "choices", None)
+                    if choices and len(choices) > 0 and hasattr(choices[0], "message"):
+                        message_content = getattr(choices[0].message, "content", None)
+                        if message_content:
+                            yield message_content
                 return  # End of this agent interaction or loop
 
             # Append the assistant's message with tool calls to history
-            assistant_msg_obj = response.choices[
-                0
-            ].message  # This is a litellm.Message object
+            choices = getattr(response, "choices", None)
+            if choices and len(choices) > 0:
+                assistant_msg_obj = choices[
+                    0
+                ].message  # This is a litellm.Message object
+            else:
+                continue  # Skip this iteration if no choices
 
             history_assistant_msg = {
                 "role": assistant_msg_obj.role,
@@ -552,7 +583,7 @@ def agent_loop(
                         else:
                             # Direct name extraction (old format)
                             schema_name = schema.get("name")
-                    elif hasattr(schema, "name"):
+                    elif hasattr(schema, "name") and schema is not None:
                         schema_name = schema.name
                     else:
                         schema_name = None
@@ -609,7 +640,7 @@ def agent_loop(
                                 )
                             else:
                                 available_tools.append(schema.get("name"))
-                        elif hasattr(schema, "name"):
+                        elif hasattr(schema, "name") and schema is not None:
                             available_tools.append(schema.name)
 
                     error_msg = f"Error: Tool '{tool_name}' not found. Available tools: {', '.join(available_tools) if available_tools else 'None'}"
@@ -650,5 +681,3 @@ def agent_loop(
         exchange.complete(error_message, all_tool_calls)
 
     yield "Error: Maximum iterations reached without a final response"
-
-    return "Error: Maximum iterations reached without a final response"

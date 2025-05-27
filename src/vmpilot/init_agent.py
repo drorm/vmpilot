@@ -40,15 +40,15 @@ def build_litellm_config(
     # Anthropic: add cache_control to system prompt (only for LiteLLM Anthropic)
     if provider == APIProvider.ANTHROPIC:
         provider_config = config.get_provider_config(APIProvider.ANTHROPIC)
-        if provider_config.beta_flags:
+        if getattr(provider_config, "beta_flags", None):
             betas.extend([flag for flag in provider_config.beta_flags.keys()])
-        system_content = {
+        system_content: Dict[str, Any] = {
             "type": "text",
             "text": system_prompt,
         }
-        if enable_prompt_caching:
+        if enable_prompt_caching and isinstance(system_content, dict):
             system_content["cache_control"] = {"type": "ephemeral"}
-        extra_headers = {"anthropic-beta": ",".join(betas)}
+        extra_headers = {"anthropic-beta": ",".join(betas)} if betas else {}
         return {
             "model": model,
             "api_key": api_key,

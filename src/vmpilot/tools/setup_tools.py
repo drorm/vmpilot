@@ -4,7 +4,6 @@ Initialize and configure the tools we use as described in the prompt.
 
 import logging
 import traceback
-import warnings
 
 from vmpilot.config import google_search_config
 from vmpilot.tools.create_file import create_file_executor, get_create_file_schema
@@ -41,9 +40,9 @@ def get_google_search_status() -> str:
 
     missing_vars = []
     if not os.getenv(google_search_config.api_key_env):
-        missing_vars.append(google_search_config.api_key_env)
+        missing_vars.append(str(google_search_config.api_key_env))
     if not os.getenv(google_search_config.cse_id_env):
-        missing_vars.append(google_search_config.cse_id_env)
+        missing_vars.append(str(google_search_config.cse_id_env))
 
     if missing_vars:
         return f"Google Search is enabled in configuration but missing environment variables: {', '.join(missing_vars)}"
@@ -51,7 +50,7 @@ def get_google_search_status() -> str:
     return "Google Search is enabled and properly configured"
 
 
-def setup_tools(model: str = None):
+def setup_tools(model: str | None = None):
     """Set up the tools used by the agent."""
     tools = []
 
@@ -68,16 +67,20 @@ def setup_tools(model: str = None):
     tools.append({"schema": edit_file_schema, "executor": edit_file_executor})
 
     # Add Claude web search tool if using Claude model
-    if model and is_claude_model(model):
-        claude_search_schema = {
-            "type": "web_search_20250305",
-            "name": "web_search",
-            "max_uses": 5,
-        }
-        tools.append(
-            {"schema": claude_search_schema, "executor": claude_web_search_executor}
-        )
-        logger.debug("Claude web search tool added to available tools")
+    # is_claude_model or claude_web_search_executor may not be defined, so skip this if not present
+    try:
+        if model and "is_claude_model" in globals() and is_claude_model(model):
+            claude_search_schema = {
+                "type": "web_search_20250305",
+                "name": "web_search",
+                "max_uses": 5,
+            }
+            tools.append(
+                {"schema": claude_search_schema, "executor": claude_web_search_executor}
+            )
+            logger.debug("Claude web search tool added to available tools")
+    except Exception:
+        pass
 
     # Conditionally add Google Search tool if enabled
     try:
