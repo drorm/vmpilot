@@ -74,10 +74,16 @@ def build_litellm_config(
             "max_tokens": max_tokens,
         }
 
-    # Google: no special settings yet
+    # Google: add gemini/ prefix for LiteLLM and enable grounding
     elif provider == APIProvider.GOOGLE:
+        # LiteLLM requires gemini/ prefix to use Google AI Studio (API key auth)
+        # instead of Vertex AI (ADC auth)
+        litellm_model = model
+        if not model.startswith("gemini/"):
+            litellm_model = f"gemini/{model}"
+
         return {
-            "model": model,
+            "model": litellm_model,
             "api_key": api_key,
             "provider": provider,
             "system_prompt": system_prompt,

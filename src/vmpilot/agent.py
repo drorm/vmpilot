@@ -340,14 +340,19 @@ def agent_loop(
             # Extract just the schema part for LiteLLM
             tool_schemas = [t.get("schema") for t in tools]
 
+            # Use model from agent_config if available (includes proper prefixes like gemini/)
+            # otherwise fall back to the model parameter
+            effective_model = agent_config.get("model") if agent_config else model
+
             # Debug logging
             logger.info(
                 f"Using tools: {[t.get('schema', {}).get('function', {}).get('name') for t in tools]}"
             )
+            logger.debug(f"Using effective model: {effective_model}")
 
             # Prepare completion parameters
             completion_params = {
-                "model": model,
+                "model": effective_model,
                 "messages": modified_messages,
                 "tools": tool_schemas,  # Pass only the schemas
                 "temperature": TEMPERATURE,  # This is a float, not a ContextVar
