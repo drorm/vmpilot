@@ -6,6 +6,7 @@ import pytest
 from vmpilot.tools.google_search_tool import GoogleSearchTool
 from vmpilot.tools.setup_tools import (
     is_claude_model,
+    is_gemini_model,
     is_google_search_enabled,
     setup_tools,
 )
@@ -173,3 +174,34 @@ class TestSetupTools:
         result = claude_web_search_executor({"query": "test query"})
         assert isinstance(result, str)
         assert "test query" in result
+
+    def test_is_gemini_model(self):
+        """Test Gemini model detection"""
+        # Test Gemini models
+        assert is_gemini_model("gemini-1.5-pro") is True
+        assert is_gemini_model("gemini-2.5-pro-preview-05-06") is True
+        assert is_gemini_model("gemini/gemini-1.5-pro") is True
+        assert is_gemini_model("Gemini-Pro") is True
+        assert is_gemini_model("GEMINI-1.5-flash") is True
+
+        # Test non-Gemini models
+        assert is_gemini_model("gpt-4o") is False
+        assert is_gemini_model("claude-3-sonnet") is False
+        assert is_gemini_model("anthropic/claude-3-5-sonnet") is False
+
+        # Test edge cases
+        assert is_gemini_model("") is False
+        assert is_gemini_model(None) is False
+
+    def test_setup_tools_gemini_search_executor(self):
+        """Test Gemini search tool executor"""
+        from vmpilot.tools.setup_tools import gemini_search_executor
+
+        # Test the executor function
+        result = gemini_search_executor({"query": "test query"})
+        assert isinstance(result, str)
+        assert "test query" in result
+
+        # Test without query
+        result = gemini_search_executor({})
+        assert isinstance(result, str)
