@@ -213,3 +213,33 @@ def gemini_search_executor(tool_args: dict) -> str:
     query = tool_args.get("query", "")
     logger.error(f"Gemini search called with query: {query}")
     return f"Gemini search executed for query: {query}"
+
+
+def get_tool_schemas(tools: list, effective_model: str) -> list:
+    """
+    Separate native tools from function calling tools
+    based on the effective model.
+    """
+    native_tools = []
+    function_tools = []
+
+    for tool in tools:
+        schema = tool.get("schema")
+        if schema:
+            # Check if this is a native tool (Claude or Gemini)
+            if isinstance(schema, dict) and ("googleSearch" in schema):  # Gemini native
+                native_tools.append(schema)
+            else:
+                # Regular function calling tool
+                function_tools.append(schema)
+
+    # For Gemini models, only use native tools if available, otherwise use function tools
+    # Gemini doesn't support mixing native and function calling tools
+    if native_tools and is_gemini_model(effective_model):
+        tool_schemas = native_tools
+        logger.debug(f"Using Gemini native tools only: {len(native_tools)} tools")
+    else:
+        # For other models or when no native tools, use function calling tools
+        tool_schemas = function_tools
+        logger.info(f"Using function calling tools: {len(function_tools)} tools")
+    return tool_schemas

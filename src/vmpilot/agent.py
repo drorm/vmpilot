@@ -17,7 +17,7 @@ from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config, current_provider, prompt_suffix
 from vmpilot.exchange import Exchange
 from vmpilot.init_agent import create_agent, modify_state_messages
-from vmpilot.tools.setup_tools import is_gemini_model, setup_tools
+from vmpilot.tools.setup_tools import get_tool_schemas, setup_tools
 from vmpilot.unified_memory import (
     clear_conversation_state,
     get_conversation_state,
@@ -346,36 +346,7 @@ def agent_loop(
             # otherwise fall back to the model parameter
             effective_model = agent_config.get("model") if agent_config else model
 
-            # Separate native tools from function calling tools
-            native_tools = []
-            function_tools = []
-
-            for tool in tools:
-                schema = tool.get("schema")
-                if schema:
-                    # Check if this is a native tool (Claude or Gemini)
-                    if isinstance(schema, dict) and (
-                        "googleSearch" in schema
-                    ):  # Gemini native
-                        native_tools.append(schema)
-                    else:
-                        # Regular function calling tool
-                        function_tools.append(schema)
-
-            # For Gemini models, only use native tools if available, otherwise use function tools
-            # Gemini doesn't support mixing native and function calling tools
-            if native_tools and is_gemini_model(effective_model):
-                tool_schemas = native_tools
-                logger.info(
-                    f"Using Gemini native tools only: {len(native_tools)} tools"
-                )
-            else:
-                # For other models or when no native tools, use function calling tools
-                tool_schemas = function_tools
-                logger.info(
-                    f"Using function calling tools: {len(function_tools)} tools"
-                )
-
+            tool_schemas = get_tool_schemas(tools, effective_model)
             # Debug logging
             logger.info(
                 f"Using tools: {[t.get('schema', {}).get('function', {}).get('name') for t in tools]}"
