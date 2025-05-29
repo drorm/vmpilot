@@ -113,15 +113,7 @@ def modify_state_messages(messages):
     if provider is None or provider != APIProvider.ANTHROPIC:
         return messages
 
-    # Only apply caching if prompt caching is enabled
-    provider_config = config.get_provider_config(APIProvider.ANTHROPIC)
-    if not (
-        provider_config
-        and provider_config.beta_flags
-        and PROMPT_CACHING_BETA_FLAG in provider_config.beta_flags
-    ):
-        return messages
-
+    logger.debug("Applying cache control to last 3 messages for Anthropic")
     # PHASE 1: Clear ALL cache_control from ALL messages first
     for message in messages:
         # Remove cache_control from message level
@@ -147,8 +139,13 @@ def modify_state_messages(messages):
                     if isinstance(block, dict) and block.get("type") == "text":
                         block["cache_control"] = {"type": "ephemeral"}
                         cached -= 1
-                        break  # Only cache one block per message
+                        logger.debug(
+                            f"Added cache_eph to list content blocks for message: {message}"
+                        )
+                        if cached <= 0:
+                            break
             elif isinstance(content, str):
+                logger.debug(f"Added cache_eph to str for message: {message}")
                 # For string content, add cache_control at message level to avoid creating extra blocks
                 message["cache_control"] = {"type": "ephemeral"}
                 cached -= 1
