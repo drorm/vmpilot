@@ -75,7 +75,7 @@ def execute_shell_command(args: Dict[str, Any]) -> str:
     if not command:
         return "Error: No command provided"
 
-    logger.info(f"Executing command: {command}")
+    logger.debug(f"Executing command: {command}")
     try:
         # Execute the command
         output = subprocess.run(

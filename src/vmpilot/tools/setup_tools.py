@@ -241,5 +241,5 @@ def get_tool_schemas(tools: list, effective_model: str) -> list:
     else:
         # For other models or when no native tools, use function calling tools
         tool_schemas = function_tools
-        logger.info(f"Using function calling tools: {len(function_tools)} tools")
+        logger.debug(f"Using function calling tools: {len(function_tools)} tools")
     return tool_schemas

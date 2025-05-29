@@ -227,7 +227,7 @@ async def process_messages(
         user_message=user_message,
         output_callback=output_callback,
     )
-    logger.info(f"Exchange created for chat_id: {chat.chat_id}")
+    logger.debug(f"Exchange created for chat_id: {chat.chat_id}")
 
     # Initialize usage tracking for this exchange with the current provider
     usage = Usage(provider=provider)
@@ -299,7 +299,7 @@ async def process_messages(
     # Save conversation state after every assistant message
     if chat and hasattr(chat, "chat_id"):
         save_conversation_state(chat.chat_id, messages, cache_info)
-        logger.info(f"Saved conversation state for chat_id: {chat.chat_id}")
+        logger.debug(f"Saved conversation state for chat_id: {chat.chat_id}")
 
 
 def agent_loop(
@@ -332,7 +332,7 @@ def agent_loop(
 
     while iteration < max_iterations:
         iteration += 1
-        logger.info(f"Agent loop iteration {iteration}")
+        logger.debug(f"Agent loop iteration {iteration}")
 
         try:
             # Apply modify_state_messages for cache control (Anthropic)
@@ -346,7 +346,7 @@ def agent_loop(
 
             tool_schemas = get_tool_schemas(tools, effective_model)
             # Debug logging
-            logger.info(
+            logger.debug(
                 f"Using tools: {[t.get('schema', {}).get('function', {}).get('name') for t in tools]}"
             )
             logger.debug(f"Using effective model: {effective_model}")
@@ -563,7 +563,7 @@ def agent_loop(
                 tool_name = tool_call["name"]
                 tool_args = tool_call["arguments"]
 
-                logger.info(f"Executing tool: {tool_name}")
+                logger.debug(f"Executing tool: {tool_name}")
                 tool_result_for_history = ""
 
                 # General tool execution: find the tool by name and call its executor
@@ -587,7 +587,7 @@ def agent_loop(
                     else:
                         schema_name = None
 
-                    logger.info(f"Tool name from schema: {schema_name}")
+                    logger.debug(f"Tool name from schema: {schema_name}")
 
                     if schema_name == tool_name:
                         matched_tool = tool
