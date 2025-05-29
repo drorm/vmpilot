@@ -342,7 +342,9 @@ def agent_loop(
             # Extract just the schema part for LiteLLM
             # Use model from agent_config if available (includes proper prefixes like gemini/)
             # otherwise fall back to the model parameter
-            effective_model = agent_config.get("model") if agent_config else model
+            effective_model = (
+                agent_config.get("model") if agent_config else None
+            ) or model
 
             tool_schemas = get_tool_schemas(tools, effective_model)
             # Debug logging

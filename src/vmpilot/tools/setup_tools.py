@@ -195,26 +195,6 @@ def gemini_search_executor(tool_args: dict) -> str:
     return f"Gemini search executed for query: {query}"
 
 
-def is_gemini_model(model: str) -> bool:
-    """Check if the model is a Gemini model."""
-    if not model:
-        return False
-    return "gemini" in model.lower() or model.lower().startswith("gemini-")
-
-
-def gemini_search_executor(tool_args: dict) -> str:
-    """
-    Executor for Gemini's search tool.
-
-    Note: This is a placeholder executor since Gemini's search is handled
-    natively by the model. This function should not be called in practice,
-    but is included for completeness.
-    """
-    query = tool_args.get("query", "")
-    logger.error(f"Gemini search called with query: {query}")
-    return f"Gemini search executed for query: {query}"
-
-
 def get_tool_schemas(tools: list, effective_model: str) -> list:
     """
     Separate native tools from function calling tools
