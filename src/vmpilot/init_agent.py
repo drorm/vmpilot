@@ -37,10 +37,12 @@ def modify_state_messages(state: AgentState):
 
     provider = current_provider.get()
 
-    # Filter out messages with empty content first (for all providers)
+    # Filter out messages with empty content, but preserve tool_calls for OpenAI/Gemini
     filtered_messages = []
     for message in messages:
-        if not message.content:
+        # Only filter if content is empty AND there are no tool_calls
+        # This preserves the tool_calls -> tool response sequence required by OpenAI/Gemini
+        if not message.content and not getattr(message, "tool_calls", None):
             logger.warning(f"Filtering out message with empty content: {message}")
             continue
         filtered_messages.append(message)
