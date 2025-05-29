@@ -36,26 +36,39 @@ def modify_state_messages(state: AgentState):
     messages = state["messages"]
 
     provider = current_provider.get()
+
+    # Filter out messages with empty content first (for all providers)
+    filtered_messages = []
+    for message in messages:
+        if not message.content:
+            logger.warning(f"Filtering out message with empty content: {message}")
+            continue
+        filtered_messages.append(message)
+
     if provider is None or provider != APIProvider.ANTHROPIC:
-        return state["messages"]
+        return filtered_messages
 
     # If the provider is Anthropic, add cache control to messages. https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
     cached = 3  # antropic allows up to 4 and we use one for system
-    for message in reversed(messages):
+    for message in reversed(filtered_messages):
         if cached > 0:
             if isinstance(message.content, list):
+                # Add cache control to the last block in the list (more efficient)
                 for block in message.content:
                     if isinstance(block, dict):
                         block["cache_control"] = {"type": "ephemeral"}
-                    logger.debug(f"Added cache_eph block: {block}")
-                    cached -= 1
+                logger.debug(
+                    f"Added cache_eph to list content blocks for message: {message}"
+                )
             else:
                 message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
                 logger.debug(
                     f"Added cache_eph message: {message}, additional_kwargs: {message.additional_kwargs}"
                 )
-                cached -= 1
+            # Decrement cached once per message, not per block
+            cached -= 1
         else:
+            # Remove cache control from messages that shouldn't have it
             if isinstance(message.content, list):
                 for block in message.content:
                     if isinstance(block, dict) and "cache_control" in block:
@@ -63,9 +76,9 @@ def modify_state_messages(state: AgentState):
             else:
                 message.additional_kwargs.pop("cache_control", None)
 
-    logger.debug(f"Modified state messages: {state['messages']}")
-    log_conversation_messages(list(state["messages"]), level="debug")
-    return messages
+    logger.debug(f"Modified state messages: {filtered_messages}")
+    log_conversation_messages(list(filtered_messages), level="debug")
+    return filtered_messages
 
 
 """
