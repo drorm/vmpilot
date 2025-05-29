@@ -8,8 +8,6 @@ solution for various LLM-based tasks.
 
 import logging
 
-import litellm
-
 from vmpilot.config import MAX_TOKENS, TEMPERATURE
 from vmpilot.config import Provider as APIProvider
 from vmpilot.config import config
@@ -78,6 +76,8 @@ def run_worker(
     # Provider-specific parameters might be needed for `litellm.completion` if not covered by env vars.
 
     try:
+        import litellm
+
         response = litellm.completion(
             model=model,
             messages=messages,

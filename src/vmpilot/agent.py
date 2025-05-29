@@ -8,8 +8,6 @@ import logging
 import traceback
 from typing import Any, Dict, Generator, List, Optional
 
-import litellm
-
 # Import Chat class
 from vmpilot.chat import Chat
 from vmpilot.config import MAX_TOKENS, TEMPERATURE, TOOL_OUTPUT_LINES
@@ -388,6 +386,8 @@ def agent_loop(
                         completion_params["extra_headers"] = agent_config[
                             "anthropic_extra_headers"
                         ]
+
+            import litellm
 
             response = litellm.completion(**completion_params)
 
