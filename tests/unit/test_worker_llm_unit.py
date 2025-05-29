@@ -41,7 +41,7 @@ class MockMessage:
 class TestRunWorker:
     """Tests for the run_worker function using LiteLLM."""
 
-    @patch("vmpilot.worker_llm.litellm.completion")
+    @patch("litellm.completion")
     @patch("vmpilot.worker_llm.config")  # To mock config.get_api_key
     def test_run_worker_with_system_prompt(self, mock_config, mock_litellm_completion):
         """Test run_worker with both system and user prompts."""
@@ -75,7 +75,7 @@ class TestRunWorker:
         )
         assert result == "LiteLLM response"
 
-    @patch("vmpilot.worker_llm.litellm.completion")
+    @patch("litellm.completion")
     @patch("vmpilot.worker_llm.config")
     def test_run_worker_without_system_prompt(
         self, mock_config, mock_litellm_completion
@@ -113,7 +113,7 @@ class TestRunWorkerAsync:
 
     @pytest.mark.asyncio
     @patch(
-        "vmpilot.worker_llm.litellm.acompletion", new_callable=AsyncMock
+        "litellm.acompletion", new_callable=AsyncMock
     )  # Use new_callable for async patches
     @patch("vmpilot.worker_llm.config")
     async def test_run_worker_async_with_system_prompt(
@@ -151,7 +151,7 @@ class TestRunWorkerAsync:
         assert result == "Async LiteLLM response"
 
     @pytest.mark.asyncio
-    @patch("vmpilot.worker_llm.litellm.acompletion", new_callable=AsyncMock)
+    @patch("litellm.acompletion", new_callable=AsyncMock)
     @patch("vmpilot.worker_llm.config")
     async def test_run_worker_async_without_system_prompt(
         self, mock_config, mock_litellm_acompletion
@@ -190,7 +190,7 @@ class TestRunWorkerAsync:
 class TestErrorHandling:
     """Tests for error handling in worker_llm functions with LiteLLM."""
 
-    @patch("vmpilot.worker_llm.litellm.completion")
+    @patch("litellm.completion")
     @patch("vmpilot.worker_llm.config")
     def test_run_worker_handles_litellm_error(
         self, mock_config, mock_litellm_completion
@@ -213,7 +213,7 @@ class TestErrorHandling:
         mock_litellm_completion.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("vmpilot.worker_llm.litellm.acompletion", new_callable=AsyncMock)
+    @patch("litellm.acompletion", new_callable=AsyncMock)
     @patch("vmpilot.worker_llm.config")
     async def test_run_worker_async_handles_litellm_error(
         self, mock_config, mock_litellm_acompletion
@@ -245,7 +245,7 @@ import litellm.exceptions
 class TestEdgeCases:
     """Tests for edge cases in worker_llm functions with LiteLLM."""
 
-    @patch("vmpilot.worker_llm.litellm.completion")
+    @patch("litellm.completion")
     @patch("vmpilot.worker_llm.config")
     def test_run_worker_with_empty_prompt(self, mock_config, mock_litellm_completion):
         """Test run_worker with an empty prompt."""
@@ -264,7 +264,7 @@ class TestEdgeCases:
         assert result == "Response to empty prompt"
 
     @pytest.mark.asyncio
-    @patch("vmpilot.worker_llm.litellm.acompletion", new_callable=AsyncMock)
+    @patch("litellm.acompletion", new_callable=AsyncMock)
     @patch("vmpilot.worker_llm.config")
     async def test_run_worker_async_with_empty_prompt(
         self, mock_config, mock_litellm_acompletion
@@ -284,7 +284,7 @@ class TestEdgeCases:
         assert call_args["messages"] == [{"role": "user", "content": ""}]
         assert result == "Async response to empty prompt"
 
-    @patch("vmpilot.worker_llm.litellm.completion")
+    @patch("litellm.completion")
     @patch("vmpilot.worker_llm.config")
     def test_run_worker_with_very_long_prompt(
         self, mock_config, mock_litellm_completion
