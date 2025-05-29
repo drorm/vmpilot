@@ -140,6 +140,8 @@ async def run_worker_async(
     # For other providers, `model` is usually sufficient.
 
     try:
+        import litellm
+
         response = await litellm.acompletion(
             model=model,
             messages=messages,
