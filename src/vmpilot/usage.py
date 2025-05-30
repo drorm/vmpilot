@@ -74,7 +74,6 @@ class Usage:
             # try to get it from config
             self.model_name = config.providers[self.provider].default_model
 
-        # Check for token usage in response_metadata (OpenAI format)
         if "token_usage" in response_metadata:
             token_usage = response_metadata["token_usage"]
             logger.debug(
@@ -84,6 +83,9 @@ class Usage:
             # Extract token usage
             prompt_tokens = token_usage.get("prompt_tokens", 0)
             completion_tokens = token_usage.get("completion_tokens", 0)
+            cache_creation_input_tokens = token_usage.get(
+                "cache_creation_input_tokens", 0
+            )
 
             # Handle cached tokens if available
             prompt_tokens_details = token_usage.get("prompt_tokens_details", {})
@@ -92,44 +94,16 @@ class Usage:
             # Update counters
             cached_tokens = 0 if cached_tokens is None else cached_tokens
             self.cache_read_input_tokens += cached_tokens
+            self.cache_creation_input_tokens += cache_creation_input_tokens
             self.input_tokens += prompt_tokens - cached_tokens  # Subtract cached tokens
             self.output_tokens += completion_tokens
 
             logger.info(
                 f"Added {self.model_name} tokens - input: {prompt_tokens - cached_tokens}, "
-                f"output: {completion_tokens}, cached: {cached_tokens}"
+                f"output: {completion_tokens}, cached: {cached_tokens}, cache_creation: {cache_creation_input_tokens}"
             )
 
             return
-
-        # Check for traditional usage_metadata (used by some models)
-        usage_metadata = getattr(message, "usage_metadata", {})
-        # Message has OpenAI usage metadata? Also applies to Gemini and others
-        if usage_metadata:
-            logger.debug(
-                f"Adding tokens from message: {usage_metadata} for model {response_metadata.get('model_name')}"
-            )
-            # Gemini/openai format
-            # Handle cached tokens if available
-            input_token_details = usage_metadata.get("input_token_details", {})
-            if input_token_details:
-                self.cache_read_input_tokens = input_token_details.get("cache_read", 0)
-                self.cache_creation_input_tokens += input_token_details.get(
-                    "cache_creation", 0
-                )
-            output_tokens = usage_metadata.get("output_tokens", 0)
-            self.output_tokens += output_tokens
-            input_tokens = usage_metadata.get("input_tokens", 0)
-            # Subtract cached tokens from output tokens since openai/gemini input tokens include cached tokens
-            input_tokens -= self.cache_read_input_tokens
-            self.input_tokens += input_tokens
-            logger.info(
-                f"Added {self.model_name} tokens - input: {input_tokens}, "
-                f"output: {output_tokens}, cached: {self.cache_read_input_tokens}"
-                f" cache creation: {self.cache_creation_input_tokens}"
-            )
-
-        return
 
     def get_totals(self) -> Dict[str, int]:
         """

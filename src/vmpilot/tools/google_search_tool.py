@@ -67,7 +67,7 @@ class GoogleSearchTool:
             return
 
         self.is_configured = True
-        logger.info("Google Search Tool initialized successfully")
+        logger.debug("Google Search Tool initialized successfully")
 
     def _run(
         self,

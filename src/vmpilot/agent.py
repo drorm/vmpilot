@@ -134,7 +134,7 @@ async def process_messages(
     logging.getLogger("httpx").setLevel(logging.WARNING)
     if disable_logging:
         # Disable all logging if flag is set
-        logging.getLogger("vmpilot").setLevel(logging.WARNING)
+        logging.getLogger("vmpilot").setLevel(logging.INFO)
         logging.getLogger("httpx").setLevel(logging.ERROR)
         logging.getLogger("httpcore").setLevel(logging.ERROR)
         logging.getLogger("asyncio").setLevel(logging.ERROR)
@@ -404,6 +404,7 @@ def agent_loop(
                             self.usage_metadata = {
                                 "input_tokens": usage_data.prompt_tokens,
                                 "output_tokens": usage_data.completion_tokens,
+                                "cache_creation_input_tokens": usage_data.cache_creation_input_tokens,
                             }
                             # Handle completion_tokens_details if present
                             if hasattr(usage_data, "completion_tokens_details"):
@@ -427,6 +428,7 @@ def agent_loop(
                                     "prompt_tokens": usage_data.prompt_tokens,
                                     "completion_tokens": usage_data.completion_tokens,
                                     "total_tokens": usage_data.total_tokens,
+                                    "cache_creation_input_tokens": usage_data.cache_creation_input_tokens,
                                 },
                             }
                             # Add prompt_tokens_details if available
