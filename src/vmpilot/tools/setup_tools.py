@@ -67,9 +67,8 @@ def setup_tools(model: str | None = None):
     tools.append({"schema": edit_file_schema, "executor": edit_file_executor})
 
     # Add Claude web search tool if using Claude model
-    # is_claude_model or claude_web_search_executor may not be defined, so skip this if not present
     try:
-        if model and "is_claude_model" in globals() and is_claude_model(model):
+        if model and is_claude_model(model):
             claude_search_schema = {
                 "type": "web_search_20250305",
                 "name": "web_search",
@@ -79,8 +78,8 @@ def setup_tools(model: str | None = None):
                 {"schema": claude_search_schema, "executor": claude_web_search_executor}
             )
             logger.debug("Claude web search tool added to available tools")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Claude web search tool not added: {e}")
 
     # Add Gemini search tool if using Gemini model
     try:
@@ -90,13 +89,10 @@ def setup_tools(model: str | None = None):
                 {"schema": gemini_search_schema, "executor": gemini_search_executor}
             )
             logger.debug("Gemini search tool added to available tools")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Gemini search tool not added: {e}")
 
-    # Note: Gemini native search tool is not needed since Google Search tool works fine with Gemini
-    # and mixing native tools with function calling tools causes "Tool use with function calling is unsupported" error
-
-    # Conditionally add Google Search tool if enabled
+    # Add Google Search tool for ALL providers if enabled
     try:
         if is_google_search_enabled():
             try:
@@ -139,10 +135,11 @@ def setup_tools(model: str | None = None):
                 if not os.getenv(google_search_config.cse_id_env):
                     missing_vars.append(google_search_config.cse_id_env)
 
-                logger.warning(
-                    "Google Search is enabled in configuration but environment variables are missing. "
-                    f"Please set: {', '.join(missing_vars)}"
-                )
+                if missing_vars:
+                    logger.warning(
+                        "Google Search is enabled in configuration but environment variables are missing. "
+                        f"Please set: {', '.join(missing_vars)}"
+                    )
             else:
                 logger.debug(
                     "Google Search Tool not enabled in configuration, skipping"
@@ -207,10 +204,13 @@ def get_tool_schemas(tools: list, effective_model: str) -> list:
         schema = tool.get("schema")
         if schema:
             # Check if this is a native tool (Claude or Gemini)
-            if isinstance(schema, dict) and ("googleSearch" in schema):  # Gemini native
+            if isinstance(schema, dict) and (
+                schema.get("type") == "web_search_20250305"  # Claude native
+                or "googleSearch" in schema  # Gemini native
+            ):
                 native_tools.append(schema)
             else:
-                # Regular function calling tool
+                # Regular function calling tool (includes basic tools and Google search)
                 function_tools.append(schema)
 
     # For Gemini models, only use native tools if available, otherwise use function tools
@@ -218,8 +218,15 @@ def get_tool_schemas(tools: list, effective_model: str) -> list:
     if native_tools and is_gemini_model(effective_model):
         tool_schemas = native_tools
         logger.debug(f"Using Gemini native tools only: {len(native_tools)} tools")
+    elif is_claude_model(effective_model):
+        # Claude gets function calling tools + native web search
+        tool_schemas = function_tools + native_tools
+        logger.debug(
+            f"Using Claude function calling tools ({len(function_tools)}) + native tools ({len(native_tools)})"
+        )
     else:
-        # For other models or when no native tools, use function calling tools
+        # All other models use function calling tools only
         tool_schemas = function_tools
-        logger.debug(f"Using function calling tools: {len(function_tools)} tools")
+        logger.debug(f"Using function calling tools only: {len(function_tools)} tools")
+
     return tool_schemas
