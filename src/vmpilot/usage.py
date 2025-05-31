@@ -241,12 +241,12 @@ class Usage:
         if len(request) > 500:
             request = request[:500] + "..."
 
-        # Round all float values in the cost dict to 6 decimal places
+        # Round all float values in the cost dict to 3 decimal places
         def round_floats(obj):
             if isinstance(obj, dict):
                 return {k: round_floats(v) for k, v in obj.items()}
             elif isinstance(obj, float):
-                return round(obj, 6)
+                return round(obj, 3)
             return obj
 
         if isinstance(cost, dict):
@@ -299,9 +299,9 @@ class Usage:
                 acc_breakdown = repo.get_accumulated_cost_breakdown(chat_id)
                 # Format as markdown table matching provider style
                 if self.provider in [Provider.OPENAI, Provider.GOOGLE]:
-                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.6f} | ${acc_breakdown['input_cost']:.6f} | ${acc_breakdown['output_cost']:.6f} | ${acc_breakdown['cache_read_cost']:.6f} |"
+                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.3f} | ${acc_breakdown['input_cost']:.3f} | ${acc_breakdown['output_cost']:.3f} | ${acc_breakdown['cache_read_cost']:.3f} |"
                 else:  # Anthropic
-                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.6f} | ${acc_breakdown['cache_creation_cost']:.6f} | ${acc_breakdown['cache_read_cost']:.6f} | ${acc_breakdown['output_cost']:.6f} |"
+                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.3f} | ${acc_breakdown['cache_creation_cost']:.3f} | ${acc_breakdown['cache_read_cost']:.3f} | ${acc_breakdown['output_cost']:.3f} |"
             except Exception:
                 accumulated_cost_table = "\n**Accumulated Cost Breakdown:** N/A"
 
@@ -315,13 +315,13 @@ class Usage:
                 except Exception:
                     acc_cost = None
             accumulated_cost_str = (
-                f"\n**Accumulated Cost:** `${acc_cost:.6f}`"
+                f"\n**Accumulated Cost:** `${acc_cost:.3f}`"
                 if acc_cost is not None
                 else "\n**Accumulated Cost:** N/A"
             )
             cost_message = (
                 f"\n\n"
-                f"**Cost Summary{model_info}:** `${cost['total_cost']:.6f}`"
+                f"**Cost Summary{model_info}:** `${cost['total_cost']:.3f}`"
                 f"{accumulated_cost_str}"
             )
         else:  # Detailed display
@@ -331,7 +331,7 @@ class Usage:
                     f"\n\n"
                     f"| Request | **Total** | Input | Output | Cache Read |\n"
                     f"|--------|--------|--------|----------|----------|\n"
-                    f"| Current |  ${cost['total_cost']:.6f} | ${cost['input_cost']:.6f} | ${cost['output_cost']:.6f} | ${cost['cache_read_cost']:.6f} |"
+                    f"| Current |  ${cost['total_cost']:.3f} | ${cost['input_cost']:.3f} | ${cost['output_cost']:.3f} | ${cost['cache_read_cost']:.3f} |"
                     f"{accumulated_cost_table}"
                 )
             else:  # Anthropic format
@@ -339,7 +339,7 @@ class Usage:
                     f"\n\n"
                     f"| Request | **Total** | Cache Creation | Cache Read | Output |\n"
                     f"|--------|----------------|------------|----------|----------|\n"
-                    f"| Current |  ${cost['total_cost']:.6f} | ${cost['cache_creation_cost']:.6f} | ${cost['cache_read_cost']:.6f} | ${cost['output_cost']:.6f} |"
+                    f"| Current |  ${cost['total_cost']:.3f} | ${cost['cache_creation_cost']:.3f} | ${cost['cache_read_cost']:.3f} | ${cost['output_cost']:.3f} |"
                     f"{accumulated_cost_table}"
                 )
 

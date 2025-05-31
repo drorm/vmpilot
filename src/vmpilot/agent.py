@@ -404,7 +404,9 @@ def agent_loop(
                             self.usage_metadata = {
                                 "input_tokens": usage_data.prompt_tokens,
                                 "output_tokens": usage_data.completion_tokens,
-                                "cache_creation_input_tokens": usage_data.cache_creation_input_tokens,
+                                "cache_creation_input_tokens": getattr(
+                                    usage_data, "cache_creation_input_tokens", 0
+                                ),
                             }
                             # Handle completion_tokens_details if present
                             if hasattr(usage_data, "completion_tokens_details"):
@@ -428,7 +430,9 @@ def agent_loop(
                                     "prompt_tokens": usage_data.prompt_tokens,
                                     "completion_tokens": usage_data.completion_tokens,
                                     "total_tokens": usage_data.total_tokens,
-                                    "cache_creation_input_tokens": usage_data.cache_creation_input_tokens,
+                                    "cache_creation_input_tokens": getattr(
+                                        usage_data, "cache_creation_input_tokens", 0
+                                    ),
                                 },
                             }
                             # Add prompt_tokens_details if available
@@ -675,12 +679,14 @@ def agent_loop(
                 exchange.complete(error_message, all_tool_calls)
             return
 
+    notice = f'I\'ve done {max_iterations} steps. Type "continue" or "next" to continue. You can change this, recursion_limit, in config.ini.'
     # If we've reached max iterations, complete the exchange
     if exchange:
         error_message = {
-            "content": "Error: Maximum iterations reached without a final response",
+            "content": notice,
             "role": "assistant",
         }
+        logger.info(notice)
         exchange.complete(error_message, all_tool_calls)
 
-    yield "Error: Maximum iterations reached without a final response"
+    yield notice
