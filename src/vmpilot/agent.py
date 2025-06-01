@@ -337,6 +337,9 @@ def agent_loop(
         try:
             # Apply modify_state_messages for cache control (Anthropic)
             modified_messages = modify_state_messages(messages.copy())
+            logger.debug(
+                f"Modified messages for iteration {iteration}: {modified_messages}"
+            )
 
             # Call LLM via LiteLLM
             # Extract just the schema part for LiteLLM
@@ -472,9 +475,29 @@ def agent_loop(
 
             # If no tool calls, we've reached the final response from the LLM for this turn
             if not tool_calls:
+                # Add the final assistant message to history before completing
+                choices = getattr(response, "choices", None)
+                if choices and len(choices) > 0:
+                    assistant_msg_obj = choices[0].message
+
+                    # Create the assistant message for history
+                    final_assistant_msg = {
+                        "role": "assistant",
+                        "content": (
+                            str(assistant_msg_obj.content)
+                            if assistant_msg_obj.content is not None
+                            else None
+                        ),
+                    }
+
+                    # Add to messages history
+                    messages.append(final_assistant_msg)
+                    logger.debug(
+                        f"Added final assistant message to history: {final_assistant_msg}"
+                    )
+
                 # Complete the exchange with the final assistant message
                 if exchange:
-                    choices = getattr(response, "choices", None)
                     if choices and len(choices) > 0 and hasattr(choices[0], "message"):
                         assistant_message = choices[0].message
                         if hasattr(assistant_message, "__dict__"):
@@ -491,7 +514,6 @@ def agent_loop(
                 # However, parse_tool_calls should already put message.content into `content`.
                 # If content is still None and no tools, it's likely the end.
                 if not content:
-                    choices = getattr(response, "choices", None)
                     if choices and len(choices) > 0 and hasattr(choices[0], "message"):
                         message_content = getattr(choices[0].message, "content", None)
                         if message_content:
