@@ -28,6 +28,7 @@ nav:
         - Todo App 2: examples/todo2.md
     - Tools:
         - Google Search: tools/google-search.md
+        - Claude Web Search: tools/web-search.md
     - Plugins:
         - Overview: plugins/overview.md
         - GitHub Issues: plugins/github.md
