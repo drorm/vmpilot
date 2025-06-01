@@ -32,9 +32,13 @@ show_usage() {
     echo ""
 }
 
-# Check if alembic is available
-if ! command -v alembic &> /dev/null; then
-    echo "Error: alembic command not found. Please install alembic:"
+# Check if alembic is available (prefer python -m alembic)
+if python -m alembic --version &> /dev/null; then
+    ALEMBIC_CMD="python -m alembic"
+elif command -v alembic &> /dev/null; then
+    ALEMBIC_CMD="alembic"
+else
+    echo "Error: alembic not found. Please install alembic:"
     echo "  pip install alembic"
     exit 1
 fi
@@ -45,20 +49,20 @@ COMMAND=${1:-""}
 case "$COMMAND" in
     "current")
         echo "Current database revision:"
-        alembic current
+        $ALEMBIC_CMD current
         ;;
     "history")
         echo "Migration history:"
-        alembic history --verbose
+        $ALEMBIC_CMD history --verbose
         ;;
     "upgrade")
         echo "Applying database migrations..."
-        alembic upgrade head
+        $ALEMBIC_CMD upgrade head
         echo "Database migrations completed successfully"
         ;;
     "downgrade")
         echo "Downgrading database by one revision..."
-        alembic downgrade -1
+        $ALEMBIC_CMD downgrade -1
         echo "Database downgrade completed"
         ;;
     "create")
@@ -69,7 +73,7 @@ case "$COMMAND" in
             exit 1
         fi
         echo "Creating new migration: $MESSAGE"
-        alembic revision -m "$MESSAGE"
+        $ALEMBIC_CMD revision -m "$MESSAGE"
         echo "Migration created successfully"
         ;;
     "help"|"-h"|"--help"|"")

@@ -44,9 +44,11 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    # Get the database URL using the same logic as the application
-    db_path = get_db_path()
-    url = f"sqlite:///{db_path}"
+    # Use URL from config if set, otherwise use application's database path
+    url = config.get_main_option("sqlalchemy.url")
+    if not url:
+        db_path = get_db_path()
+        url = f"sqlite:///{db_path}"
 
     context.configure(
         url=url,
@@ -66,9 +68,12 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    # Override the database URL with the application's database path
-    db_path = get_db_path()
-    config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")
+    # Use URL from config if set, otherwise use application's database path
+    url = config.get_main_option("sqlalchemy.url")
+    if not url:
+        db_path = get_db_path()
+        url = f"sqlite:///{db_path}"
+        config.set_main_option("sqlalchemy.url", url)
 
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
