@@ -70,9 +70,15 @@ sleep 5
 if [ ! -f "$VMPILOT_DIR/config/config.ini" ]; then
   echo "📝 Copying default configuration file..."
   docker cp vmpilot:/app/vmpilot/src/vmpilot/config.ini $VMPILOT_DIR/config/
-  echo "🔄 Restarting VMPilot to apply configuration..."
-  docker exec vmpilot supervisorctl restart vmpilot
 fi
+
+# Apply database migrations
+echo "🗄️  Applying database migrations..."
+docker exec vmpilot /app/vmpilot/bin/migrate.sh upgrade
+
+# Restart VMPilot to ensure all changes are applied
+echo "🔄 Restarting VMPilot to apply configuration..."
+docker exec vmpilot supervisorctl restart vmpilot
 
 # Verify Open WebUI is running
 echo "🔍 Verifying Open WebUI service..."

@@ -82,6 +82,14 @@ def get_db_connection() -> sqlite3.Connection:
 
     if _db_connection is None:
         db_path = get_db_path()
+
+        # Ensure database is migrated before connecting
+        from .migrations import ensure_database_migrated
+
+        db_url = f"sqlite:///{db_path}"
+        if not ensure_database_migrated(db_url):
+            logger.warning("Database migration failed, proceeding anyway")
+
         _db_connection = sqlite3.connect(
             db_path,
             detect_types=sqlite3.PARSE_DECLTYPES,

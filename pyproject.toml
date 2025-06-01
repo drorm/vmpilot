@@ -23,7 +23,8 @@ dependencies = [
     "coverage>=7.3.0",
     "litellm>=1.0.0",
     "langchain-google-community>=0.0.10",
-    "typing-extensions>=4.0.0"
+    "typing-extensions>=4.0.0",
+    "alembic>=1.13.0"
 ]
 
 [project.optional-dependencies]

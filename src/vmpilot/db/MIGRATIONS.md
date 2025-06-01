@@ -48,9 +48,18 @@ This creates a `migrations/` directory with config and version scripts.
 - In `env.py`, ensure it uses raw SQL migrations (not automagic ORM reflection)
 
 #### 4. Create a Migration (Raw SQL Example)
+
+**Using the migration script (recommended):**
 ```bash
+./bin/migrate.sh create "create exchanges table"
+```
+
+**Using alembic directly:**
+```bash
+# From src/vmpilot/db directory
 alembic revision -m "create exchanges table"
 ```
+
 Edit the generated file in `migrations/versions/` and write raw SQL in the `upgrade()` and `downgrade()` functions, e.g.:
 ```python
 from alembic import op
@@ -69,13 +78,33 @@ def downgrade():
 ```
 
 #### 5. Run Migrations
+
+**Using the migration script (recommended):**
 ```bash
-alembic upgrade head      # upgrade to latest
-alembic downgrade -1      # downgrade one revision
+# From project root
+./bin/migrate.sh upgrade      # upgrade to latest
+./bin/migrate.sh downgrade    # downgrade one revision
+./bin/migrate.sh current      # show current revision
+./bin/migrate.sh history      # show migration history
 ```
 
-#### 6. Check Migration Status
+**Using alembic directly:**
 ```bash
+# From src/vmpilot/db directory
+alembic upgrade head      # upgrade to latest
+alembic downgrade -1      # downgrade one revision
 alembic current           # show current revision
 alembic history           # show migration history
 ```
+
+#### 6. Automatic Migration Application
+
+VMPilot automatically applies pending migrations when the application starts. This ensures the database is always up to date without manual intervention.
+
+**For Docker installations:**
+- Migrations are applied during the installation process
+- No manual migration steps required
+
+**For development:**
+- Migrations are applied when the database connection is first established
+- Use `./bin/migrate.sh` for manual migration management
