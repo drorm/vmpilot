@@ -15,18 +15,18 @@ def test_gemini_token_tracking():
     # Create a usage tracker for Gemini
     usage = Usage(provider=Provider.GOOGLE)
 
-    # Create a mock message with Gemini usage metadata
+    # Create a mock message with token usage in response_metadata
     mock_message = MagicMock()
-    mock_message.usage_metadata = {
-        "input_tokens": 3328,
-        "output_tokens": 18,
-        "total_tokens": 3346,
-        "input_token_details": {"cache_read": 200},
-    }
     mock_message.response_metadata = {
         "model_name": "gemini-2.5-pro-exp-03-25",
         "prompt_feedback": {"block_reason": 0, "safety_ratings": []},
         "finish_reason": "STOP",
+        "token_usage": {
+            "prompt_tokens": 3328,
+            "completion_tokens": 18,
+            "total_tokens": 3346,
+            "prompt_tokens_details": {"cached_tokens": 200},
+        },
     }
 
     # Add the tokens from the mock message
@@ -52,15 +52,17 @@ def test_gemini_cost_message():
     # Create a usage tracker for Gemini
     usage = Usage(provider=Provider.GOOGLE)
 
-    # Create a mock message with Gemini usage metadata
+    # Create a mock message with token usage in response_metadata
     mock_message = MagicMock()
-    mock_message.usage_metadata = {
-        "input_tokens": 3328,
-        "output_tokens": 18,
-        "total_tokens": 3346,
-        "input_token_details": {"cache_read": 200},
+    mock_message.response_metadata = {
+        "model_name": "gemini-2.5-pro-exp-03-25",
+        "token_usage": {
+            "prompt_tokens": 3328,
+            "completion_tokens": 18,
+            "total_tokens": 3346,
+            "prompt_tokens_details": {"cached_tokens": 200},
+        },
     }
-    mock_message.response_metadata = {"model_name": "gemini-2.5-pro-exp-03-25"}
 
     # Add the tokens from the mock message
     usage.add_tokens(mock_message)

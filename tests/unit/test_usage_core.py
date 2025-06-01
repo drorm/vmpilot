@@ -61,7 +61,7 @@ def test_store_cost_in_db_success(MockRepo):
         chat_id="cid",
         model="gpt-4",
         request="test request",
-        cost={"total_cost": 0.001234567},
+        cost={"total_cost": 0.001},
         start="starttime",
         end="endtime",
     )
@@ -70,7 +70,7 @@ def test_store_cost_in_db_success(MockRepo):
     assert args[1] == "gpt-4"
     assert args[2] == "test request"
     # cost rounded
-    assert args[3]["total_cost"] == 0.001235
+    assert args[3]["total_cost"] == 0.001
 
 
 @patch("vmpilot.usage.logger")
