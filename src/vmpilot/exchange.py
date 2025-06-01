@@ -14,8 +14,6 @@ import logging
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from langchain_core.messages import AIMessage, HumanMessage
-
 from vmpilot.config import GitConfig, config
 from vmpilot.git_track import GitStatus, GitTracker
 
@@ -28,7 +26,7 @@ class Exchange:
     def __init__(
         self,
         chat_id: str,
-        user_message: Union[Dict[str, Any], HumanMessage],
+        user_message: Dict[str, Any],
         output_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
     ):
         """Initialize a new exchange.
@@ -41,13 +39,8 @@ class Exchange:
         self.output_callback = output_callback
         self.chat_id = chat_id
 
-        # Handle different user message formats
-        if isinstance(user_message, dict):
-            self.user_message = HumanMessage(content=user_message.get("content", ""))
-        else:
-            self.user_message = user_message
-
-        self.assistant_message: AIMessage | None = None
+        self.user_message = user_message
+        self.assistant_message: Dict[str, Any] | None = None
         self.tool_calls: list[dict[str, Any]] = []
         self.started_at = datetime.now()
         self.completed_at: datetime | None = None
@@ -109,7 +102,7 @@ class Exchange:
 
     def complete(
         self,
-        assistant_message: Union[Dict[str, Any], AIMessage],
+        assistant_message: Dict[str, Any],
         tool_calls: Optional[List[Dict[str, Any]]] = None,
     ) -> "Exchange":
         """Complete the exchange with assistant response and handle Git commit.
@@ -121,13 +114,7 @@ class Exchange:
         Returns:
             Self for method chaining
         """
-        # Handle different assistant message formats
-        if isinstance(assistant_message, dict):
-            self.assistant_message = AIMessage(
-                content=assistant_message.get("content", "")
-            )
-        else:
-            self.assistant_message = assistant_message
+        self.assistant_message = assistant_message
 
         self.tool_calls = tool_calls or []
         self.completed_at = datetime.now()
@@ -163,7 +150,7 @@ class Exchange:
                 return False
         return False
 
-    def to_messages(self) -> List[Union[HumanMessage, AIMessage]]:
+    def to_messages(self) -> List[Dict[str, Any]]:
         """Convert exchange to message format for conversation state.
 
         Returns:

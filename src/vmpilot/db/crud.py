@@ -11,8 +11,6 @@ import os
 import traceback
 from typing import Dict, List, Optional, Tuple
 
-from langchain_core.messages import BaseMessage
-
 from vmpilot.db.connection import get_db_connection
 
 logger = logging.getLogger(__name__)
@@ -114,25 +112,24 @@ class ConversationRepository:
         self.conn.commit()
         logger.debug(f"Created new chat record for chat_id {chat_id}")
 
-    def serialize_messages(self, messages: List[BaseMessage]) -> str:
-        """Serialize a list of BaseMessage objects to JSON string."""
-        from langchain_core.messages import messages_to_dict
-
+    def serialize_messages(self, messages: List[Dict]) -> str:
+        """
+        Serialize a list of message dictionaries to JSON string.
+        """
         try:
-            serializable = messages_to_dict(messages)
+            serializable = messages
+
             return json.dumps(serializable)
         except Exception as e:
             logger.error(f"Error serializing messages: {e}")
+            traceback.print_exc()
             return "[]"
 
-    def deserialize_messages(self, json_str: str) -> List[BaseMessage]:
-        """Deserialize JSON string back to list of BaseMessage objects."""
-        from langchain_core.messages import messages_from_dict
-
+    def deserialize_messages(self, json_str: str) -> List[Dict]:
+        """Deserialize JSON string back to list of message dictionaries."""
         try:
             data = json.loads(json_str)
-            messages = messages_from_dict(data)
-            return messages
+            return data
         except Exception as e:
             logger.error(f"Error deserializing messages: {e}")
             return []
@@ -140,7 +137,7 @@ class ConversationRepository:
     def save_conversation_state(
         self,
         chat_id: str,
-        messages: List[BaseMessage],
+        messages: List,
         cache_info: Optional[Dict[str, int]] = None,
     ) -> None:
         """
@@ -148,7 +145,7 @@ class ConversationRepository:
 
         Args:
             chat_id: The unique identifier for the conversation thread
-            messages: List of LangChain messages representing the conversation state
+            messages: List of messages representing the conversation state
             cache_info: Dictionary containing cache token information (optional)
         """
         if chat_id is None:
@@ -183,9 +180,7 @@ class ConversationRepository:
         except Exception as e:
             logger.error(f"Error saving conversation state to database: {e}")
 
-    def get_conversation_state(
-        self, chat_id: str
-    ) -> Tuple[List[BaseMessage], Dict[str, int]]:
+    def get_conversation_state(self, chat_id: str) -> Tuple[List, Dict[str, int]]:
         """
         Retrieve the conversation state for a given chat_id from the database.
 
@@ -194,7 +189,7 @@ class ConversationRepository:
 
         Returns:
             Tuple containing:
-            - List of LangChain messages representing the conversation state
+            - List of messages representing the conversation state
             - Dictionary with cache token information
         """
         if chat_id is None:

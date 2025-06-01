@@ -125,9 +125,9 @@ class TestConversationRepository(unittest.TestCase):
 
         # Sample messages for testing
         self.messages = [
-            SystemMessage(content="You are a helpful assistant."),
-            HumanMessage(content="Hello, how are you?"),
-            AIMessage(content="I'm doing well, thank you for asking!"),
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello, how are you?"},
+            {"role": "assistant", "content": "I'm doing well, thank you for asking!"},
         ]
 
         # Sample cache info
@@ -155,9 +155,9 @@ class TestConversationRepository(unittest.TestCase):
 
         # Verify that deserialized messages match original messages
         self.assertEqual(len(deserialized), 3)
-        self.assertEqual(deserialized[0].content, self.messages[0].content)
-        self.assertEqual(deserialized[1].content, self.messages[1].content)
-        self.assertEqual(deserialized[2].content, self.messages[2].content)
+        self.assertEqual(deserialized[0]["content"], self.messages[0]["content"])
+        self.assertEqual(deserialized[1]["content"], self.messages[1]["content"])
+        self.assertEqual(deserialized[2]["content"], self.messages[2]["content"])
 
     def test_save_and_get_conversation_state(self):
         """Test saving and retrieving conversation state."""
@@ -173,9 +173,9 @@ class TestConversationRepository(unittest.TestCase):
 
         # Verify that retrieved messages match original messages
         self.assertEqual(len(retrieved_messages), 3)
-        self.assertEqual(retrieved_messages[0].content, self.messages[0].content)
-        self.assertEqual(retrieved_messages[1].content, self.messages[1].content)
-        self.assertEqual(retrieved_messages[2].content, self.messages[2].content)
+        self.assertEqual(retrieved_messages[0]["content"], self.messages[0]["content"])
+        self.assertEqual(retrieved_messages[1]["content"], self.messages[1]["content"])
+        self.assertEqual(retrieved_messages[2]["content"], self.messages[2]["content"])
 
         # Verify that retrieved cache info matches original cache info
         self.assertEqual(retrieved_cache_info, self.cache_info)

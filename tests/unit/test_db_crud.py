@@ -9,8 +9,6 @@ import sqlite3
 import unittest
 from unittest.mock import MagicMock, patch
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
 from vmpilot.db.crud import ConversationRepository
 
 
@@ -46,9 +44,9 @@ class TestConversationRepositoryCRUD(unittest.TestCase):
         # Sample data for testing
         self.chat_id = "test-chat-123"
         self.messages = [
-            SystemMessage(content="You are a helpful assistant."),
-            HumanMessage(content="Hello, how are you?"),
-            AIMessage(content="I'm doing well, thank you for asking!"),
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello, how are you?"},
+            {"role": "assistant", "content": "I'm doing well, thank you for asking!"},
         ]
         self.cache_info = {"input_tokens": 10, "output_tokens": 20}
 

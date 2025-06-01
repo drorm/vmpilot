@@ -21,19 +21,17 @@ class TestUsageOpenAI(unittest.TestCase):
         # Create a mock message with OpenAI token usage
         mock_message = MagicMock()
 
-        # Set response_metadata directly as a dictionary
-        # Set usage_metadata for OpenAI format
-        mock_message.usage_metadata = {
-            "input_tokens": 100,
-            "output_tokens": 50,
-            "total_tokens": 150,
-            "input_token_details": {"cache_read": 20},
-        }
-
+        # Set response_metadata with token_usage
         mock_message.response_metadata = {
             "model_name": "gpt-4.1-2025-04-14",
             "system_fingerprint": "fp_b38e740b47",
             "finish_reason": "stop",
+            "token_usage": {
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+                "total_tokens": 150,
+                "prompt_tokens_details": {"cached_tokens": 20},
+            },
         }
 
         # Add tokens from the mock message

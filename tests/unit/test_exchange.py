@@ -2,7 +2,6 @@ import time
 from datetime import datetime, timedelta
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
 
 from vmpilot import exchange
 from vmpilot.exchange import Exchange
@@ -74,18 +73,18 @@ def patch_dependencies(monkeypatch):
 
 def test_init_with_dict_message():
     chat_id = "chat1"
-    user_msg = {"content": "Hello"}
+    user_msg = {"role": "user", "content": "Hello"}
     ex = Exchange(chat_id, user_msg)
-    assert isinstance(ex.user_message, HumanMessage)
-    assert ex.user_message.content == "Hello"
+    assert ex.user_message["role"] == "user"
+    assert ex.user_message["content"] == "Hello"
     assert ex.completed_at is None
 
 
 def test_init_with_human_message():
     chat_id = "chat2"
-    user_msg = HumanMessage(content="Hi there")
+    user_msg = {"role": "user", "content": "Hi there"}
     ex = Exchange(chat_id, user_msg)
-    assert ex.user_message.content == "Hi there"
+    assert ex.user_message["content"] == "Hi there"
 
 
 def test_check_git_status_clean(monkeypatch):
@@ -150,12 +149,12 @@ def test_complete_sets_assistant_and_tool_calls(monkeypatch):
     dummy_tracker = DummyGitTracker(status=DummyGitStatus.CLEAN)
     monkeypatch.setattr(exchange, "GitTracker", lambda: dummy_tracker)
 
-    ex = Exchange("chat_complete", {"content": "User message"})
-    assistant = {"content": "Assistant reply"}
+    ex = Exchange("chat_complete", {"role": "user", "content": "User message"})
+    assistant = {"role": "assistant", "content": "Assistant reply"}
     tool_calls = ["tool1", "tool2"]
     ex.complete(assistant, tool_calls)
-    assert isinstance(ex.assistant_message, AIMessage)
-    assert ex.assistant_message.content == "Assistant reply"
+    assert ex.assistant_message["role"] == "assistant"
+    assert ex.assistant_message["content"] == "Assistant reply"
     assert ex.tool_calls == tool_calls
 
 
@@ -197,7 +196,7 @@ def test_to_messages_without_assistant():
     ex = Exchange("chat_msgs", {"content": "User message"})
     msgs = ex.to_messages()
     assert len(msgs) == 1
-    assert msgs[0].content == "User message"
+    assert msgs[0]["content"] == "User message"
 
 
 def test_to_messages_with_assistant():
@@ -206,7 +205,7 @@ def test_to_messages_with_assistant():
     ex.complete({"content": "Assistant message"})
     msgs = ex.to_messages()
     assert len(msgs) == 2
-    contents = [m.content for m in msgs]
+    contents = [m["content"] for m in msgs]
     assert "User message" in contents
     assert "Assistant message" in contents
 
@@ -254,4 +253,4 @@ def test_commit_changes_exception(monkeypatch):
     # This should not raise despite exception in commit_changes
     ex.complete({"content": "Assistant after exception"})
     # Check that assistant_message is set regardless of commit failure
-    assert ex.assistant_message.content == "Assistant after exception"
+    assert ex.assistant_message["content"] == "Assistant after exception"

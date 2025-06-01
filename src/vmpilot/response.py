@@ -1,9 +1,7 @@
 """
-response.py
+response.py for LiteLLM implementation
 Generates responses from the LLM and tools, handling streaming and output callbacks.
-This module is designed to be used within a pipeline, where it can process process_messages
-from the LLM and tools, and yield responses as they come in.
-
+This module calls the agent_loop from lllm_agent.py.
 """
 
 import asyncio
@@ -11,9 +9,9 @@ import logging
 import queue
 import threading
 import traceback
-from typing import Dict
+from typing import Generator
 
-from vmpilot.agent import APIProvider, process_messages
+from vmpilot.agent import process_messages
 from vmpilot.config import MAX_TOKENS, RECURSION_LIMIT, TEMPERATURE, TOOL_OUTPUT_LINES
 
 logger = logging.getLogger(__name__)
@@ -21,38 +19,64 @@ logger = logging.getLogger(__name__)
 
 def generate_responses(
     body, pipeline_self, messages, system_prompt_suffix, formatted_messages
-):
+) -> Generator[str, None, None]:
     """
     Generates responses from the LLM and tools, handling streaming and output callbacks.
     This function is intended to be called from within the pipeline logic.
+
+    Args:
+        body: Request body
+        pipeline_self: Reference to the pipeline object
+        messages: List of messages
+        system_prompt_suffix: Additional text to append to the system prompt
+        formatted_messages: Formatted messages for the LLM
+
+    Yields:
+        Response chunks as they become available
     """
     output_queue = queue.Queue()
     loop_done = threading.Event()
 
-    # Output callback to handle messages from the LLM
-    def output_callback(content: Dict):
+    # Extract the user input from formatted_messages
+    user_input = ""
+    for msg in formatted_messages:
+        if msg.get("role") == "user":
+            user_input = msg.get("content", "")
+            break
+
+    if not user_input:
+        logger.error("No user input found in formatted_messages")
+        yield "Error: No user input found"
+        return
+
+    def handle_exception(e):
+        logger.error(f"Error: {e}")
+        logger.error("".join(traceback.format_tb(e.__traceback__)))
+        output_queue.put(f"Error: {str(e)}")
+
+    # Callbacks for LLM and tool outputs
+    def output_callback(content):
         logger.debug(f"Received content: {content}")
-        if content["type"] == "text":
+        if isinstance(content, dict) and content.get("type") == "text":
             logger.debug(f"Assistant: {content['text']}")
             output_queue.put(content["text"])
+        elif isinstance(content, str):
+            output_queue.put(content)
 
-    # Output callback to handle tool messages: output from commands
-    def tool_callback(result, tool_id):
+    def tool_callback(result, tool_id=None):
         logger.debug(f"Tool callback received result: {result}")
         outputs = []
-        # Handle dictionary results (from FileEditTool)
         if isinstance(result, dict):
             if "error" in result and result["error"]:
                 outputs.append(result["error"])
             if "output" in result and result["output"]:
                 outputs.append(result["output"])
-        # Handle object results (from shell tool)
+        elif hasattr(result, "error") and result.error:
+            if hasattr(result, "exit_code") and result.exit_code:
+                outputs.append(f"Exit code: {result.exit_code}")
+            outputs.append(result.error)
         else:
-            if hasattr(result, "error") and result.error:
-                if hasattr(result, "exit_code") and result.exit_code:
-                    outputs.append(f"Exit code: {result.exit_code}")
-                outputs.append(result.error)
-
+            outputs.append(str(result))
         logger.debug("Tool callback queueing outputs:")
         for output in outputs:
             output_lines = str(output).splitlines()
@@ -63,7 +87,6 @@ def generate_responses(
                 truncated_output += "\n"
             output_queue.put(truncated_output)
 
-    # Run the sampling loop in a separate thread while waiting for responses
     def run_loop():
         loop = None
         try:
@@ -71,45 +94,36 @@ def generate_responses(
             asyncio.set_event_loop(loop)
 
             # Set exception handler for the loop to catch unhandled exceptions
-            def handle_exception(loop, context):
+            def handle_asyncio_exception(loop, context):
                 exception = context.get("exception")
                 if exception:
-                    if "TCPTransport closed=True" in str(
-                        exception
-                    ) or "unable to perform operation" in str(exception):
-                        logger.info(
-                            "Ignoring expected httpx connection cleanup exception. This is OK. For more info: https://github.com/drorm/vmpilot/issues/35"
-                        )
-                    else:
-                        message = f"Caught asyncio exception: {exception}"
-                        logger.error(message)
-                        logger.error(
-                            "".join(traceback.format_tb(exception.__traceback__))
-                        )
+                    logger.error(f"Caught asyncio exception: {exception}")
+                    logger.error("".join(traceback.format_tb(exception.__traceback__)))
                 else:
                     logger.error(f"Asyncio error: {context['message']}")
 
-            loop.set_exception_handler(handle_exception)
+            loop.set_exception_handler(handle_asyncio_exception)
 
-            logger.debug(f"body: {body}")
-            loop.run_until_complete(
-                process_messages(
-                    model=pipeline_self.valves.model,
-                    provider=APIProvider(pipeline_self.valves.provider.value),
-                    system_prompt_suffix=system_prompt_suffix,
-                    messages=formatted_messages,
-                    output_callback=output_callback,
-                    tool_output_callback=tool_callback,
-                    api_key=pipeline_self._api_key,
-                    max_tokens=MAX_TOKENS,
-                    temperature=TEMPERATURE,
-                    disable_logging=body.get("disable_logging", False),
-                    recursion_limit=RECURSION_LIMIT,
-                )
+            model = pipeline_self.valves.model
+            provider = getattr(pipeline_self.valves.provider, "value", None)
+            api_key = getattr(pipeline_self, "_api_key", None)
+            # Build messages and params for process_messages
+            coroutine = process_messages(
+                model=model,
+                provider=provider,
+                system_prompt_suffix=system_prompt_suffix,
+                messages=formatted_messages,
+                output_callback=output_callback,
+                tool_output_callback=tool_callback,
+                api_key=api_key,
+                max_tokens=MAX_TOKENS,
+                temperature=TEMPERATURE,
+                disable_logging=body.get("disable_logging", False),
+                recursion_limit=RECURSION_LIMIT,
             )
+            loop.run_until_complete(coroutine)
         except Exception as e:
-            logger.error(f"Error: {e}")
-            logger.error("".join(traceback.format_tb(e.__traceback__)))
+            handle_exception(e)
         finally:
             loop_done.set()
             # Safely close the loop
@@ -130,17 +144,22 @@ def generate_responses(
 
     # Start the sampling loop in a separate thread
     thread = threading.Thread(target=run_loop)
+    thread.daemon = True
     thread.start()
 
-    # Yield responses as they come in
+    # Yield responses from the queue
+    response_received = False
     while not loop_done.is_set() or not output_queue.empty():
         try:
             output = output_queue.get(timeout=0.1)
+            response_received = True
             yield output
         except queue.Empty:
             continue
         except Exception as e:
-            logger.error(f"Error getting output: {e}")
+            handle_exception(e)
             break
 
-    thread.join()
+    # If no response was received and the loop is done, yield a default message
+    if not response_received and loop_done.is_set():
+        yield "Command executed but no response was generated."

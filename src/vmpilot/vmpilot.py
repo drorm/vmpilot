@@ -4,7 +4,7 @@ author: Assistant
 date: 2024-12-02
 version: 0.2
 license: MIT
-description: A pipeline that enables using an LLM to execute commands via LangChain
+description: A pipeline that enables using an LLM to execute commands
 environment_variables: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
 """
 
@@ -252,7 +252,7 @@ class Pipeline:
                 return error_generator()
             return error_msg
 
-        from vmpilot.agent import APIProvider, process_messages
+        from vmpilot.response import generate_responses
 
         # Handle title request
         if body.get("title", False):
@@ -300,15 +300,10 @@ class Pipeline:
                     )
                 else:
                     formatted_messages.append({"role": role, "content": content})
-                formatted_messages[-1]["content"][-1]["cache_control"] = {
-                    "type": "ephemeral"
-                }
 
             # Message truncation is now handled by the Chat class in agent.py
 
             """ Set up the params for the process_messages function and run it in a separate thread. """
-
-            from vmpilot.response import generate_responses
 
             """
             In a typical llm chat streaming means that the output is sent to the user as it is generated.

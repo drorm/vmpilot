@@ -11,8 +11,6 @@ For OpenAI and Gemini models, token usage is tracked using metadata from the res
 import logging
 from typing import Any, Dict, Optional, Tuple
 
-from litellm import model_cost
-
 from vmpilot.config import Provider, config
 
 logger = logging.getLogger(__name__)
@@ -76,7 +74,6 @@ class Usage:
             # try to get it from config
             self.model_name = config.providers[self.provider].default_model
 
-        # Check for token usage in response_metadata (OpenAI format)
         if "token_usage" in response_metadata:
             token_usage = response_metadata["token_usage"]
             logger.debug(
@@ -86,51 +83,27 @@ class Usage:
             # Extract token usage
             prompt_tokens = token_usage.get("prompt_tokens", 0)
             completion_tokens = token_usage.get("completion_tokens", 0)
+            cache_creation_input_tokens = token_usage.get(
+                "cache_creation_input_tokens", 0
+            )
 
             # Handle cached tokens if available
             prompt_tokens_details = token_usage.get("prompt_tokens_details", {})
             cached_tokens = prompt_tokens_details.get("cached_tokens", 0)
 
             # Update counters
+            cached_tokens = 0 if cached_tokens is None else cached_tokens
             self.cache_read_input_tokens += cached_tokens
+            self.cache_creation_input_tokens += cache_creation_input_tokens
             self.input_tokens += prompt_tokens - cached_tokens  # Subtract cached tokens
             self.output_tokens += completion_tokens
 
             logger.info(
                 f"Added {self.model_name} tokens - input: {prompt_tokens - cached_tokens}, "
-                f"output: {completion_tokens}, cached: {cached_tokens}"
+                f"output: {completion_tokens}, cached: {cached_tokens}, cache_creation: {cache_creation_input_tokens}"
             )
 
             return
-
-        # Check for traditional usage_metadata (used by some models)
-        usage_metadata = getattr(message, "usage_metadata", {})
-        # Message has OpenAI usage metadata? Also applies to Gemini and others
-        if usage_metadata:
-            logger.debug(
-                f"Adding tokens from message: {usage_metadata} for model {response_metadata.get('model_name')}"
-            )
-            # Gemini/openai format
-            # Handle cached tokens if available
-            input_token_details = usage_metadata.get("input_token_details", {})
-            if input_token_details:
-                self.cache_read_input_tokens = input_token_details.get("cache_read", 0)
-                self.cache_creation_input_tokens += input_token_details.get(
-                    "cache_creation", 0
-                )
-            output_tokens = usage_metadata.get("output_tokens", 0)
-            self.output_tokens += output_tokens
-            input_tokens = usage_metadata.get("input_tokens", 0)
-            # Subtract cached tokens from output tokens since openai/gemini input tokens include cached tokens
-            input_tokens -= self.cache_read_input_tokens
-            self.input_tokens += input_tokens
-            logger.info(
-                f"Added {self.model_name} tokens - input: {input_tokens}, "
-                f"output: {output_tokens}, cached: {self.cache_read_input_tokens}"
-                f" cache creation: {self.cache_creation_input_tokens}"
-            )
-
-        return
 
     def get_totals(self) -> Dict[str, int]:
         """
@@ -161,6 +134,8 @@ class Usage:
         # If we have a model name, use litellm for pricing
         if self.model_name:
             try:
+                from litellm import model_cost
+
                 model_pricing = model_cost.get(self.model_name)
                 if model_pricing:
                     logger.debug(
@@ -266,12 +241,12 @@ class Usage:
         if len(request) > 500:
             request = request[:500] + "..."
 
-        # Round all float values in the cost dict to 6 decimal places
+        # Round all float values in the cost dict to 3 decimal places
         def round_floats(obj):
             if isinstance(obj, dict):
                 return {k: round_floats(v) for k, v in obj.items()}
             elif isinstance(obj, float):
-                return round(obj, 6)
+                return round(obj, 3)
             return obj
 
         if isinstance(cost, dict):
@@ -324,9 +299,9 @@ class Usage:
                 acc_breakdown = repo.get_accumulated_cost_breakdown(chat_id)
                 # Format as markdown table matching provider style
                 if self.provider in [Provider.OPENAI, Provider.GOOGLE]:
-                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.6f} | ${acc_breakdown['input_cost']:.6f} | ${acc_breakdown['output_cost']:.6f} | ${acc_breakdown['cache_read_cost']:.6f} |"
+                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.3f} | ${acc_breakdown['input_cost']:.3f} | ${acc_breakdown['output_cost']:.3f} | ${acc_breakdown['cache_read_cost']:.3f} |"
                 else:  # Anthropic
-                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.6f} | ${acc_breakdown['cache_creation_cost']:.6f} | ${acc_breakdown['cache_read_cost']:.6f} | ${acc_breakdown['output_cost']:.6f} |"
+                    accumulated_cost_table = f"\n| All | ${acc_breakdown['total_cost']:.3f} | ${acc_breakdown['cache_creation_cost']:.3f} | ${acc_breakdown['cache_read_cost']:.3f} | ${acc_breakdown['output_cost']:.3f} |"
             except Exception:
                 accumulated_cost_table = "\n**Accumulated Cost Breakdown:** N/A"
 
@@ -340,13 +315,13 @@ class Usage:
                 except Exception:
                     acc_cost = None
             accumulated_cost_str = (
-                f"\n**Accumulated Cost:** `${acc_cost:.6f}`"
+                f"\n**Accumulated Cost:** `${acc_cost:.3f}`"
                 if acc_cost is not None
                 else "\n**Accumulated Cost:** N/A"
             )
             cost_message = (
                 f"\n\n"
-                f"**Cost Summary{model_info}:** `${cost['total_cost']:.6f}`"
+                f"**Cost Summary{model_info}:** `${cost['total_cost']:.3f}`"
                 f"{accumulated_cost_str}"
             )
         else:  # Detailed display
@@ -356,7 +331,7 @@ class Usage:
                     f"\n\n"
                     f"| Request | **Total** | Input | Output | Cache Read |\n"
                     f"|--------|--------|--------|----------|----------|\n"
-                    f"| Current |  ${cost['total_cost']:.6f} | ${cost['input_cost']:.6f} | ${cost['output_cost']:.6f} | ${cost['cache_read_cost']:.6f} |"
+                    f"| Current |  ${cost['total_cost']:.3f} | ${cost['input_cost']:.3f} | ${cost['output_cost']:.3f} | ${cost['cache_read_cost']:.3f} |"
                     f"{accumulated_cost_table}"
                 )
             else:  # Anthropic format
@@ -364,7 +339,7 @@ class Usage:
                     f"\n\n"
                     f"| Request | **Total** | Cache Creation | Cache Read | Output |\n"
                     f"|--------|----------------|------------|----------|----------|\n"
-                    f"| Current |  ${cost['total_cost']:.6f} | ${cost['cache_creation_cost']:.6f} | ${cost['cache_read_cost']:.6f} | ${cost['output_cost']:.6f} |"
+                    f"| Current |  ${cost['total_cost']:.3f} | ${cost['cache_creation_cost']:.3f} | ${cost['cache_read_cost']:.3f} | ${cost['output_cost']:.3f} |"
                     f"{accumulated_cost_table}"
                 )
 

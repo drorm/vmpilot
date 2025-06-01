@@ -33,6 +33,36 @@ def get_plugins_readme():
         return "No plugins available"
 
 
+def get_available_tools_description():
+    """Generate a description of available tools based on actual configuration."""
+    from vmpilot.tools.setup_tools import setup_tools
+
+    try:
+        tools = setup_tools()
+        if not tools:
+            return "No tools are currently available."
+
+        tool_descriptions = []
+        for tool in tools:
+            schema = tool.get("schema", {})
+            if schema.get("type") == "function":
+                func_info = schema.get("function", {})
+                name = func_info.get("name", "Unknown")
+                description = func_info.get("description", "No description available")
+                tool_descriptions.append(
+                    f"* Use the {name} tool for {description.split('.')[0].lower()}."
+                )
+
+        if tool_descriptions:
+            return "\n".join(tool_descriptions)
+        else:
+            return "Tools are available but descriptions could not be generated."
+
+    except Exception as e:
+        logger.warning(f"Failed to get tools description: {e}")
+        return "* Use the shell tool for executing bash commands.\n* Use the create_file tool for creating files.\n* Use the edit_file tool for editing files."
+
+
 # Generate system prompt on demand, ensuring current project root is used
 def get_system_prompt():
 
@@ -91,9 +121,7 @@ Use multiple edit blocks if needed.
 </IMPORTANT>
 
 <TOOLS>
-* Use the EditTool tool for editing files.
-* Use the CreateFileTool tool for creating files. Takes path and content as input. **Always use this to create files.**
-* Use the GoogleSearchTool tool for searching the web. The output will be a list of relevant search results.
+{get_available_tools_description()}
 </TOOLS>
 
 <PLUGINS>
