@@ -67,9 +67,9 @@ run_test_component() {
 # Track overall test status
 overall_status=0
 
-# 1. Run coverage analysis
-log "Step 1: Running coverage analysis"
-if ! run_test_component "Coverage Analysis" "cd $PROJECT_ROOT && bash $TEST_DIR/coverage.sh"; then
+# 1. Run deptry dependency analysis
+log "Step 1: Running deptry dependency analysis"
+if ! run_test_component "Deptry Dependency Analysis" "cd $PROJECT_ROOT && deptry ."; then
     overall_status=1
 fi
 
@@ -79,11 +79,12 @@ if ! run_test_component "Pyright Type Checking" "cd $PROJECT_ROOT && bash $TEST_
     overall_status=1
 fi
 
-# 3. Run deptry dependency analysis
-log "Step 3: Running deptry dependency analysis"
-if ! run_test_component "Deptry Dependency Analysis" "cd $PROJECT_ROOT && deptry ."; then
+# 3. Run coverage analysis
+log "Step 3: Running coverage analysis"
+if ! run_test_component "Coverage Analysis" "cd $PROJECT_ROOT && bash $TEST_DIR/coverage.sh"; then
     overall_status=1
 fi
+
 
 # Generate summary
 log "Summary"
