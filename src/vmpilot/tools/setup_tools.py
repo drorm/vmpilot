@@ -81,17 +81,6 @@ def setup_tools(model: str | None = None):
     except Exception as e:
         logger.debug(f"Claude web search tool not added: {e}")
 
-    # Add Gemini search tool if using Gemini model
-    try:
-        if model and is_gemini_model(model):
-            gemini_search_schema = {"googleSearch": {}}
-            tools.append(
-                {"schema": gemini_search_schema, "executor": gemini_search_executor}
-            )
-            logger.debug("Gemini search tool added to available tools")
-    except Exception as e:
-        logger.debug(f"Gemini search tool not added: {e}")
-
     # Add Google Search tool for ALL providers if enabled
     try:
         if is_google_search_enabled():
