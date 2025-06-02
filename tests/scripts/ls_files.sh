@@ -11,7 +11,7 @@ shift $((OPTIND -1))
 
 # Use the run_cli.sh wrapper script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-output=$("$SCRIPT_DI"$SCRIPT_DIR/run_cli.sh"" -p "$PROVIDER" -t 0 "ls -1 $TEST_DIR")
+output=$("$SCRIPT_DI"$SCRIPT_DIR/run_cli.sh"" -p "$PROVIDER" -t 0 "ls -1 $TEST_DIR | sort")
 echo "Contents of TEST_DIR before executing cli.sh:" && ls -1 $TEST_DIR
 echo "Raw output:"
 echo "$output"

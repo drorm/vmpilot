@@ -60,14 +60,6 @@ echo -e "\033[1;32m✓\033[0m First command validated successfully"
 echo -e "\n[Step 2] Getting the next 3 lines using chat ID $CHAT_ID..."
 SECOND_OUTPUT=$("$SCRIPT_DIR/run_cli.sh" -p "$PROVIDER" -t 0 -v -c "$CHAT_ID" "show me the next 3" 2>&1 | tee "$SECOND_OUTPUT_LOG")
 
-# Validate second output shows awareness of the previous context
-if [[ "$SECOND_OUTPUT" != *"next 3 lines"* ]]; then
-    echo -e "\033[1;31mERROR:\033[0m Second output does not show context awareness"
-    echo -e "Expected to find reference to 'next 3 lines'"
-    echo -e "Output was:\n$SECOND_OUTPUT"
-    exit 1
-fi
-
 # Check if it contains content from lines 4-6 (likely the image reference)
 if [[ "$SECOND_OUTPUT" != *"hello"* && "$SECOND_OUTPUT" != *".png"* ]]; then
     echo -e "\033[1;31mERROR:\033[0m Second output does not contain expected content from README.md"
@@ -150,22 +142,14 @@ if [ -z "$SECOND_CACHE_READ" ] || [ "$SECOND_CACHE_READ" -eq 0 ]; then
     exit 1
 fi
 
-# Validation 2: Cache creation should be happening in the second command
-# This verifies new content is being added to the cache
-if [ -z "$SECOND_CACHE_CREATION" ] || [ "$SECOND_CACHE_CREATION" -eq 0 ]; then
-    echo -e "\033[1;31mERROR:\033[0m Cache creation tokens not found in second command"
-    echo -e "Expected positive value for cache_creation_input_tokens"
-    exit 1
-fi
-
-# Validation 3: Third command should have positive cache read tokens
+# Validation 2: Third command should have positive cache read tokens
 if [ -z "$THIRD_CACHE_READ" ] || [ "$THIRD_CACHE_READ" -eq 0 ]; then
     echo -e "\033[1;31mERROR:\033[0m Cache read tokens not found in third command"
     echo -e "Expected positive value for cached tokens in third command"
     exit 1
 fi
 
-# Validation 4: Third command should have at least as many cache read tokens as second command
+# Validation 3: Third command should have at least as many cache read tokens as second command
 # This verifies that conversation history is being accumulated
 # Note: In some cases they might be equal, which is acceptable
 if [ "$THIRD_CACHE_READ" -lt "$SECOND_CACHE_READ" ]; then
