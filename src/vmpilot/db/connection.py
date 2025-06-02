@@ -83,6 +83,7 @@ def get_db_connection() -> sqlite3.Connection:
     if _db_connection is None:
         db_path = get_db_path()
 
+        logging.getLogger("alembic.runtime.migration").setLevel(logging.WARNING)
         # Ensure database is migrated before connecting
         from .migrations import ensure_database_migrated
 
