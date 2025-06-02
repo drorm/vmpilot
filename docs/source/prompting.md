@@ -4,6 +4,42 @@
 Whenever you start a conversation with an LLM, it has no context or memory of previous interactions. You need to provide context and direction.
 VMPilot uses a multi-level prompting system to ensure the LLM has the necessary context to assist effectively.
 
+---
+
+## Per-Model Prompt Customization
+
+VMPilot supports **per-model prompt customization** to harmonize and fine-tune the behavior of different LLM providers (OpenAI/GPT, Anthropic/Claude, Google/Gemini).
+
+### How it Works
+- For each provider, VMPilot loads custom instructions from a dedicated Markdown file in `src/vmpilot/prompts/`:
+    - `openai.md` (for GPT models)
+    - `anthropic.md` (for Claude models)
+    - `google.md` (for Gemini models)
+- These prompt files contain provider-specific guidelines, workflow policies, and behavioral instructions.
+- When constructing the system prompt, VMPilot detects the active provider and appends the corresponding file's content.
+
+### Why Customize Per-Model?
+Each LLM provider has different defaults for verbosity, workflow, and reasoning. Custom instructions ensure:
+- Predictable, uniform outputs
+- Consistent workflow across tools
+- Mitigation of model-specific quirks (e.g., verbosity, stopping early, over-explaining)
+
+### How to Customize
+1. **Edit the prompt file** for your provider in `src/vmpilot/prompts/`.
+   For example, to change GPT (OpenAI) behavior:
+   ```bash
+   nano src/vmpilot/prompts/openai.md
+   ```
+2. Add, change, or remove instructions as needed. For guidance, see the examples in each file.
+3. Restart VMPilot to apply changes.
+
+### Examples
+- **Claude**: "Be concise and action-oriented. Avoid extra commentary or moral hedging. Do not explain unless explicitly asked. Use direct shell commands when appropriate."
+- **Gemini**: "Continue through all required steps without stopping unless you hit an error or await input. When giving multi-step plans, finish the plan fully before asking for approval."
+- **GPT**: "Stay concise but include short context or clarification only when it helps avoid ambiguity. Shell commands should be direct and minimal unless requested otherwise."
+
+---
+
 ## Context Layers
 
 ### 1. Project Context (Workspace Level)
