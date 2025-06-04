@@ -6,330 +6,309 @@ including both synchronous and asynchronous operations, edge cases, and error ha
 """
 
 import asyncio
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch  # Added AsyncMock here
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from pydantic import SecretStr
+from pydantic import (  # Keep if config.get_api_key still uses it, otherwise can be removed if api_key is str
+    SecretStr,
+)
 
 from vmpilot.config import Provider as APIProvider
-from vmpilot.worker_llm import get_worker_llm, run_worker, run_worker_async
+
+# get_worker_llm is removed, so only import run_worker and run_worker_async
+from vmpilot.worker_llm import run_worker, run_worker_async
 
 
-class TestGetWorkerLLM:
-    """Tests for the get_worker_llm function."""
+# Mocking litellm.completion and litellm.acompletion response structure
+class MockLiteLLMResponse:
+    def __init__(self, content):
+        self.choices = [MockChoice(content)]
 
-    @patch("vmpilot.worker_llm.ChatOpenAI")
-    @patch("vmpilot.worker_llm.config")
-    def test_get_openai_worker(self, mock_config, mock_chat_openai):
-        """Test that get_worker_llm returns OpenAI worker with correct parameters."""
-        # Setup
-        mock_config.get_api_key.return_value = "fake-api-key"
-        mock_chat_openai.return_value = "openai-instance"
 
-        # Execute
-        result = get_worker_llm(
-            model="gpt-4-turbo",
-            provider=APIProvider.OPENAI,
-            temperature=0.5,
-            max_tokens=1000,
-        )
+class MockChoice:
+    def __init__(self, content):
+        self.message = MockMessage(content)
 
-        # Verify
-        mock_config.get_api_key.assert_called_once_with(APIProvider.OPENAI)
-        mock_chat_openai.assert_called_once_with(
-            model="gpt-4-turbo",
-            temperature=0.5,
-            model_kwargs={"max_tokens": 1000},
-            api_key=SecretStr("fake-api-key"),
-        )
-        assert result == "openai-instance"
 
-    @patch("vmpilot.worker_llm.ChatAnthropic")
-    @patch("vmpilot.worker_llm.config")
-    def test_get_anthropic_worker(self, mock_config, mock_chat_anthropic):
-        """Test that get_worker_llm returns Anthropic worker with correct parameters."""
-        # Setup
-        mock_config.get_api_key.return_value = "fake-api-key"
-        mock_chat_anthropic.return_value = "anthropic-instance"
+class MockMessage:
+    def __init__(self, content):
+        self.content = content
 
-        # Execute
-        result = get_worker_llm(
-            model="claude-3-opus-20240229",
-            provider=APIProvider.ANTHROPIC,
-            temperature=0.7,
-            max_tokens=2000,
-        )
 
-        # Verify
-        mock_config.get_api_key.assert_called_once_with(APIProvider.ANTHROPIC)
-        mock_chat_anthropic.assert_called_once_with(
-            model_name="claude-3-opus-20240229",
-            temperature=0.7,
-            max_tokens_to_sample=2000,
-            timeout=None,
-            stop=None,
-            api_key=SecretStr("fake-api-key"),
-        )
-        assert result == "anthropic-instance"
-
-    def test_get_unsupported_provider(self):
-        """Test that get_worker_llm raises ValueError for unsupported provider."""
-        # Define a mock unsupported provider
-        unsupported_provider = "UNSUPPORTED"
-
-        # Execute and verify
-        with pytest.raises(
-            ValueError, match=f"Unsupported provider: {unsupported_provider}"
-        ):
-            get_worker_llm(provider=unsupported_provider)
+# Removed TestGetWorkerLLM class as get_worker_llm function is removed.
 
 
 class TestRunWorker:
-    """Tests for the run_worker function."""
+    """Tests for the run_worker function using LiteLLM."""
 
-    @patch("vmpilot.worker_llm.get_worker_llm")
-    def test_run_worker_with_system_prompt(self, mock_get_worker_llm):
+    @patch("litellm.completion")
+    @patch("vmpilot.worker_llm.config")  # To mock config.get_api_key
+    def test_run_worker_with_system_prompt(self, mock_config, mock_litellm_completion):
         """Test run_worker with both system and user prompts."""
         # Setup
-        mock_llm = Mock()
-        mock_response = Mock()
-        mock_response.content = "  LLM response  "
-        mock_llm.invoke.return_value = mock_response
-        mock_get_worker_llm.return_value = mock_llm
+        mock_config.get_api_key.return_value = "fake_api_key_for_test"
+        mock_litellm_completion.return_value = MockLiteLLMResponse(
+            "  LiteLLM response  "
+        )
 
         # Execute
         result = run_worker(
             prompt="Test prompt",
             system_prompt="System instructions",
-            model="test-model",
-            provider=APIProvider.OPENAI,
+            model="test-model",  # LiteLLM model string
+            provider=APIProvider.OPENAI,  # Used for API key lookup
             temperature=0.8,
             max_tokens=500,
         )
 
         # Verify
-        mock_get_worker_llm.assert_called_once_with(
+        mock_config.get_api_key.assert_called_once_with(APIProvider.OPENAI)
+        mock_litellm_completion.assert_called_once_with(
             model="test-model",
-            provider=APIProvider.OPENAI,
+            messages=[
+                {"role": "system", "content": "System instructions"},
+                {"role": "user", "content": "Test prompt"},
+            ],
             temperature=0.8,
             max_tokens=500,
+            api_key="fake_api_key_for_test",
         )
+        assert result == "LiteLLM response"
 
-        # Check that both system and human messages were included
-        call_args = mock_llm.invoke.call_args[0][0]
-        assert len(call_args) == 2
-        assert isinstance(call_args[0], SystemMessage)
-        assert call_args[0].content == "System instructions"
-        assert isinstance(call_args[1], HumanMessage)
-        assert call_args[1].content == "Test prompt"
-
-        # Check that whitespace was stripped from response
-        assert result == "LLM response"
-
-    @patch("vmpilot.worker_llm.get_worker_llm")
-    def test_run_worker_without_system_prompt(self, mock_get_worker_llm):
+    @patch("litellm.completion")
+    @patch("vmpilot.worker_llm.config")
+    def test_run_worker_without_system_prompt(
+        self, mock_config, mock_litellm_completion
+    ):
         """Test run_worker with only user prompt."""
         # Setup
-        mock_llm = Mock()
-        mock_response = Mock()
-        mock_response.content = "LLM response"
-        mock_llm.invoke.return_value = mock_response
-        mock_get_worker_llm.return_value = mock_llm
+        mock_config.get_api_key.return_value = "fake_api_key_for_test"
+        mock_litellm_completion.return_value = MockLiteLLMResponse("LiteLLM response")
+        # Default provider is ANTHROPIC if not specified, let's test that path for get_api_key
 
         # Execute
         result = run_worker(
             prompt="Test prompt",
             system_prompt="",  # Empty system prompt
             model="test-model",
+            temperature=0.0,  # Explicitly set to match assertion
+            max_tokens=4000,  # Explicitly set to match assertion
+            # provider=APIProvider.ANTHROPIC, # Implicitly ANTHROPIC by default in run_worker
         )
 
         # Verify
-        # Check that only human message was included
-        call_args = mock_llm.invoke.call_args[0][0]
-        assert len(call_args) == 1
-        assert isinstance(call_args[0], HumanMessage)
-        assert call_args[0].content == "Test prompt"
-
-        assert result == "LLM response"
+        mock_config.get_api_key.assert_called_once_with(APIProvider.ANTHROPIC)
+        mock_litellm_completion.assert_called_once_with(
+            model="test-model",
+            messages=[{"role": "user", "content": "Test prompt"}],
+            temperature=0.0,  # Default temperature in run_worker
+            max_tokens=4000,  # Default max_tokens in run_worker
+            api_key="fake_api_key_for_test",
+        )
+        assert result == "LiteLLM response"
 
 
 class TestRunWorkerAsync:
-    """Tests for the run_worker_async function."""
+    """Tests for the run_worker_async function using LiteLLM."""
 
     @pytest.mark.asyncio
-    @patch("vmpilot.worker_llm.get_worker_llm")
-    async def test_run_worker_async_with_system_prompt(self, mock_get_worker_llm):
+    @patch(
+        "litellm.acompletion", new_callable=AsyncMock
+    )  # Use new_callable for async patches
+    @patch("vmpilot.worker_llm.config")
+    async def test_run_worker_async_with_system_prompt(
+        self, mock_config, mock_litellm_acompletion
+    ):
         """Test run_worker_async with both system and user prompts."""
         # Setup
-        mock_llm = Mock()
-        mock_response = Mock()
-        mock_response.content = "  Async LLM response  "
-
-        # Setup the async mock
-        mock_llm.ainvoke = AsyncMock(return_value=mock_response)
-        mock_get_worker_llm.return_value = mock_llm
+        mock_config.get_api_key.return_value = "fake_async_api_key"
+        mock_litellm_acompletion.return_value = MockLiteLLMResponse(
+            "  Async LiteLLM response  "
+        )
 
         # Execute
         result = await run_worker_async(
             prompt="Test async prompt",
             system_prompt="Async system instructions",
-            model="test-async-model",
-            provider=APIProvider.ANTHROPIC,
+            model="test-async-model",  # LiteLLM model string
+            provider=APIProvider.ANTHROPIC,  # Used for API key lookup
             temperature=0.3,
             max_tokens=800,
         )
 
         # Verify
-        mock_get_worker_llm.assert_called_once_with(
+        mock_config.get_api_key.assert_called_once_with(APIProvider.ANTHROPIC)
+        mock_litellm_acompletion.assert_called_once_with(
             model="test-async-model",
-            provider=APIProvider.ANTHROPIC,
+            messages=[
+                {"role": "system", "content": "Async system instructions"},
+                {"role": "user", "content": "Test async prompt"},
+            ],
             temperature=0.3,
             max_tokens=800,
+            api_key="fake_async_api_key",
         )
-
-        # Check that both system and human messages were included
-        call_args = mock_llm.ainvoke.call_args[0][0]
-        assert len(call_args) == 2
-        assert isinstance(call_args[0], SystemMessage)
-        assert call_args[0].content == "Async system instructions"
-        assert isinstance(call_args[1], HumanMessage)
-        assert call_args[1].content == "Test async prompt"
-
-        # Check that whitespace was stripped from response
-        assert result == "Async LLM response"
+        assert result == "Async LiteLLM response"
 
     @pytest.mark.asyncio
-    @patch("vmpilot.worker_llm.get_worker_llm")
-    async def test_run_worker_async_without_system_prompt(self, mock_get_worker_llm):
+    @patch("litellm.acompletion", new_callable=AsyncMock)
+    @patch("vmpilot.worker_llm.config")
+    async def test_run_worker_async_without_system_prompt(
+        self, mock_config, mock_litellm_acompletion
+    ):
         """Test run_worker_async with only user prompt."""
         # Setup
-        mock_llm = Mock()
-        mock_response = Mock()
-        mock_response.content = "Async LLM response"
-
-        # Setup the async mock
-        mock_llm.ainvoke = AsyncMock(return_value=mock_response)
-        mock_get_worker_llm.return_value = mock_llm
+        mock_config.get_api_key.return_value = "fake_async_api_key"
+        mock_litellm_acompletion.return_value = MockLiteLLMResponse(
+            "Async LiteLLM response"
+        )
 
         # Execute
         result = await run_worker_async(
             prompt="Test async prompt",
             system_prompt="",  # Empty system prompt
             model="test-async-model",
+            temperature=0.0,  # Explicitly set to match assertion
+            max_tokens=4000,  # Explicitly set to match assertion
+            # provider=APIProvider.OPENAI, # Test with a different provider for key lookup
         )
 
         # Verify
-        # Check that only human message was included
-        call_args = mock_llm.ainvoke.call_args[0][0]
-        assert len(call_args) == 1
-        assert isinstance(call_args[0], HumanMessage)
-        assert call_args[0].content == "Test async prompt"
-
-        assert result == "Async LLM response"
+        mock_config.get_api_key.assert_called_once_with(
+            APIProvider.ANTHROPIC
+        )  # Default provider
+        mock_litellm_acompletion.assert_called_once_with(
+            model="test-async-model",
+            messages=[{"role": "user", "content": "Test async prompt"}],
+            temperature=0.0,  # Default temperature
+            max_tokens=4000,  # Default max_tokens
+            api_key="fake_async_api_key",
+        )
+        assert result == "Async LiteLLM response"
 
 
 class TestErrorHandling:
-    """Tests for error handling in worker_llm functions."""
+    """Tests for error handling in worker_llm functions with LiteLLM."""
 
-    @patch("vmpilot.worker_llm.get_worker_llm")
-    def test_run_worker_handles_llm_error(self, mock_get_worker_llm):
-        """Test that run_worker properly handles LLM errors."""
-        # Setup - LLM that raises an exception
-        mock_llm = Mock()
-        mock_llm.invoke.side_effect = ValueError("API error")
-        mock_get_worker_llm.return_value = mock_llm
+    @patch("litellm.completion")
+    @patch("vmpilot.worker_llm.config")
+    def test_run_worker_handles_litellm_error(
+        self, mock_config, mock_litellm_completion
+    ):
+        """Test that run_worker properly handles LiteLLM errors."""
+        # Setup
+        mock_config.get_api_key.return_value = "key"
+        # Correctly instantiate APIError for side_effect
+        mock_litellm_completion.side_effect = litellm.exceptions.APIError(
+            message="LiteLLM API error",
+            status_code=500,
+            llm_provider="test_provider",
+            model="test_model",
+        )
 
         # Execute and verify
-        with pytest.raises(ValueError, match="API error"):
+        with pytest.raises(litellm.exceptions.APIError, match="LiteLLM API error"):
             run_worker(prompt="Test prompt")
 
-        # Verify the LLM was called
-        mock_llm.invoke.assert_called_once()
+        mock_litellm_completion.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("vmpilot.worker_llm.get_worker_llm")
-    async def test_run_worker_async_handles_llm_error(self, mock_get_worker_llm):
-        """Test that run_worker_async properly handles LLM errors."""
-        # Setup - LLM that raises an exception
-        mock_llm = Mock()
-        mock_llm.ainvoke = AsyncMock(side_effect=ValueError("Async API error"))
-        mock_get_worker_llm.return_value = mock_llm
+    @patch("litellm.acompletion", new_callable=AsyncMock)
+    @patch("vmpilot.worker_llm.config")
+    async def test_run_worker_async_handles_litellm_error(
+        self, mock_config, mock_litellm_acompletion
+    ):
+        """Test that run_worker_async properly handles LiteLLM errors."""
+        # Setup
+        mock_config.get_api_key.return_value = "key"
+        # Correctly instantiate APIError for side_effect
+        mock_litellm_acompletion.side_effect = litellm.exceptions.APIError(
+            message="Async LiteLLM API error",
+            status_code=500,
+            llm_provider="test_provider",
+            model="test_model",
+        )
 
         # Execute and verify
-        with pytest.raises(ValueError, match="Async API error"):
+        with pytest.raises(
+            litellm.exceptions.APIError, match="Async LiteLLM API error"
+        ):
             await run_worker_async(prompt="Test async prompt")
 
-        # Verify the LLM was called
-        mock_llm.ainvoke.assert_called_once()
+        mock_litellm_acompletion.assert_called_once()
+
+
+# Need to import litellm for the exception type
+import litellm.exceptions
 
 
 class TestEdgeCases:
-    """Tests for edge cases in worker_llm functions."""
+    """Tests for edge cases in worker_llm functions with LiteLLM."""
 
-    @patch("vmpilot.worker_llm.get_worker_llm")
-    def test_run_worker_with_empty_prompt(self, mock_get_worker_llm):
+    @patch("litellm.completion")
+    @patch("vmpilot.worker_llm.config")
+    def test_run_worker_with_empty_prompt(self, mock_config, mock_litellm_completion):
         """Test run_worker with an empty prompt."""
         # Setup
-        mock_llm = Mock()
-        mock_response = Mock()
-        mock_response.content = "Response to empty prompt"
-        mock_llm.invoke.return_value = mock_response
-        mock_get_worker_llm.return_value = mock_llm
+        mock_config.get_api_key.return_value = "key"
+        mock_litellm_completion.return_value = MockLiteLLMResponse(
+            "Response to empty prompt"
+        )
 
         # Execute
         result = run_worker(prompt="")
 
         # Verify
-        call_args = mock_llm.invoke.call_args[0][0]
-        assert len(call_args) == 1
-        assert call_args[0].content == ""  # Empty prompt
+        call_args = mock_litellm_completion.call_args[1]  # kwargs
+        assert call_args["messages"] == [{"role": "user", "content": ""}]
         assert result == "Response to empty prompt"
 
     @pytest.mark.asyncio
-    @patch("vmpilot.worker_llm.get_worker_llm")
-    async def test_run_worker_async_with_empty_prompt(self, mock_get_worker_llm):
+    @patch("litellm.acompletion", new_callable=AsyncMock)
+    @patch("vmpilot.worker_llm.config")
+    async def test_run_worker_async_with_empty_prompt(
+        self, mock_config, mock_litellm_acompletion
+    ):
         """Test run_worker_async with an empty prompt."""
         # Setup
-        mock_llm = Mock()
-        mock_response = Mock()
-        mock_response.content = "Async response to empty prompt"
-        mock_llm.ainvoke = AsyncMock(return_value=mock_response)
-        mock_get_worker_llm.return_value = mock_llm
+        mock_config.get_api_key.return_value = "key"
+        mock_litellm_acompletion.return_value = MockLiteLLMResponse(
+            "Async response to empty prompt"
+        )
 
         # Execute
         result = await run_worker_async(prompt="")
 
         # Verify
-        call_args = mock_llm.ainvoke.call_args[0][0]
-        assert len(call_args) == 1
-        assert call_args[0].content == ""  # Empty prompt
+        call_args = mock_litellm_acompletion.call_args[1]  # kwargs
+        assert call_args["messages"] == [{"role": "user", "content": ""}]
         assert result == "Async response to empty prompt"
 
-    @patch("vmpilot.worker_llm.get_worker_llm")
-    def test_run_worker_with_very_long_prompt(self, mock_get_worker_llm):
+    @patch("litellm.completion")
+    @patch("vmpilot.worker_llm.config")
+    def test_run_worker_with_very_long_prompt(
+        self, mock_config, mock_litellm_completion
+    ):
         """Test run_worker with a very long prompt."""
         # Setup
-        mock_llm = Mock()
-        mock_response = Mock()
-        mock_response.content = "Response to long prompt"
-        mock_llm.invoke.return_value = mock_response
-        mock_get_worker_llm.return_value = mock_llm
-
-        # Create a long prompt (10KB)
+        mock_config.get_api_key.return_value = "key"
+        mock_litellm_completion.return_value = MockLiteLLMResponse(
+            "Response to long prompt"
+        )
         long_prompt = "x" * 10240
 
         # Execute
         result = run_worker(prompt=long_prompt)
 
         # Verify
-        call_args = mock_llm.invoke.call_args[0][0]
-        assert len(call_args) == 1
-        assert call_args[0].content == long_prompt
+        call_args = mock_litellm_completion.call_args[1]  # kwargs
+        assert call_args["messages"] == [{"role": "user", "content": long_prompt}]
         assert result == "Response to long prompt"
 
 
-# Helper class for async mocking
-class AsyncMock(MagicMock):
-    async def __call__(self, *args, **kwargs):
-        return super(AsyncMock, self).__call__(*args, **kwargs)
+# AsyncMock helper class might not be needed if unittest.mock.AsyncMock is used directly and correctly.
+# If it was defined locally for a specific reason, ensure it's still needed or remove.
+# For now, assuming unittest.mock.AsyncMock is sufficient when used with new_callable=AsyncMock in @patch.
+# class AsyncMock(MagicMock):
+#     async def __call__(self, *args, **kwargs):
+#         return super(AsyncMock, self).__call__(*args, **kwargs)

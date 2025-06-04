@@ -8,9 +8,8 @@ storing and retrieving chats and messages in a SQLite database.
 import json
 import logging
 import os
+import traceback
 from typing import Dict, List, Optional, Tuple
-
-from langchain_core.messages import BaseMessage
 
 from vmpilot.db.connection import get_db_connection
 
@@ -23,6 +22,49 @@ class ConversationRepository:
     def __init__(self):
         """Initialize the repository with a database connection."""
         self.conn = get_db_connection()
+
+    def create_exchange(
+        self,
+        chat_id: str,
+        model: str,
+        request: str,
+        cost: dict,
+        start: str,
+        end: str,
+    ) -> None:
+        """
+        Insert a new exchange row into the exchanges table.
+
+        Args:
+            chat_id: The chat/thread ID.
+            request: The truncated user request.
+            cost: Cost info (as dict, will be serialized to JSON).
+            start: Start timestamp (ISO string).
+            end: End timestamp (ISO string).
+        """
+        import json
+
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO exchanges (chat_id, model, request, cost, start, end)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    chat_id,
+                    model,
+                    request,
+                    json.dumps(cost),
+                    start,
+                    end,
+                ),
+            )
+            self.conn.commit()
+            logger.debug(f"Inserted exchange for chat_id={chat_id}")
+        except Exception as e:
+            logger.error(f"Failed to insert exchange: {e}")
+            traceback.print_exc()
 
     def create_chat(self, chat_id: str, initial_request: Optional[str] = None) -> None:
         """
@@ -70,25 +112,24 @@ class ConversationRepository:
         self.conn.commit()
         logger.debug(f"Created new chat record for chat_id {chat_id}")
 
-    def serialize_messages(self, messages: List[BaseMessage]) -> str:
-        """Serialize a list of BaseMessage objects to JSON string."""
-        from langchain_core.messages import messages_to_dict
-
+    def serialize_messages(self, messages: List[Dict]) -> str:
+        """
+        Serialize a list of message dictionaries to JSON string.
+        """
         try:
-            serializable = messages_to_dict(messages)
+            serializable = messages
+
             return json.dumps(serializable)
         except Exception as e:
             logger.error(f"Error serializing messages: {e}")
+            traceback.print_exc()
             return "[]"
 
-    def deserialize_messages(self, json_str: str) -> List[BaseMessage]:
-        """Deserialize JSON string back to list of BaseMessage objects."""
-        from langchain_core.messages import messages_from_dict
-
+    def deserialize_messages(self, json_str: str) -> List[Dict]:
+        """Deserialize JSON string back to list of message dictionaries."""
         try:
             data = json.loads(json_str)
-            messages = messages_from_dict(data)
-            return messages
+            return data
         except Exception as e:
             logger.error(f"Error deserializing messages: {e}")
             return []
@@ -96,7 +137,7 @@ class ConversationRepository:
     def save_conversation_state(
         self,
         chat_id: str,
-        messages: List[BaseMessage],
+        messages: List,
         cache_info: Optional[Dict[str, int]] = None,
     ) -> None:
         """
@@ -104,7 +145,7 @@ class ConversationRepository:
 
         Args:
             chat_id: The unique identifier for the conversation thread
-            messages: List of LangChain messages representing the conversation state
+            messages: List of messages representing the conversation state
             cache_info: Dictionary containing cache token information (optional)
         """
         if chat_id is None:
@@ -139,9 +180,7 @@ class ConversationRepository:
         except Exception as e:
             logger.error(f"Error saving conversation state to database: {e}")
 
-    def get_conversation_state(
-        self, chat_id: str
-    ) -> Tuple[List[BaseMessage], Dict[str, int]]:
+    def get_conversation_state(self, chat_id: str) -> Tuple[List, Dict[str, int]]:
         """
         Retrieve the conversation state for a given chat_id from the database.
 
@@ -150,7 +189,7 @@ class ConversationRepository:
 
         Returns:
             Tuple containing:
-            - List of LangChain messages representing the conversation state
+            - List of messages representing the conversation state
             - Dictionary with cache token information
         """
         if chat_id is None:
@@ -266,3 +305,59 @@ class ConversationRepository:
 
         self.conn.commit()
         logger.debug(f"Cleared conversation state from database for chat_id {chat_id}")
+
+    def get_accumulated_cost(self, chat_id: str) -> float:
+        """
+        Returns the sum of total_cost for all exchanges for a given chat_id.
+        """
+        import json
+
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute("SELECT cost FROM exchanges WHERE chat_id = ?", (chat_id,))
+            total = 0.0
+            for row in cursor.fetchall():
+                try:
+                    cost_data = json.loads(row[0])
+                    total += float(cost_data.get("total_cost", 0.0))
+                except Exception as e:
+                    logger.warning(f"Could not parse cost row: {e}")
+            return round(total, 6)
+        except Exception as e:
+            logger.error(f"Failed to calculate accumulated cost: {e}")
+            return 0.0
+
+    def get_accumulated_cost_breakdown(self, chat_id: str) -> dict:
+        """
+        Returns a dict of summed cost fields across all exchanges for a given chat_id.
+        Fields include: input_cost, output_cost, cache_read_cost,
+        cache_creation_cost, total_cost (matching per-exchange breakdown).
+        Missing fields are treated as 0.0.
+        """
+        import json
+
+        fields = [
+            "input_cost",
+            "output_cost",
+            "cache_read_cost",
+            "cache_creation_cost",
+            "total_cost",
+        ]
+        sums = {field: 0.0 for field in fields}
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute("SELECT cost FROM exchanges WHERE chat_id = ?", (chat_id,))
+            for row in cursor.fetchall():
+                try:
+                    cost_data = json.loads(row[0])
+                    for field in fields:
+                        sums[field] += float(cost_data.get(field, 0.0))
+                except Exception as e:
+                    logger.warning(f"Could not parse cost row: {e}")
+            # Round all floats to 6 places
+            for k in sums:
+                sums[k] = round(sums[k], 6)
+            return sums
+        except Exception as e:
+            logger.error(f"Failed to calculate accumulated cost breakdown: {e}")
+            return {field: 0.0 for field in fields}

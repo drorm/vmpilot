@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI interface for interacting with vmpilot from the cli using LangChain
+CLI interface for interacting with vmpilot from the cli
 Usage: ./cli.py "your command here"
        ./cli.py -f input_file.txt (processes commands from a file)
        ./cli.py --coverage "your command here" (run with code coverage)
@@ -78,9 +78,9 @@ def create_mock_messages(command: str, chat_id: Optional[str] = None) -> List[Di
         chat_id: Optional chat ID for continuing a conversation
 
     Returns:
-        A list of message dictionaries formatted for LangChain compatibility
+        A list of message dictionaries formatted for LiteLLM compatibility
     """
-    # Format messages for LangChain compatibility
+    # Format messages for LiteLLM compatibility
     messages = []
 
     # If chat_id is provided, add a bogus assistant message with the chat ID
@@ -169,7 +169,7 @@ async def process_command(
     # Print each message in the stream
     try:
         for msg in result:
-            # Handle both string and dict outputs from LangChain
+            # Handle both string and dict outputs from LiteLLM
             if isinstance(msg, dict):
                 if msg.get("type") == "text":
                     # Only print non-system messages

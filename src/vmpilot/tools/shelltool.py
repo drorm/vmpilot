@@ -2,76 +2,118 @@
 
 import logging
 import subprocess
-from typing import Optional, Type
-
-from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
 
-class ShellInput(BaseModel):
-    """Input schema for shell commands."""
+class ShellTool:
+    """Wrapper to provide class interface for test compatibility"""
 
-    command: str = Field(description="The shell command to execute")
-    language: str = Field(
-        default="bash",
-        description="Output language for syntax highlighting (e.g. 'bash', 'python', 'text')",
-    )
+    def run(self, args: dict) -> str:
+        # Extract command and language, pass through the shell logic
+        command = args.get("command")
+        language = args.get("language", "bash")
+        if not command or command.strip() == "":
+            return "*Command executed with no output*"
+        return run_shell_command(command, language)
 
 
-class ShellTool(BaseTool):
-    """Tool for executing shell commands with formatted output."""
+def run_shell_command(command, language):
+    """Executes the command and returns output as string (markdown-formatted)."""
+    # The below mimics the function of shell_tool executor
+    import subprocess
 
-    name: str = "shell"
-    description: str = """Execute bash commands in the system. Input should be a single command string. Examples:
-            - ls /path
-            - cat file.txt
-            - head -n 10 file.md
-            - grep pattern file
-            The output will be automatically formatted with appropriate markdown syntax."""
-    args_schema: Type[BaseModel] = ShellInput
+    out = None
+    try:
+        out = subprocess.run(
+            command, shell=True, capture_output=True, text=True, timeout=30
+        )
+        if out.returncode == 0:
+            return f"```{language}\n{out.stdout}```"
+        else:
+            return f"```{language}\n{out.stderr}```"
+    except Exception as e:
+        return f"```{language}\nError: {e}```"
 
-    def _run(
-        self,
-        command: str,
-        language: str = "bash",
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Execute shell command and return formatted output."""
-        try:
-            # Execute the command
-            output = subprocess.run(
-                command,
-                shell=True,
-                capture_output=True,
-                text=True,
-                executable="/bin/bash",
+
+# Tool definition for LiteLLM
+shell_tool = {
+    "type": "function",
+    "function": {
+        "name": "shell",  # Changed from shell_tool to shell to match the example
+        "description": "Execute bash commands in the system. Input should be a single command string. Examples:\n"
+        "            - ls /path\n"
+        "            - cat file.txt\n"
+        "            - head -n 10 file.md\n"
+        "            - grep pattern file\n"
+        "            The output will be automatically formatted with appropriate markdown syntax.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "The shell command to execute",
+                },
+                "language": {
+                    "type": "string",
+                    "description": "Output language for syntax highlighting (e.g. 'bash', 'python', 'text')",
+                    "default": "bash",
+                },
+            },
+            "required": ["command"],
+        },
+    },
+}
+
+
+def execute_shell_command(args: Dict[str, Any]) -> str:
+    """Execute shell command and return formatted output."""
+    command = args.get("command")
+    language = args.get("language", "bash")
+
+    if not command:
+        return "Error: No command provided"
+
+    logger.debug(f"Executing command: {command}")
+    try:
+        # Execute the command
+        output = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            executable="/bin/bash",
+            timeout=60,  # 1-minute timeout
+        )
+
+        # Get stdout and stderr
+        stdout = output.stdout.strip()
+        stderr = output.stderr.strip()
+        return_code = output.returncode
+
+        # Format the output
+        formatted_result = ""
+
+        # Add stdout if available
+        if stdout:
+            formatted_result += f"\n````{language}\n{stdout}\n````\n\n"
+
+        # Add stderr if available and there was an error
+        if stderr and return_code != 0:
+            formatted_result += (
+                f"\n**Error (code {return_code}):**\n````text\n{stderr}\n````\n\n"
             )
 
-            # Combine stdout and stderr if there's an error
-            if output.returncode != 0:
-                result = f"{output.stdout}\n{output.stderr}".strip()
-            else:
-                result = output.stdout.strip()
+        # Add a message for empty output
+        if not stdout and not stderr:
+            formatted_result += "\n*Command executed with no output*\n"
 
-            # Format the output with the specified language and include the original command
-            formatted_result = f"**$ {command}**\n"
-            if result:
-                # we use 4 backticks to escape the 3 backticks that might be in the markdown
-                formatted_result += f"\n````{language}\n{result}\n````\n\n"
-            return formatted_result
+        return formatted_result
 
-        except Exception as e:
-            logger.error(f"Error executing command '{command}': {str(e)}")
-            return f"Error: {str(e)}"
-
-    async def _arun(
-        self,
-        command: str,
-        language: str = "bash",
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
-        """Run the shell command asynchronously."""
-        return self._run(command=command, language=language, run_manager=run_manager)
+    except subprocess.TimeoutExpired:
+        logger.error(f"Command timed out after 60 seconds: {command}")
+        return f"Error: Command timed out after 60 seconds: {command}"
+    except Exception as e:
+        logger.error(f"Error executing command '{command}': {str(e)}")
+        return f"Error: {str(e)}"

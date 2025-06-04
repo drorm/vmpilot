@@ -8,8 +8,6 @@ in-memory and database storage based on configuration.
 import unittest
 from unittest.mock import MagicMock, patch
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-
 
 class TestUnifiedMemory(unittest.TestCase):
     """Test cases for the unified memory module."""
@@ -18,9 +16,9 @@ class TestUnifiedMemory(unittest.TestCase):
         """Set up test environment."""
         # Create sample messages for testing
         self.messages = [
-            SystemMessage(content="You are a helpful assistant."),
-            HumanMessage(content="Hello, how are you?"),
-            AIMessage(content="I'm doing well, thank you for asking!"),
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello, how are you?"},
+            {"role": "assistant", "content": "I'm doing well, thank you for asking!"},
         ]
 
         # Sample cache info

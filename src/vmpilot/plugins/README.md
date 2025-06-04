@@ -5,7 +5,11 @@ Alls plugins as well as the main README.md are located in $VMPILOT_ROOT/src/vmpi
 # Github
 
 directory: github\_issues
+<<<<<<< HEAD
+- To view or list issues, use "cd $rootDir && gh issue view $number -c" or "gh issue list". Always include the "gh" command.
+=======
 - To view or list issues, use "$PROJECT_ROOT/src/vmpilot/plugins/github_issues/gh_issue.sh  view $number" or use this gh_issue.sh command as a replacement for any other "gh" command.
+>>>>>>> dev
 - To create an issue view the README.md file for instructions.
 
 # Documentation

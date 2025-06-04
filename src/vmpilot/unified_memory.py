@@ -20,7 +20,6 @@ except Exception as e:
         f"Error checking database configuration, defaulting to sqlite-memory storage: {e}"
     )
 if use_database:
-    logger.info("Using database storage for conversation state")
     from vmpilot.persistent_memory import (
         clear_conversation_state,
         get_conversation_state,
@@ -28,7 +27,6 @@ if use_database:
         update_cache_info,
     )
 else:
-    logger.info("Using in-memory storage for conversation state")
     from vmpilot.agent_memory import (
         clear_conversation_state,
         get_conversation_state,

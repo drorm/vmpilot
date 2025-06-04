@@ -13,6 +13,41 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
+
+# Google Search configuration class
+class GoogleSearchConfig(BaseModel):
+    """Configuration for Google Search API"""
+
+    enabled: bool = Field(default=False)
+    api_key_env: str = Field(default="GOOGLE_API_KEY")
+    cse_id_env: str = Field(default="GOOGLE_CSE_ID")
+    max_results: int = Field(default=10)
+
+    @classmethod
+    def from_config(cls, parser: ConfigParser) -> "GoogleSearchConfig":
+        """Create GoogleSearchConfig from ConfigParser"""
+        if not parser.has_section("google_search"):
+            return cls()
+
+        section = parser["google_search"]
+        return cls(
+            enabled=section.getboolean("enabled", False),
+            api_key_env=section.get("api_key_env", "GOOGLE_API_KEY"),
+            cse_id_env=section.get("cse_id_env", "GOOGLE_CSE_ID"),
+            max_results=section.getint("max_results", 10),
+        )
+
+    def is_properly_configured(self) -> bool:
+        """Check if Google Search is properly configured by verifying required environment variables."""
+        if not self.enabled:
+            return False
+
+        google_api_key = os.getenv(self.api_key_env)
+        google_cse_id = os.getenv(self.cse_id_env)
+
+        return bool(google_api_key and google_cse_id)
+
+
 logger = logging.getLogger(__name__)
 # Don't set the level here - it will inherit from the root logger
 
@@ -403,6 +438,15 @@ class ModelConfig(BaseModel):
 
 # Global configuration instance
 config = ModelConfig()
+
+# Google Search configuration
+google_search_config = GoogleSearchConfig.from_config(parser)
+logger.debug(
+    f"Google Search configuration: enabled={google_search_config.enabled}, "
+    + f"api_key_env={google_search_config.api_key_env}, "
+    + f"cse_id_env={google_search_config.cse_id_env}, "
+    + f"max_results={google_search_config.max_results}"
+)
 
 # General configuration
 DEFAULT_PROVIDER = parser.get("general", "default_provider")

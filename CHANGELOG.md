@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6] - 2025-06-03
+
+### Added
+
+- #12: Add Web Search Capability to VMPilot (@dror-llm)
+- #46: [Feature] Update cli.py to use the new chat approach (@dror-llm)
+- #56: Feature: Migrate CLI Chat ID Handling to New Approach (@dror-llm)
+- #74: Implement Caching for Code Search Using Gemini API (@dror-llm)
+- #78: Implement Cost Tracking Database Integration (@dror-llm)
+- #80: Adopt Alembic-Based Schema Migrations (Raw SQL) for SQLite Database (@dror-llm)
+- #83: [Feature] Per-Model Prompt Customization for Uniform LLM Behavior (@dror-llm)
+- #88: [Feature] Full LiteLLM Migration Implementation (@dror-llm)
+
+
 ## [0.5] - 2025-05-01
 
 ### Added

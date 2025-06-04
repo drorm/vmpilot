@@ -140,15 +140,16 @@ class TestGitTrackerLLMIntegration(unittest.TestCase):
             # Since we're using run_worker_async, run_worker might not be called
             # mock_run_worker.assert_called_once()
 
-    def test_generate_commit_message_exception(self):
+    @patch("vmpilot.worker_llm.run_worker_async")
+    def test_generate_commit_message_exception(self, mock_run_worker_async):
         """Test generate_commit_message when an exception occurs."""
         # Set up the mock to raise an exception
-        self.mock_get_llm.side_effect = Exception("LLM API error")
+        mock_run_worker_async.side_effect = Exception("LLM API error")
 
         result = self.git_tracker.generate_commit_message("diff content")
 
         self.assertEqual(result, "LLM-generated changes")
-        self.mock_get_llm.assert_called_once()
+        mock_run_worker_async.assert_called_once()
 
     def test_generate_commit_message_with_different_config(self):
         """Test generate_commit_message with different configuration."""
