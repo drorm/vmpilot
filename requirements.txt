@@ -47,7 +47,7 @@ frozenlist==1.6.2
     #   aiosignal
 fsspec==2025.5.1
     # via huggingface-hub
-h11==0.14.0
+h11==0.16.0
     # via httpcore
 hf-xet==1.1.2
     # via huggingface-hub
